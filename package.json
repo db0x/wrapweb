@@ -1,0 +1,16 @@
+{
+  "name": "wrapweb",
+  "description": "PWA Wrapper",
+  "keywords": [],
+  "main": "./main.js",
+  "version": "0.0.1",
+  "author": "db0x",
+  "scripts": {
+    "start": "electron .",
+    "build": "node scripts/build.js"
+  },
+  "devDependencies": {
+    "electron": "41.2.0",
+    "electron-builder": "^26.4.0"
+  }
+}
