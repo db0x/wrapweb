@@ -11,7 +11,6 @@ function createWindow(pkg) {
     height: pkg.geometry?.height ?? 1024,
     x:      pkg.geometry?.x      ?? NaN,
     y:      pkg.geometry?.y      ?? NaN,
-    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,

@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, Menu } = require('electron')
 const path = require('node:path')
 const pkg = require(app.getAppPath() + '/package.json')
 const { createWindow } = require('./src/window')
@@ -18,6 +18,8 @@ app.commandLine.appendSwitch('disable-features',  'Vulkan,UseSkiaRenderer')
 app.commandLine.appendSwitch('enable-features',   'WebRTCPipeWireCapturer')
 app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer')
 app.setPath('userData', path.join(app.getPath('appData'), 'wrapweb', profile))
+
+Menu.setApplicationMenu(null)
 
 app.whenReady().then(() => {
   createWindow(pkg)
