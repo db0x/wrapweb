@@ -1,4 +1,4 @@
-const { session, desktopCapturer } = require('electron')
+const { session, desktopCapturer, app } = require('electron')
 
 const MEDIA_PERMISSIONS = [
   'media', 'display-capture', 'mediaKeySystem',
@@ -7,6 +7,8 @@ const MEDIA_PERMISSIONS = [
 
 function createSession(profile) {
   const customSession = session.fromPartition('persist:my-profile', { cache: true })
+
+  customSession.setSpellCheckerLanguages(app.getPreferredSystemLanguages())
 
   customSession.setPermissionCheckHandler((_wc, permission) =>
     MEDIA_PERMISSIONS.includes(permission)

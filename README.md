@@ -8,7 +8,7 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 
 - **Isolated sessions** — each app has its own persistent profile; logging into one never affects another
 - **Native feel** — no browser chrome, auto-hidden menu bar, correct WM class for taskbar grouping
-- **Context menu** — Cut / Copy / Paste + Save Image As (i18n: German / English, follows system locale)
+- **Context menu** — Cut / Copy / Paste + Save Image As (i18n: German / English, follows system locale); right-clicking a misspelled word shows spelling suggestions via `aspell` (falls back to English if no system dictionary is installed for the current locale)
 - **Zoom** — `Ctrl+Scroll` to zoom in/out per window
 - **Screen sharing** — WebRTC / PipeWire capture works out of the box (Teams, Meet, …)
 - **DevTools** — press `F12` to toggle
@@ -31,6 +31,7 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 
 - Node.js ≥ 18
 - Linux (Wayland or X11)
+- `aspell` for spelling suggestions in the context menu (English is built in; install the matching language pack for native-language suggestions, e.g. `sudo apt install aspell-de` for German)
 
 ```bash
 npm install
