@@ -13,6 +13,7 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 - **Screen sharing** — WebRTC / PipeWire capture works out of the box (Teams, Meet, …)
 - **DevTools** — press `F12` to toggle
 - **Private builds** — configs matching `build.private.*.json` are gitignored and never committed
+- **Desktop integration** — auto-installs a `.desktop` entry after each build; `npm run install-app` to install without rebuilding
 
 ## Included app configs
 
@@ -51,7 +52,23 @@ npm run build -- teams
 npm run build -- google-earth
 ```
 
-Output lands in `dist/` as a self-contained AppImage.
+Output lands in `dist/` as a self-contained AppImage. A `.desktop` entry is written to `~/.local/share/applications/` automatically after each build, so the app appears in your launcher right away.
+
+## Installing without rebuilding
+
+If you already have a built AppImage and just want to (re-)create the launcher entry:
+
+```bash
+npm run install-app -- whatsapp
+npm run install-app            # all configs
+```
+
+If the `.desktop` file already exists it is skipped. To force an update, delete it first:
+
+```bash
+rm ~/.local/share/applications/wrapweb-whatsapp.desktop
+npm run install-app -- whatsapp
+```
 
 ## Adding your own app
 
@@ -76,11 +93,14 @@ npm run build -- myapp
 |---|---|---|
 | `profile` | string | **Required.** Unique identifier — used for the session partition, userData path, and derived app IDs |
 | `url` | string | **Required.** URL to load on startup |
+| `name` | string | *(optional)* Human-readable display name shown in the launcher (default: derived from `profile`, e.g. `google-earth` → `Google Earth`) |
+| `icon` | string | *(optional)* Icon name for the `.desktop` entry — resolved from the system icon theme (default: `profile` name) |
 | `userAgent` | string | *(optional)* Override the user-agent string |
 | `geometry.width` | number | *(optional)* Initial window width (default: 1280) |
 | `geometry.height` | number | *(optional)* Initial window height (default: 1024) |
 | `geometry.x` | number | *(optional)* Initial window X position |
 | `geometry.y` | number | *(optional)* Initial window Y position |
+| `internalDomains` | string or array | *(optional)* Domains to allow opening in new windows (e.g., OAuth providers like `accounts.google.com`, `github.com`). By default, only same-origin URLs open internally; external links open in the system browser. |
 | `crossOriginIsolation` | boolean | *(optional)* Enable `SharedArrayBuffer` — required for apps like Google Earth that use multi-threaded WASM |
 
 Everything else (`appId`, `productName`, `artifactName`, the `linux` section) is derived from `profile` by `scripts/build.js`.
@@ -108,6 +128,17 @@ With window position and WASM multi-threading:
     "url": "https://earth.google.com",
     "crossOriginIsolation": true,
     "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+}
+```
+
+With OAuth providers whitelisted (so login flows stay in the app) and a custom display name:
+```json
+{
+    "profile": "claude",
+    "name": "Claude",
+    "icon": "claude",
+    "url": "https://claude.ai",
+    "internalDomains": ["accounts.google.com", "github.com"]
 }
 ```
 

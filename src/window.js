@@ -33,9 +33,30 @@ function createWindow(pkg) {
     )
   })
 
+  const appOrigin = new URL(pkg.url).origin
+  const internalDomains = pkg.internalDomains ?
+    (Array.isArray(pkg.internalDomains) ? pkg.internalDomains : [pkg.internalDomains]) :
+    []
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
-    return { action: 'deny' }
+    try {
+      const targetUrl = new URL(url)
+      // Allow same-origin URLs (OAuth redirects, etc.)
+      if (targetUrl.origin === appOrigin) {
+        return { action: 'allow' }
+      }
+      // Allow whitelisted internal domains (e.g., accounts.google.com)
+      if (internalDomains.some(domain =>
+        targetUrl.hostname === domain || targetUrl.hostname.endsWith('.' + domain)
+      )) {
+        return { action: 'allow' }
+      }
+      // External URLs: open in system browser
+      shell.openExternal(url)
+      return { action: 'deny' }
+    } catch (err) {
+      return { action: 'deny' }
+    }
   })
 
   mainWindow.webContents.on('context-menu', (_event, params) => {
