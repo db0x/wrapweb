@@ -2,15 +2,18 @@ const { BrowserWindow, shell, ipcMain } = require('electron')
 const path = require('node:path')
 const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
+const windowState = require('./window-state')
 
 function createWindow(pkg) {
   const customSession = createSession(pkg.profile)
 
+  const saved = !pkg.geometry ? windowState.load() : null
+
   const mainWindow = new BrowserWindow({
-    width:  pkg.geometry?.width  ?? 1280,
-    height: pkg.geometry?.height ?? 1024,
-    x:      pkg.geometry?.x      ?? NaN,
-    y:      pkg.geometry?.y      ?? NaN,
+    width:  pkg.geometry?.width  ?? saved?.width  ?? 1280,
+    height: pkg.geometry?.height ?? saved?.height ?? 1024,
+    x:      pkg.geometry?.x,
+    y:      pkg.geometry?.y,
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
       contextIsolation: true,
@@ -19,6 +22,8 @@ function createWindow(pkg) {
       ...(pkg.crossOriginIsolation && { enableBlinkFeatures: 'SharedArrayBuffer' }),
     },
   })
+
+  if (!pkg.geometry) mainWindow.on('close', () => windowState.save(mainWindow))
 
   if (pkg.userAgent) mainWindow.webContents.setUserAgent(pkg.userAgent)
   mainWindow.loadURL(pkg.url)

@@ -3,15 +3,15 @@
   "description": "PWA Wrapper",
   "keywords": [],
   "main": "./main.js",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "db0x",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "build": "node scripts/build.js",
     "install-app": "node scripts/install.js"
   },
   "devDependencies": {
-    "electron": "41.2.0",
+    "electron": "41.3.0",
     "electron-builder": "^26.4.0"
   }
 }

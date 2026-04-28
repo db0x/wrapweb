@@ -1,50 +1,6 @@
 #!/usr/bin/env node
 const fs = require('node:fs')
-const os = require('node:os')
-const path = require('node:path')
-const { execSync } = require('node:child_process')
-
-function toDisplayName(profile) {
-  return profile.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-}
-
-function installDesktop(app) {
-  const desktopName = `wrapweb-${app.profile}`
-  const desktopsDir = path.join(os.homedir(), '.local', 'share', 'applications')
-  const desktopFile = path.join(desktopsDir, `${desktopName}.desktop`)
-
-  if (fs.existsSync(desktopFile)) {
-    console.log(`  Already installed, skipping: ${desktopFile}`)
-    return
-  }
-
-  const appImagePath = path.resolve('dist', `wrapweb.${app.profile}`)
-  const displayName = app.name || toDisplayName(app.profile)
-  const icon = app.icon || app.profile
-
-  const content = [
-    '[Desktop Entry]',
-    'Version=1.0',
-    `Name=${displayName}`,
-    `Comment=${displayName}`,
-    `Exec=${appImagePath} --no-sandbox`,
-    'Terminal=false',
-    'Type=Application',
-    `Icon=${icon}`,
-    `StartupWMClass=${desktopName}`,
-    '',
-  ].join('\n')
-
-  fs.mkdirSync(desktopsDir, { recursive: true })
-  fs.writeFileSync(desktopFile, content, 'utf8')
-  console.log(`  Installed: ${desktopFile}`)
-
-  try {
-    execSync(`update-desktop-database "${desktopsDir}"`, { stdio: 'ignore' })
-  } catch {
-    // non-fatal
-  }
-}
+const { installDesktop, installIcon } = require('./lib')
 
 const configs = fs
   .readdirSync('.')
@@ -52,6 +8,8 @@ const configs = fs
   .sort()
 
 const profile = process.argv[2]
+
+installIcon()
 
 if (profile) {
   const configFile = `build.${profile}.json`
