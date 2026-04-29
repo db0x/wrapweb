@@ -50,6 +50,7 @@ The manager's WM class is `wrapweb`; each app's WM class is `wrapweb-<profile>`.
 
 | Config | App |
 |---|---|
+| `build.claude.json` | Claude (Anthropic) |
 | `build.whatsapp.json` | WhatsApp Web |
 | `build.teams.json` | Microsoft Teams |
 | `build.google-docs.json` | Google Docs |
