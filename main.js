@@ -138,7 +138,7 @@ for name in sys.argv[1:]:
 `
   const r = spawnSync('python3', ['-c', script, ...names], { encoding: 'utf8', timeout: 3000 })
   if (r.error || r.status !== 0) return {}
-  const lines = (r.stdout || '').trim().split('\n')
+  const lines = (r.stdout || '').split('\n')
   return Object.fromEntries(names.map((name, i) => [name, lines[i] || null]))
 }
 
