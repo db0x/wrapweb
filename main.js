@@ -36,17 +36,18 @@ if (profile) {
       .sort()
       .map(f => {
         const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'))
+        const configLabel = f.replace(/^build\.(.+)\.json$/, '$1')
         const built = fs.existsSync(path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`))
         const desktopFile = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${cfg.profile}.desktop`)
         const installed = fs.existsSync(desktopFile)
-        let iconValue = null
+        let iconValue = cfg.icon || null
         if (installed) {
           const m = fs.readFileSync(desktopFile, 'utf8').match(/^Icon=(.+)$/m)
           if (m) iconValue = m[1].trim()
         }
         const appImagePath = path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
-        return { profile: cfg.profile, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath }
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath }
       })
 
     // Separate absolute paths from theme names — batch-resolve theme names via GTK
@@ -70,8 +71,8 @@ if (profile) {
   ipcMain.handle('manager:version', () => pkg.version)
 
   ipcMain.handle('manager:ui-icons', () => {
-    const r = resolveIconsByGtk(['weather-clear-symbolic', 'weather-clear-night-symbolic', 'dialog-information-symbolic', 'system-run-symbolic', 'system-software-install-symbolic', 'edit-delete-symbolic'])
-    return { sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'], info: r['dialog-information-symbolic'], build: r['system-run-symbolic'], install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'] }
+    const r = resolveIconsByGtk(['weather-clear-symbolic', 'weather-clear-night-symbolic', 'dialog-information-symbolic', 'system-run-symbolic', 'system-software-install-symbolic', 'edit-delete-symbolic', 'application-default-icon'])
+    return { sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'], info: r['dialog-information-symbolic'], build: r['system-run-symbolic'], install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'], appDefault: r['application-default-icon'] }
   })
 
   ipcMain.handle('manager:launch', (event, profile) => {
@@ -94,9 +95,9 @@ if (profile) {
     }
   })
 
-  ipcMain.handle('manager:install', (event, profile) => {
+  ipcMain.handle('manager:install', (event, configLabel) => {
     return new Promise((resolve) => {
-      const child = spawn('node', [path.join(__dirname, 'scripts', 'install.js'), profile], { cwd: __dirname })
+      const child = spawn('node', [path.join(__dirname, 'scripts', 'install.js'), configLabel], { cwd: __dirname })
       let stdout = '', stderr = ''
       child.stdout?.on('data', d => { stdout += d.toString() })
       child.stderr?.on('data', d => { stderr += d.toString() })
@@ -105,9 +106,9 @@ if (profile) {
     })
   })
 
-  ipcMain.handle('manager:build', (event, profile) => {
+  ipcMain.handle('manager:build', (event, configLabel) => {
     return new Promise((resolve) => {
-      const child = spawn('node', [path.join(__dirname, 'scripts', 'build.js'), profile], { cwd: __dirname })
+      const child = spawn('node', [path.join(__dirname, 'scripts', 'build.js'), configLabel], { cwd: __dirname })
       let stdout = '', stderr = ''
       child.stdout?.on('data', d => { stdout += d.toString() })
       child.stderr?.on('data', d => { stderr += d.toString() })

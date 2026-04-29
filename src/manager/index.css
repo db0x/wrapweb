@@ -1,4 +1,4 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
 :root {
   --bg:          #f0f0f0;
@@ -16,6 +16,8 @@
   --badge-unbuilt-fg:   #666;
   --badge-private-bg:   #fff3cd;
   --badge-private-fg:   #7a5f00;
+  --badge-installed-bg: #cce5ff;
+  --badge-installed-fg: #004085;
 }
 
 body.dark {
@@ -34,6 +36,8 @@ body.dark {
   --badge-unbuilt-fg:   #aaa;
   --badge-private-bg:   #3a3218;
   --badge-private-fg:   #f0c040;
+  --badge-installed-bg: #1a2f4a;
+  --badge-installed-fg: #7ab8f5;
 }
 
 body {
@@ -180,9 +184,10 @@ header h1 span {
   border-radius: 10px;
 }
 
-.badge.built     { background: var(--badge-built-bg);   color: var(--badge-built-fg); }
-.badge.not-built { background: var(--badge-unbuilt-bg); color: var(--badge-unbuilt-fg); }
-.badge.private   { background: var(--badge-private-bg); color: var(--badge-private-fg); }
+.badge.built      { background: var(--badge-built-bg);     color: var(--badge-built-fg); }
+.badge.not-built  { background: var(--badge-unbuilt-bg);   color: var(--badge-unbuilt-fg); }
+.badge.private    { background: var(--badge-private-bg);   color: var(--badge-private-fg); }
+.badge.installed  { background: var(--badge-installed-bg); color: var(--badge-installed-fg); }
 
 /* ── Card toolbar ── */
 
@@ -217,7 +222,13 @@ header h1 span {
   gap: 2px;
   padding-top: 8px;
   border-top: 1px solid var(--card-shadow);
-  margin-top: 2px;
+  margin-top: auto;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.card:hover .card-toolbar {
+  opacity: 1;
 }
 
 .toolbar-btn {

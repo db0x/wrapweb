@@ -17,12 +17,13 @@ const [apps, version, uiIcons] = await Promise.all([
 
 document.getElementById('version').textContent = `v${version}`
 
-const sunSrc     = uiIcons.sun     ? `file://${uiIcons.sun}`     : null
-const moonSrc    = uiIcons.moon    ? `file://${uiIcons.moon}`    : null
-const infoSrc    = uiIcons.info    ? `file://${uiIcons.info}`    : null
-const buildSrc   = uiIcons.build   ? `file://${uiIcons.build}`   : null
-const installSrc = uiIcons.install ? `file://${uiIcons.install}` : null
-const deleteSrc  = uiIcons.delete  ? `file://${uiIcons.delete}`  : null
+const sunSrc        = uiIcons.sun        ? `file://${uiIcons.sun}`        : null
+const moonSrc       = uiIcons.moon       ? `file://${uiIcons.moon}`       : null
+const infoSrc       = uiIcons.info       ? `file://${uiIcons.info}`       : null
+const buildSrc      = uiIcons.build      ? `file://${uiIcons.build}`      : null
+const installSrc    = uiIcons.install    ? `file://${uiIcons.install}`    : null
+const deleteSrc     = uiIcons.delete     ? `file://${uiIcons.delete}`     : null
+const appDefaultSrc = uiIcons.appDefault ? `file://${uiIcons.appDefault}` : '../../assets/wrapweb.svg'
 
 // ── Theme toggle ──────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ for (const app of apps) {
 
   const card = document.createElement('div')
   card.className = 'card'
-  const iconSrc = app.iconPath ? `file://${app.iconPath}` : '../../assets/wrapweb.svg'
+  const iconSrc = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
 
   card.innerHTML = `
     <img src="${iconSrc}" alt="${name}" class="${app.built && app.installed ? 'launchable' : 'unavailable'}">
@@ -143,6 +144,7 @@ for (const app of apps) {
     <span class="url">${hostname}</span>
     <div class="badges">
       <span class="badge ${app.built ? 'built' : 'not-built'}" data-role="build-badge">${app.built ? 'Gebaut' : 'Nicht gebaut'}</span>
+      ${app.installed ? '<span class="badge installed" data-role="install-badge">Installiert</span>' : ''}
       ${app.isPrivate ? '<span class="badge private">Privat</span>' : ''}
     </div>
     <div class="card-toolbar">
@@ -185,6 +187,7 @@ for (const app of apps) {
       const installBtn = card.querySelector('[data-action="install"]')
       if (installBtn) installBtn.disabled = true
       iconEl.classList.replace('launchable', 'unavailable')
+      card.querySelector('[data-role="install-badge"]')?.remove()
     } else {
       btn.disabled = false
     }
@@ -194,12 +197,18 @@ for (const app of apps) {
     const btn = card.querySelector('[data-action="install"]')
     btn.disabled = true
     btn.classList.add('loading')
-    const result = await window.managerAPI.installApp(app.profile)
+    const result = await window.managerAPI.installApp(app.configLabel)
     btn.classList.remove('loading')
     if (result.success) {
       app.installed = true
       btn.disabled = true
       iconEl.classList.replace('unavailable', 'launchable')
+      const buildBadge = card.querySelector('[data-role="build-badge"]')
+      const installBadge = document.createElement('span')
+      installBadge.className = 'badge installed'
+      installBadge.dataset.role = 'install-badge'
+      installBadge.textContent = 'Installiert'
+      buildBadge.insertAdjacentElement('afterend', installBadge)
     } else {
       btn.disabled = false
     }
@@ -212,7 +221,7 @@ for (const app of apps) {
     btn.disabled = true
     btn.classList.add('loading')
 
-    const result = await window.managerAPI.buildApp(app.profile)
+    const result = await window.managerAPI.buildApp(app.configLabel)
 
     btn.disabled = false
     btn.classList.remove('loading')
@@ -224,6 +233,8 @@ for (const app of apps) {
       btn.title = 'Neu bauen'
       const installBtn = card.querySelector('[data-action="install"]')
       if (installBtn && !app.installed) installBtn.disabled = false
+      const deleteBtn = card.querySelector('[data-action="delete"]')
+      if (deleteBtn) deleteBtn.disabled = false
     }
   })
 
