@@ -113,6 +113,7 @@ header h1 span {
 }
 
 .card {
+  position: relative;
   background: var(--card-bg);
   border-radius: 10px;
   padding: 20px 14px 16px;
@@ -169,40 +170,153 @@ header h1 span {
 .badge.not-built { background: var(--badge-unbuilt-bg); color: var(--badge-unbuilt-fg); }
 .badge.private   { background: var(--badge-private-bg); color: var(--badge-private-fg); }
 
-/* ── Info button on card ── */
+/* ── Card toolbar ── */
 
-.card {
-  position: relative;
+.card-toolbar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--card-shadow);
+  margin-top: 2px;
 }
 
-.card-info-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+.toolbar-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px;
-  border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
+  padding: 7px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s;
 }
 
-.card:hover .card-info-btn {
-  opacity: 0.55;
-}
-
-.card-info-btn:hover {
-  opacity: 1 !important;
+.toolbar-btn:hover {
   background: var(--card-shadow);
 }
 
-.card-info-btn img {
-  width: 16px;
-  height: 16px;
+.toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.toolbar-btn img {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) opacity(0.45);
+}
+
+body.dark .toolbar-btn img {
+  filter: brightness(0) invert(1) opacity(0.55);
+}
+
+.toolbar-btn:not(:disabled):hover img {
+  filter: brightness(0) opacity(0.8);
+}
+
+body.dark .toolbar-btn:not(:disabled):hover img {
+  filter: brightness(0) invert(1) opacity(0.9);
+}
+
+.toolbar-btn.loading img {
+  animation: toolbar-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes toolbar-pulse {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.8; }
+}
+
+.toolbar-btn.danger img {
+  filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(4000%) hue-rotate(345deg) brightness(90%) contrast(110%) opacity(0.8);
+}
+
+body.dark .toolbar-btn.danger img {
+  filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(4000%) hue-rotate(345deg) brightness(160%) contrast(120%) opacity(0.9);
+}
+
+.toolbar-btn.danger:not(:disabled):hover {
+  background: rgba(220, 40, 40, 0.1);
+}
+
+.toolbar-btn.danger:not(:disabled):hover img {
+  filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(4000%) hue-rotate(345deg) brightness(100%) contrast(115%) opacity(1);
+}
+
+body.dark .toolbar-btn.danger:not(:disabled):hover img {
+  filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(4000%) hue-rotate(345deg) brightness(190%) contrast(120%) opacity(1);
+}
+
+/* ── Confirm dialog ── */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.confirm-overlay.hidden {
+  display: none;
+}
+
+.confirm-dialog {
+  background: var(--card-bg);
+  color: var(--card-fg);
+  border-radius: 12px;
+  padding: 24px 28px 20px;
+  width: 380px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.confirm-dialog p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--card-url);
+}
+
+.confirm-dialog strong {
+  color: var(--card-fg);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirm-actions button {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.confirm-actions button:hover {
+  opacity: 0.85;
+}
+
+.btn-cancel {
+  background: var(--badge-unbuilt-bg);
+  color: var(--badge-unbuilt-fg);
+}
+
+.btn-confirm-delete {
+  background: #c0392b;
+  color: white;
 }
 
 /* ── Info dialog ── */
