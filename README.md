@@ -1,3 +1,11 @@
+```
+                                 __ 
+ _    _________ ____ _    _____ / / 
+| |/|/ / __/ _ `/ _ \ |/|/ / -_) _ \
+|__,__/_/  \_,_/ .__/__,__/\__/_.__/🐧
+              /_/                   
+```
+
 # wrapweb
 
 Turn any web app into a standalone Linux desktop application — packaged as an AppImage, with its own window, session, and taskbar entry.

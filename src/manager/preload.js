@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('managerAPI', {
   buildApp:   (profile) => ipcRenderer.invoke('manager:build',   profile),
   installApp: (profile) => ipcRenderer.invoke('manager:install', profile),
   deleteApp:  (profile) => ipcRenderer.invoke('manager:delete',  profile),
+  launchApp:  (profile) => ipcRenderer.invoke('manager:launch',  profile),
 })

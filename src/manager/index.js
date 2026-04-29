@@ -138,7 +138,7 @@ for (const app of apps) {
   const iconSrc = app.iconPath ? `file://${app.iconPath}` : '../../assets/wrapweb.svg'
 
   card.innerHTML = `
-    <img src="${iconSrc}" alt="${name}">
+    <img src="${iconSrc}" alt="${name}" class="${app.built && app.installed ? 'launchable' : 'unavailable'}">
     <span class="name">${name}</span>
     <span class="url">${hostname}</span>
     <div class="badges">
@@ -152,6 +152,11 @@ for (const app of apps) {
       ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="Löschen" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}" alt="Löschen"></button>` : ''}
     </div>
   `
+
+  const iconEl = card.querySelector('img')
+  iconEl.addEventListener('click', () => {
+    if (app.built && app.installed) window.managerAPI.launchApp(app.profile)
+  })
 
   card.querySelector('[data-action="info"]')?.addEventListener('click', () => openDialog(app, name))
 
@@ -179,6 +184,7 @@ for (const app of apps) {
       card.querySelector('[data-action="build"]').title = 'Bauen'
       const installBtn = card.querySelector('[data-action="install"]')
       if (installBtn) installBtn.disabled = true
+      iconEl.classList.replace('launchable', 'unavailable')
     } else {
       btn.disabled = false
     }
@@ -193,6 +199,7 @@ for (const app of apps) {
     if (result.success) {
       app.installed = true
       btn.disabled = true
+      iconEl.classList.replace('unavailable', 'launchable')
     } else {
       btn.disabled = false
     }
@@ -222,3 +229,8 @@ for (const app of apps) {
 
   document.getElementById('grid').appendChild(card)
 }
+
+const addCard = document.createElement('div')
+addCard.className = 'card card-add'
+addCard.innerHTML = `<span class="plus">+</span>`
+document.getElementById('grid').appendChild(addCard)

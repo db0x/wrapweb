@@ -74,6 +74,14 @@ if (profile) {
     return { sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'], info: r['dialog-information-symbolic'], build: r['system-run-symbolic'], install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'] }
   })
 
+  ipcMain.handle('manager:launch', (event, profile) => {
+    const appImagePath = path.join(__dirname, 'dist', `wrapweb.${profile}`)
+    if (!fs.existsSync(appImagePath)) return { success: false }
+    const child = spawn(appImagePath, ['--no-sandbox'], { detached: true, stdio: 'ignore' })
+    child.unref()
+    return { success: true }
+  })
+
   ipcMain.handle('manager:delete', (event, profile) => {
     const desktopFile  = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${profile}.desktop`)
     const appImageFile = path.join(__dirname, 'dist', `wrapweb.${profile}`)
