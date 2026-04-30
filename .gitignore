@@ -31,8 +31,8 @@ node_modules
 # ---> VisualStudioCode
 .settings
 
-
 current
 dist
 node_modules
 build.private.*.json
+.claude
