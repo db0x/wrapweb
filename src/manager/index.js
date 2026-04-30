@@ -179,6 +179,28 @@ function showConfirm(message) {
   })
 }
 
+// ── Build overlay ─────────────────────────────────────────────
+
+let isBuildRunning = false
+
+const buildOverlay = document.createElement('div')
+buildOverlay.id = 'build-overlay'
+buildOverlay.className = 'hidden'
+buildOverlay.innerHTML = `
+  <div class="build-spinner"></div>
+  <span class="build-overlay-label" id="build-overlay-label"></span>
+`
+document.body.appendChild(buildOverlay)
+
+function showBuildOverlay(name) {
+  document.getElementById('build-overlay-label').textContent = `Baut ${name} …`
+  buildOverlay.classList.remove('hidden')
+}
+
+function hideBuildOverlay() {
+  buildOverlay.classList.add('hidden')
+}
+
 // ── Info dialog ───────────────────────────────────────────────
 
 const overlay = document.createElement('div')
@@ -304,6 +326,9 @@ for (const app of apps) {
   })
 
   card.querySelector('[data-action="build"]')?.addEventListener('click', async () => {
+    if (isBuildRunning) return
+    isBuildRunning = true
+    showBuildOverlay(name)
     const btn   = card.querySelector('[data-action="build"]')
     const badge = card.querySelector('[data-role="build-badge"]')
     btn.disabled = true
@@ -311,6 +336,8 @@ for (const app of apps) {
     const result = await window.managerAPI.buildApp(app.configLabel)
     btn.disabled = false
     btn.classList.remove('loading')
+    isBuildRunning = false
+    hideBuildOverlay()
     if (result.success) {
       app.built = true
       badge.textContent = 'Gebaut'

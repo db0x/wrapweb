@@ -1,5 +1,6 @@
 {
     "profile": "whatsapp",
+    "name": "WhatsApp",
     "url": "https://web.whatsapp.com",
     "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
     "geometry": { "width": 1024, "height": 1280, "x": 64, "y": 128 }
