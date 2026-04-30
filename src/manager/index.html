@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>wrapweb</title>
+  <link rel="stylesheet" href="../../node_modules/overlayscrollbars/styles/overlayscrollbars.css">
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -14,7 +15,9 @@
       <img id="menu-icon" src="" alt="Menü">
     </button>
   </header>
-  <div class="grid" id="grid"></div>
+  <div id="grid-wrapper">
+    <div class="grid" id="grid"></div>
+  </div>
 
   <script type="module" src="index.js"></script>
 </body>

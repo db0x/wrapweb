@@ -1,3 +1,5 @@
+import { OverlayScrollbars } from '../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
+
 function toDisplayName(profile) {
   return profile
     .replace(/^private\./, '')
@@ -331,3 +333,5 @@ document.getElementById('grid').appendChild(addCard)
 
 // apply saved filter after all cards are in the DOM
 applyFilter(currentFilter)
+
+OverlayScrollbars(document.getElementById('grid-wrapper'), { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })

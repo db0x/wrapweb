@@ -237,14 +237,23 @@ body.dark .menu-item.active .toggle-switch {
   background: #3584e4;
 }
 
+#grid-wrapper {
+  flex: 1;
+  min-height: 0;
+}
+
+body.dark .os-theme-dark {
+  --os-handle-bg:        rgba(255, 255, 255, 0.44);
+  --os-handle-bg-hover:  rgba(255, 255, 255, 0.60);
+  --os-handle-bg-active: rgba(255, 255, 255, 0.75);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 172px);
   justify-content: center;
   gap: 14px;
   padding: 20px;
-  overflow-y: auto;
-  flex: 1;
   align-content: start;
 }
 

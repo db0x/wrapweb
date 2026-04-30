@@ -42,7 +42,10 @@ Each app is shown as a card with its icon, name, URL, and status badges. Hoverin
 
 Clicking the app icon directly **launches** the app — if it is installed. Uninstalled apps have a grayed-out icon.
 
-The manager supports **light and dark mode** — toggle via the sun/moon button in the header. The preference is saved per session.
+The hamburger menu (top right) offers:
+- **Light / Dark mode** toggle — preference is saved across sessions
+- **Visibility filter** — show all apps, embedded-only, or user apps only
+- **Hide uninstalled** — toggle to suppress apps that haven't been installed yet
 
 The manager's WM class is `wrapweb`; each app's WM class is `wrapweb-<profile>`.
 
@@ -61,14 +64,24 @@ The manager's WM class is `wrapweb`; each app's WM class is `wrapweb-<profile>`.
 
 ## Requirements
 
-- Node.js ≥ 18
-- Linux (Wayland or X11)
-- `python3-gi` (GTK bindings) for icon resolution in the Manager
-- `aspell` for spelling suggestions (optional; `sudo apt install aspell-de` for German, etc.)
+- **Node.js ≥ 18**
+- **Linux** (GNOME/Wayland recommended — see note above)
+- **FUSE** — required to run AppImages (`sudo apt install fuse` or `fuse3`)
+- **python3-gi** — GTK bindings used by the Manager to resolve system icon theme icons (`sudo apt install python3-gi`)
+- **gtk-update-icon-cache** and **update-desktop-database** — called after installing an app; usually already present via `libgtk-3-bin` and `desktop-file-utils`
+- **aspell** — spell-check suggestions in text fields (optional; `sudo apt install aspell-de` for German, etc.)
 
 ```bash
 npm install
 ```
+
+## Libraries
+
+| Library | Used for |
+|---|---|
+| [Electron](https://www.electronjs.org/) | App shell, renderer, IPC |
+| [electron-builder](https://www.electron.build/) | AppImage packaging |
+| [OverlayScrollbars](https://github.com/KingSora/OverlayScrollbars) | Native-style overlay scrollbars in the Manager |
 
 ## Building
 

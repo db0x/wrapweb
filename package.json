@@ -13,5 +13,8 @@
   "devDependencies": {
     "electron": "41.3.0",
     "electron-builder": "^26.4.0"
+  },
+  "dependencies": {
+    "overlayscrollbars": "^2.15.1"
   }
 }

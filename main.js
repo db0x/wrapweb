@@ -158,7 +158,7 @@ for name in sys.argv[1:]:
 
 function openManager() {
   const win = new BrowserWindow({
-    width: 960,
+    width: 780,
     height: 640,
     resizable: false,
     title: 'wrapweb',
