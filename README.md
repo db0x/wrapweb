@@ -61,6 +61,7 @@ The manager's WM class is `wrapweb`; each app's WM class is `wrapweb-<profile>`.
 | `build.google-gemini.json` | Google Gemini |
 | `build.google-earth.json` | Google Earth |
 | `build.openai.json` | ChatGPT / OpenAI |
+| `build.outlook.json` | Microsoft Outlook |
 
 ## Requirements
 

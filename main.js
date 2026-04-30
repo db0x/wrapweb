@@ -33,7 +33,6 @@ if (profile) {
   ipcMain.handle('manager:apps', () => {
     const configs = fs.readdirSync(__dirname)
       .filter(f => /^build\..+\.json$/.test(f))
-      .sort()
       .map(f => {
         const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'))
         const configLabel = f.replace(/^build\.(.+)\.json$/, '$1')
@@ -49,6 +48,12 @@ if (profile) {
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
         return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath }
       })
+
+    configs.sort((a, b) => {
+      const nameA = (a.name || a.profile.replace(/^private\./, '').replace(/-/g, ' ')).toLowerCase()
+      const nameB = (b.name || b.profile.replace(/^private\./, '').replace(/-/g, ' ')).toLowerCase()
+      return nameA.localeCompare(nameB)
+    })
 
     // Separate absolute paths from theme names — batch-resolve theme names via GTK
     const themeNames = [...new Set(configs
@@ -118,6 +123,42 @@ if (profile) {
       child.on('close', code => resolve({ success: code === 0, stdout, stderr }))
       child.on('error', err => resolve({ success: false, stdout, stderr: err.message }))
     })
+  })
+
+  ipcMain.handle('manager:check-profile', (event, profile) => {
+    return [`build.private.${profile}.json`, `build.${profile}.json`]
+      .some(f => fs.existsSync(path.join(__dirname, f)))
+  })
+
+  ipcMain.handle('manager:create-app', (event, { profile, name, url, icon }) => {
+    const filePath = path.join(__dirname, `build.private.${profile}.json`)
+    if (fs.existsSync(filePath)) return { success: false, error: 'exists' }
+    const cfg = { profile, url }
+    if (name) cfg.name = name
+    if (icon) cfg.icon = icon
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(cfg, null, 4), 'utf8')
+    } catch (err) {
+      return { success: false, error: err.message }
+    }
+    let iconPath = null
+    if (icon) {
+      const resolved = resolveIconsByGtk([icon])
+      iconPath = resolved[icon] || null
+    }
+    return {
+      success: true,
+      app: {
+        profile,
+        configLabel: `private.${profile}`,
+        name: name || null,
+        url,
+        built: false,
+        installed: false,
+        isPrivate: true,
+        iconPath,
+      }
+    }
   })
 
   ipcMain.handle('manager:build', (event, configLabel) => {

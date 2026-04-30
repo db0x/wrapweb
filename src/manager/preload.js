@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('managerAPI', {
   getUiIcons: () => ipcRenderer.invoke('manager:ui-icons'),
   buildApp:   (profile) => ipcRenderer.invoke('manager:build',   profile),
   installApp: (profile) => ipcRenderer.invoke('manager:install', profile),
-  deleteApp:  (profile) => ipcRenderer.invoke('manager:delete',  profile),
-  launchApp:  (profile) => ipcRenderer.invoke('manager:launch',  profile),
+  deleteApp:    (profile) => ipcRenderer.invoke('manager:delete',       profile),
+  launchApp:    (profile) => ipcRenderer.invoke('manager:launch',       profile),
+  checkProfile: (profile) => ipcRenderer.invoke('manager:check-profile', profile),
+  createApp:    (data)    => ipcRenderer.invoke('manager:create-app',    data),
 })

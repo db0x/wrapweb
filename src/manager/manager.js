@@ -244,14 +244,17 @@ function openDialog(app, name) {
 
 // ── App cards ─────────────────────────────────────────────────
 
-for (const app of apps) {
+const grid = document.getElementById('grid')
+
+function createCard(app) {
   const hostname = (() => { try { return new URL(app.url).hostname } catch { return app.url } })()
   const name = app.name || toDisplayName(app.profile)
 
   const card = document.createElement('div')
   card.className = 'card'
-  card.dataset.private    = app.isPrivate   ? 'true' : 'false'
-  card.dataset.installed  = app.installed   ? 'true' : 'false'
+  card.dataset.private   = app.isPrivate  ? 'true' : 'false'
+  card.dataset.installed = app.installed  ? 'true' : 'false'
+  card.dataset.sortname  = name.toLowerCase()
   const iconSrc = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
 
   card.innerHTML = `
@@ -350,13 +353,189 @@ for (const app of apps) {
     }
   })
 
-  document.getElementById('grid').appendChild(card)
+  return card
+}
+
+function insertCard(card) {
+  const sortname = card.dataset.sortname
+  const existing = [...grid.querySelectorAll('.card[data-sortname]')]
+  const before = existing.find(c => c.dataset.sortname > sortname)
+  grid.insertBefore(card, before ?? addCard)
+}
+
+for (const app of apps) {
+  grid.appendChild(createCard(app))
 }
 
 const addCard = document.createElement('div')
 addCard.className = 'card card-add'
 addCard.innerHTML = `<span class="plus">+</span>`
-document.getElementById('grid').appendChild(addCard)
+grid.appendChild(addCard)
+
+// ── Create App Dialog ─────────────────────────────────────────
+
+const createOverlay = document.createElement('div')
+createOverlay.className = 'dialog-overlay hidden'
+createOverlay.innerHTML = `
+  <div class="dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">Neue WebApp hinzufügen</span>
+      <button class="dialog-close" id="create-close">✕</button>
+    </div>
+    <div class="dialog-fields">
+      <div class="dialog-field">
+        <label>Profil *</label>
+        <input type="text" id="create-profile" placeholder="meine-app" autocomplete="off" spellcheck="false">
+        <span class="field-hint" id="create-profile-hint"></span>
+      </div>
+      <div class="dialog-field">
+        <label>Name</label>
+        <input type="text" id="create-name" placeholder="Meine App">
+      </div>
+      <div class="dialog-field">
+        <label>URL *</label>
+        <input type="text" id="create-url" placeholder="https://app.example.com" autocomplete="off" spellcheck="false">
+        <span class="field-hint" id="create-url-hint"></span>
+      </div>
+      <div class="dialog-field">
+        <label>Icon (GNOME-Theme)</label>
+        <input type="text" id="create-icon" placeholder="application-x-executable" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" id="create-cancel">Abbrechen</button>
+      <button class="btn-save" id="create-save" disabled>Speichern</button>
+    </div>
+  </div>
+`
+document.body.appendChild(createOverlay)
+
+let profileValid = false
+let urlValid = false
+let profileCheckTimer = null
+
+const createProfileInput = document.getElementById('create-profile')
+const createProfileHint  = document.getElementById('create-profile-hint')
+const createUrlInput     = document.getElementById('create-url')
+const createUrlHint      = document.getElementById('create-url-hint')
+const createSaveBtn      = document.getElementById('create-save')
+
+function updateCreateSaveBtn() {
+  createSaveBtn.disabled = !(profileValid && urlValid)
+}
+
+createProfileInput.addEventListener('input', () => {
+  const val = createProfileInput.value.trim()
+  profileValid = false
+
+  if (!val) {
+    createProfileInput.className = ''
+    createProfileHint.textContent = ''
+    clearTimeout(profileCheckTimer)
+    updateCreateSaveBtn()
+    return
+  }
+
+  if (!/^[a-z0-9-]+$/.test(val)) {
+    createProfileInput.className = 'invalid'
+    createProfileHint.textContent = 'Nur Kleinbuchstaben, Ziffern und Bindestriche'
+    createProfileHint.className = 'field-hint error'
+    clearTimeout(profileCheckTimer)
+    updateCreateSaveBtn()
+    return
+  }
+
+  clearTimeout(profileCheckTimer)
+  createProfileInput.className = ''
+  createProfileHint.textContent = '…'
+  createProfileHint.className = 'field-hint'
+
+  profileCheckTimer = setTimeout(async () => {
+    const exists = await window.managerAPI.checkProfile(val)
+    if (createProfileInput.value.trim() !== val) return
+    if (exists) {
+      createProfileInput.className = 'invalid'
+      createProfileHint.textContent = 'Profil existiert bereits'
+      createProfileHint.className = 'field-hint error'
+      profileValid = false
+    } else {
+      createProfileInput.className = 'valid'
+      createProfileHint.textContent = `→ build.private.${val}.json`
+      createProfileHint.className = 'field-hint'
+      profileValid = true
+    }
+    updateCreateSaveBtn()
+  }, 300)
+})
+
+createUrlInput.addEventListener('input', () => {
+  const val = createUrlInput.value.trim()
+  if (!val) {
+    urlValid = false
+    createUrlInput.className = ''
+    createUrlHint.textContent = ''
+    createUrlHint.className = 'field-hint'
+  } else {
+    try {
+      new URL(val)
+      urlValid = true
+      createUrlInput.className = 'valid'
+      createUrlHint.textContent = ''
+    } catch {
+      urlValid = false
+      createUrlInput.className = 'invalid'
+      createUrlHint.textContent = 'Keine gültige URL'
+      createUrlHint.className = 'field-hint error'
+    }
+  }
+  updateCreateSaveBtn()
+})
+
+function openCreateDialog() {
+  createProfileInput.value = ''
+  createProfileInput.className = ''
+  createProfileHint.textContent = ''
+  createProfileHint.className = 'field-hint'
+  document.getElementById('create-name').value = ''
+  createUrlInput.value = ''
+  createUrlInput.className = ''
+  createUrlHint.textContent = ''
+  createUrlHint.className = 'field-hint'
+  document.getElementById('create-icon').value = ''
+  profileValid = false
+  urlValid = false
+  updateCreateSaveBtn()
+  createOverlay.classList.remove('hidden')
+  createProfileInput.focus()
+}
+
+function closeCreateDialog() {
+  clearTimeout(profileCheckTimer)
+  createOverlay.classList.add('hidden')
+}
+
+createOverlay.addEventListener('click', e => { if (e.target === createOverlay) closeCreateDialog() })
+document.getElementById('create-close').addEventListener('click', closeCreateDialog)
+document.getElementById('create-cancel').addEventListener('click', closeCreateDialog)
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCreateDialog() })
+
+createSaveBtn.addEventListener('click', async () => {
+  const profile = createProfileInput.value.trim()
+  const name    = document.getElementById('create-name').value.trim()
+  const url     = createUrlInput.value.trim()
+  const icon    = document.getElementById('create-icon').value.trim()
+  createSaveBtn.disabled = true
+  const result = await window.managerAPI.createApp({ profile, name, url, icon })
+  if (result.success) {
+    closeCreateDialog()
+    insertCard(createCard(result.app))
+    applyVisibility()
+  } else {
+    updateCreateSaveBtn()
+  }
+})
+
+addCard.addEventListener('click', openCreateDialog)
 
 // apply saved filter after all cards are in the DOM
 applyFilter(currentFilter)

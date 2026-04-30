@@ -635,3 +635,51 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   word-break: break-all;
   user-select: text;
 }
+
+.dialog-field input {
+  width: 100%;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--badge-unbuilt-bg);
+  color: var(--card-fg);
+  border: 1.5px solid transparent;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s;
+  user-select: text;
+}
+
+.dialog-field input:focus {
+  border-color: #3584e4;
+}
+
+.dialog-field input.invalid {
+  border-color: #e74c3c;
+}
+
+.dialog-field input.valid {
+  border-color: #27ae60;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--card-url);
+  margin-top: 3px;
+  display: block;
+  min-height: 15px;
+}
+
+.field-hint.error {
+  color: #e74c3c;
+}
+
+.btn-save {
+  background: #3584e4;
+  color: white;
+}
+
+.btn-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
