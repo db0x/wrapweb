@@ -338,6 +338,7 @@ body.dark .os-theme-dark {
   box-shadow: none;
   cursor: pointer;
   justify-content: center;
+  min-height: 230px;
   opacity: 0.5;
   transition: opacity 0.15s, border-color 0.15s;
 }
