@@ -132,7 +132,6 @@ header h1 span {
   width: 290px;
   background: var(--card-bg);
   color: var(--card-fg);
-  box-shadow: -4px 0 24px rgba(0,0,0,0.25);
   z-index: 50;
   transform: translateX(100%);
   transition: transform 0.22s ease;
@@ -143,6 +142,7 @@ header h1 span {
 
 .drawer.open {
   transform: translateX(0);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.25);
 }
 
 .drawer-section-label {

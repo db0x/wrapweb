@@ -168,7 +168,7 @@ function openManager() {
       nodeIntegration: false,
     },
   })
-  win.loadFile(path.join(__dirname, 'src', 'manager', 'index.html'))
+  win.loadFile(path.join(__dirname, 'src', 'manager', 'manager.html'))
 }
 
 app.on('window-all-closed', () => {
