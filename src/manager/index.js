@@ -17,38 +17,134 @@ const [apps, version, uiIcons] = await Promise.all([
 
 document.getElementById('version').textContent = `v${version}`
 
-const sunSrc        = uiIcons.sun        ? `file://${uiIcons.sun}`        : null
-const moonSrc       = uiIcons.moon       ? `file://${uiIcons.moon}`       : null
-const infoSrc       = uiIcons.info       ? `file://${uiIcons.info}`       : null
-const buildSrc      = uiIcons.build      ? `file://${uiIcons.build}`      : null
-const installSrc    = uiIcons.install    ? `file://${uiIcons.install}`    : null
-const deleteSrc     = uiIcons.delete     ? `file://${uiIcons.delete}`     : null
-const appDefaultSrc = uiIcons.appDefault ? `file://${uiIcons.appDefault}` : '../../assets/wrapweb.svg'
+const s = k => uiIcons[k] ? `file://${uiIcons[k]}` : null
 
-// ── Theme toggle ──────────────────────────────────────────────
+const sunSrc          = s('sun')
+const moonSrc         = s('moon')
+const infoSrc         = s('info')
+const buildSrc        = s('build')
+const installSrc      = s('install')
+const deleteSrc       = s('delete')
+const menuSrc         = s('menu')
+const filterAllSrc     = s('filterAll')
+const filterPublicSrc  = s('filterPublic')
+const filterPrivateSrc = s('filterPrivate')
+const hideFilterSrc    = s('hideFilter')
+const appDefaultSrc    = s('appDefault') ?? '../../assets/wrapweb.svg'
 
-function applyThemeIcon() {
+// ── Hamburger button ──────────────────────────────────────────
+
+const menuBtn  = document.getElementById('menu-btn')
+const menuIcon = document.getElementById('menu-icon')
+if (menuSrc) menuIcon.src = menuSrc
+else menuBtn.style.display = 'none'
+
+// ── Side drawer ───────────────────────────────────────────────
+
+const backdrop = document.createElement('div')
+backdrop.className = 'drawer-backdrop'
+document.body.appendChild(backdrop)
+
+const drawer = document.createElement('div')
+drawer.className = 'drawer'
+drawer.innerHTML = `
+  <div class="drawer-section-label">Darstellung</div>
+  <button class="menu-item" id="menu-darkmode">
+    <img id="menu-darkmode-icon" src="" alt="">
+    <span id="menu-darkmode-label"></span>
+  </button>
+  <hr class="drawer-divider">
+  <div class="drawer-section-label">Sichtbarkeit</div>
+  <button class="menu-item" data-filter="all">
+    ${filterAllSrc    ? `<img src="${filterAllSrc}"    alt="">` : ''}
+    <span>Alle Apps</span>
+  </button>
+  <button class="menu-item" data-filter="public">
+    ${filterPublicSrc ? `<img src="${filterPublicSrc}" alt="">` : ''}
+    <span>Embedded Apps</span>
+  </button>
+  <button class="menu-item" data-filter="private">
+    ${filterPrivateSrc ? `<img src="${filterPrivateSrc}" alt="">` : ''}
+    <span>Benutzer Apps</span>
+  </button>
+  <button class="menu-item menu-toggle" id="menu-hide-uninstalled">
+    <span class="toggle-switch"></span>
+    <span>Nicht installierte ausblenden</span>
+  </button>
+`
+document.body.appendChild(drawer)
+
+function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open') }
+function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open') }
+
+menuBtn.addEventListener('click', () =>
+  drawer.classList.contains('open') ? closeDrawer() : openDrawer()
+)
+backdrop.addEventListener('click', closeDrawer)
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer() })
+
+// ── Dark mode (in drawer) ─────────────────────────────────────
+
+function applyDarkmodeMenuItem() {
   const isDark = document.body.classList.contains('dark')
-  const src = isDark ? sunSrc : moonSrc
-  const btn = document.getElementById('theme-toggle')
-  const img = document.getElementById('theme-icon')
-  if (src) {
-    img.src = src
-    btn.style.display = ''
-  } else {
-    btn.style.display = 'none'
-  }
+  const icon = document.getElementById('menu-darkmode-icon')
+  const label = document.getElementById('menu-darkmode-label')
+  icon.src = isDark ? (sunSrc ?? '') : (moonSrc ?? '')
+  icon.style.display = (sunSrc || moonSrc) ? '' : 'none'
+  label.textContent = isDark ? 'Light Mode' : 'Dark Mode'
 }
 
-applyThemeIcon()
+applyDarkmodeMenuItem()
 
-document.getElementById('theme-toggle').addEventListener('click', () => {
+document.getElementById('menu-darkmode').addEventListener('click', () => {
   document.body.classList.toggle('dark')
   localStorage.setItem('dark', document.body.classList.contains('dark') ? '1' : '0')
-  applyThemeIcon()
+  applyDarkmodeMenuItem()
 })
 
-// ── Confirm dialog ───────────────────────────────────────────
+// ── Filter ────────────────────────────────────────────────────
+
+let currentFilter    = localStorage.getItem('filter') ?? 'all'
+let hideUninstalled  = localStorage.getItem('hideUninstalled') === '1'
+
+function applyVisibility() {
+  document.querySelectorAll('.card[data-private]').forEach(card => {
+    const isPrivate   = card.dataset.private    === 'true'
+    const isInstalled = card.dataset.installed  === 'true'
+    const passesFilter =
+      currentFilter === 'all' ||
+      (currentFilter === 'public'  && !isPrivate) ||
+      (currentFilter === 'private' &&  isPrivate)
+    const passesInstalled = !hideUninstalled || isInstalled
+    card.style.display = (passesFilter && passesInstalled) ? '' : 'none'
+  })
+  const addCardEl = document.querySelector('.card-add')
+  if (addCardEl) addCardEl.style.display = currentFilter === 'public' ? 'none' : ''
+}
+
+function applyFilter(filter) {
+  currentFilter = filter
+  localStorage.setItem('filter', filter)
+  drawer.querySelectorAll('[data-filter]').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.filter === filter)
+  )
+  applyVisibility()
+}
+
+drawer.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => { applyFilter(btn.dataset.filter); closeDrawer() })
+})
+
+const hideUninstalledBtn = document.getElementById('menu-hide-uninstalled')
+hideUninstalledBtn.classList.toggle('active', hideUninstalled)
+hideUninstalledBtn.addEventListener('click', () => {
+  hideUninstalled = !hideUninstalled
+  localStorage.setItem('hideUninstalled', hideUninstalled ? '1' : '0')
+  hideUninstalledBtn.classList.toggle('active', hideUninstalled)
+  applyVisibility()
+})
+
+// ── Confirm dialog ────────────────────────────────────────────
 
 const confirmOverlay = document.createElement('div')
 confirmOverlay.className = 'confirm-overlay hidden'
@@ -69,14 +165,14 @@ function showConfirm(message) {
     confirmOverlay.classList.remove('hidden')
     const ok     = document.getElementById('confirm-ok')
     const cancel = document.getElementById('confirm-cancel')
-    const cleanup = (result) => {
+    const cleanup = result => {
       confirmOverlay.classList.add('hidden')
       ok.replaceWith(ok.cloneNode(true))
       cancel.replaceWith(cancel.cloneNode(true))
       resolve(result)
     }
-    document.getElementById('confirm-ok').addEventListener('click',     () => cleanup(true))
-    document.getElementById('confirm-cancel').addEventListener('click',  () => cleanup(false))
+    document.getElementById('confirm-ok').addEventListener('click',    () => cleanup(true))
+    document.getElementById('confirm-cancel').addEventListener('click', () => cleanup(false))
     confirmOverlay.addEventListener('click', e => { if (e.target === confirmOverlay) cleanup(false) }, { once: true })
   })
 }
@@ -101,30 +197,24 @@ overlay.addEventListener('click', e => { if (e.target === overlay) closeDialog()
 document.getElementById('dialog-close').addEventListener('click', closeDialog)
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDialog() })
 
-function closeDialog() {
-  overlay.classList.add('hidden')
-}
+function closeDialog() { overlay.classList.add('hidden') }
 
 function openDialog(app, name) {
   document.getElementById('dialog-title').textContent = name
-
   const fieldsEl = document.getElementById('dialog-fields')
-
   if (!app.built) {
     fieldsEl.innerHTML = `<p style="font-size:13px; color: var(--card-url);">App ist nicht gebaut.</p>`
   } else {
-    const fields = [
-      { label: 'App-Image', value: app.appImagePath },
+    fieldsEl.innerHTML = [
+      { label: 'App-Image',    value: app.appImagePath },
       { label: 'Profil-Ordner', value: app.profilePath },
-    ]
-    fieldsEl.innerHTML = fields.map(f => `
+    ].map(f => `
       <div class="dialog-field">
         <label>${f.label}</label>
         <div class="value">${f.value}</div>
       </div>
     `).join('')
   }
-
   overlay.classList.remove('hidden')
 }
 
@@ -136,6 +226,8 @@ for (const app of apps) {
 
   const card = document.createElement('div')
   card.className = 'card'
+  card.dataset.private    = app.isPrivate   ? 'true' : 'false'
+  card.dataset.installed  = app.installed   ? 'true' : 'false'
   const iconSrc = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
 
   card.innerHTML = `
@@ -145,13 +237,13 @@ for (const app of apps) {
     <div class="badges">
       <span class="badge ${app.built ? 'built' : 'not-built'}" data-role="build-badge">${app.built ? 'Gebaut' : 'Nicht gebaut'}</span>
       ${app.installed ? '<span class="badge installed" data-role="install-badge">Installiert</span>' : ''}
-      ${app.isPrivate ? '<span class="badge private">Privat</span>' : ''}
+      ${app.isPrivate ? '<span class="badge private">Benutzer</span>' : ''}
     </div>
     <div class="card-toolbar">
-      ${infoSrc  ? `<button class="toolbar-btn" data-action="info"  title="Informationen"><img src="${infoSrc}"  alt="Info"></button>`  : ''}
+      ${infoSrc    ? `<button class="toolbar-btn" data-action="info"    title="Informationen"><img src="${infoSrc}"    alt="Info"></button>`    : ''}
       ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   title="${app.built ? 'Neu bauen' : 'Bauen'}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
       ${installSrc ? `<button class="toolbar-btn" data-action="install" title="Installieren" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="Install"></button>` : ''}
-      ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="Löschen" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}" alt="Löschen"></button>` : ''}
+      ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="Löschen" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="Löschen"></button>` : ''}
     </div>
   `
 
@@ -168,26 +260,21 @@ for (const app of apps) {
       <p>Das Profil-Verzeichnis bleibt erhalten.</p>
     `)
     if (!confirmed) return
-
     const btn = card.querySelector('[data-action="delete"]')
     btn.disabled = true
     btn.classList.add('loading')
-
     const result = await window.managerAPI.deleteApp(app.profile)
-
     btn.classList.remove('loading')
-
     if (result.success) {
       app.built = false
       app.installed = false
-      const badge = card.querySelector('[data-role="build-badge"]')
-      badge.textContent = 'Nicht gebaut'
-      badge.classList.replace('built', 'not-built')
+      card.dataset.installed = 'false'
+      card.querySelector('[data-role="build-badge"]').textContent = 'Nicht gebaut'
+      card.querySelector('[data-role="build-badge"]').classList.replace('built', 'not-built')
       card.querySelector('[data-action="build"]').title = 'Bauen'
-      const installBtn = card.querySelector('[data-action="install"]')
-      if (installBtn) installBtn.disabled = true
-      iconEl.classList.replace('launchable', 'unavailable')
+      card.querySelector('[data-action="install"]')?.setAttribute('disabled', '')
       card.querySelector('[data-role="install-badge"]')?.remove()
+      iconEl.classList.replace('launchable', 'unavailable')
     } else {
       btn.disabled = false
     }
@@ -201,7 +288,7 @@ for (const app of apps) {
     btn.classList.remove('loading')
     if (result.success) {
       app.installed = true
-      btn.disabled = true
+      card.dataset.installed = 'true'
       iconEl.classList.replace('unavailable', 'launchable')
       const buildBadge = card.querySelector('[data-role="build-badge"]')
       const installBadge = document.createElement('span')
@@ -215,17 +302,13 @@ for (const app of apps) {
   })
 
   card.querySelector('[data-action="build"]')?.addEventListener('click', async () => {
-    const btn  = card.querySelector('[data-action="build"]')
+    const btn   = card.querySelector('[data-action="build"]')
     const badge = card.querySelector('[data-role="build-badge"]')
-
     btn.disabled = true
     btn.classList.add('loading')
-
     const result = await window.managerAPI.buildApp(app.configLabel)
-
     btn.disabled = false
     btn.classList.remove('loading')
-
     if (result.success) {
       app.built = true
       badge.textContent = 'Gebaut'
@@ -245,3 +328,6 @@ const addCard = document.createElement('div')
 addCard.className = 'card card-add'
 addCard.innerHTML = `<span class="plus">+</span>`
 document.getElementById('grid').appendChild(addCard)
+
+// apply saved filter after all cards are in the DOM
+applyFilter(currentFilter)

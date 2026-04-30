@@ -71,8 +71,22 @@ if (profile) {
   ipcMain.handle('manager:version', () => pkg.version)
 
   ipcMain.handle('manager:ui-icons', () => {
-    const r = resolveIconsByGtk(['weather-clear-symbolic', 'weather-clear-night-symbolic', 'dialog-information-symbolic', 'system-run-symbolic', 'system-software-install-symbolic', 'edit-delete-symbolic', 'application-default-icon'])
-    return { sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'], info: r['dialog-information-symbolic'], build: r['system-run-symbolic'], install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'], appDefault: r['application-default-icon'] }
+    const r = resolveIconsByGtk([
+      'weather-clear-symbolic', 'weather-clear-night-symbolic',
+      'dialog-information-symbolic', 'system-run-symbolic',
+      'system-software-install-symbolic', 'edit-delete-symbolic',
+      'application-default-icon', 'open-menu-symbolic',
+      'view-app-grid-symbolic', 'applications-internet-symbolic',
+      'avatar-default-symbolic', 'view-filter-symbolic',
+    ])
+    return {
+      sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
+      info: r['dialog-information-symbolic'], build: r['system-run-symbolic'],
+      install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'],
+      appDefault: r['application-default-icon'], menu: r['open-menu-symbolic'],
+      filterAll: r['view-app-grid-symbolic'], filterPublic: r['applications-internet-symbolic'],
+      filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
+    }
   })
 
   ipcMain.handle('manager:launch', (event, profile) => {
