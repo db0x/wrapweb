@@ -221,11 +221,13 @@ body.dark .menu-item img {
   transition: transform 0.2s;
 }
 
-.menu-item.active .toggle-switch {
+.menu-item.active .toggle-switch,
+.dialog-field-toggle.active .toggle-switch {
   background: #3584e4;
 }
 
-.menu-item.active .toggle-switch::after {
+.menu-item.active .toggle-switch::after,
+.dialog-field-toggle.active .toggle-switch::after {
   transform: translateX(20px);
 }
 
@@ -233,7 +235,8 @@ body.dark .toggle-switch {
   background: rgba(255, 255, 255, 0.18);
 }
 
-body.dark .menu-item.active .toggle-switch {
+body.dark .menu-item.active .toggle-switch,
+body.dark .dialog-field-toggle.active .toggle-switch {
   background: #3584e4;
 }
 
@@ -625,6 +628,34 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   margin-bottom: 3px;
 }
 
+.dialog-field-path {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dialog-field-path .value {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-reveal {
+  background: var(--badge-unbuilt-bg);
+  color: var(--badge-unbuilt-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.btn-reveal:hover {
+  opacity: 0.75;
+}
+
 .dialog-field .value {
   font-size: 12px;
   font-family: 'JetBrains Mono', 'Fira Mono', monospace;
@@ -648,6 +679,30 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   outline: none;
   transition: border-color 0.15s;
   user-select: text;
+}
+
+.dialog-field select {
+  width: 100%;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--badge-unbuilt-bg);
+  color: var(--card-fg);
+  border: 1.5px solid transparent;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.dialog-field select:focus {
+  border-color: #3584e4;
+}
+
+.dialog-field input[type="number"]::-webkit-inner-spin-button,
+.dialog-field input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .dialog-field input:focus {
@@ -682,4 +737,48 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
 .btn-save:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.dialog-section-divider {
+  border: none;
+  border-top: 1px solid var(--card-shadow);
+  margin: 4px 0 0;
+}
+
+.dialog-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--card-url);
+}
+
+.dialog-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dialog-field-row .dialog-field {
+  margin: 0;
+}
+
+.dialog-field-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--card-fg);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 2px 0;
+  user-select: none;
+}
+
+body.dark .dialog-field-toggle {
+  color: var(--card-url);
 }

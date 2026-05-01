@@ -11,10 +11,11 @@ function toDisplayName(profile) {
 const dark = localStorage.getItem('dark') === '1'
 if (dark) document.body.classList.add('dark')
 
-const [apps, version, uiIcons] = await Promise.all([
+const [apps, version, uiIcons, uaPresets] = await Promise.all([
   window.managerAPI.getApps(),
   window.managerAPI.getVersion(),
   window.managerAPI.getUiIcons(),
+  window.managerAPI.getUaPresets(),
 ])
 
 document.getElementById('version').textContent = `v${version}`
@@ -153,6 +154,12 @@ confirmOverlay.className = 'confirm-overlay hidden'
 confirmOverlay.innerHTML = `
   <div class="confirm-dialog">
     <div id="confirm-message"></div>
+    <div id="confirm-toggle-row" style="display:none">
+      <button type="button" class="dialog-field-toggle" id="confirm-toggle-btn">
+        <span class="toggle-switch"></span>
+        <span id="confirm-toggle-label"></span>
+      </button>
+    </div>
     <div class="confirm-actions">
       <button class="btn-cancel" id="confirm-cancel">Abbrechen</button>
       <button class="btn-confirm-delete" id="confirm-ok">Löschen</button>
@@ -161,9 +168,23 @@ confirmOverlay.innerHTML = `
 `
 document.body.appendChild(confirmOverlay)
 
-function showConfirm(message) {
+document.getElementById('confirm-toggle-btn').addEventListener('click', e =>
+  e.currentTarget.classList.toggle('active')
+)
+
+function showConfirm(message, options = {}) {
   return new Promise(resolve => {
     document.getElementById('confirm-message').innerHTML = message
+    const toggleRow = document.getElementById('confirm-toggle-row')
+    const toggleBtn = document.getElementById('confirm-toggle-btn')
+    if (options.toggle) {
+      document.getElementById('confirm-toggle-label').textContent = options.toggle.label
+      toggleBtn.classList.toggle('active', options.toggle.defaultOn ?? false)
+      toggleRow.style.display = ''
+    } else {
+      toggleRow.style.display = 'none'
+      toggleBtn.classList.remove('active')
+    }
     confirmOverlay.classList.remove('hidden')
     const ok     = document.getElementById('confirm-ok')
     const cancel = document.getElementById('confirm-cancel')
@@ -171,7 +192,7 @@ function showConfirm(message) {
       confirmOverlay.classList.add('hidden')
       ok.replaceWith(ok.cloneNode(true))
       cancel.replaceWith(cancel.cloneNode(true))
-      resolve(result)
+      resolve({ confirmed: result, deleteConfig: toggleBtn.classList.contains('active') })
     }
     document.getElementById('confirm-ok').addEventListener('click',    () => cleanup(true))
     document.getElementById('confirm-cancel').addEventListener('click', () => cleanup(false))
@@ -226,19 +247,48 @@ function closeDialog() { overlay.classList.add('hidden') }
 function openDialog(app, name) {
   document.getElementById('dialog-title').textContent = name
   const fieldsEl = document.getElementById('dialog-fields')
-  if (!app.built) {
-    fieldsEl.innerHTML = `<p style="font-size:13px; color: var(--card-url);">App ist nicht gebaut.</p>`
-  } else {
-    fieldsEl.innerHTML = [
-      { label: 'App-Image',    value: app.appImagePath },
-      { label: 'Profil-Ordner', value: app.profilePath },
-    ].map(f => `
-      <div class="dialog-field">
-        <label>${f.label}</label>
-        <div class="value">${f.value}</div>
+
+  const field = (label, value) => `
+    <div class="dialog-field">
+      <label>${label}</label>
+      <div class="value">${value}</div>
+    </div>`
+
+  const pathField = (label, value) => `
+    <div class="dialog-field">
+      <label>${label}</label>
+      <div class="dialog-field-path">
+        <div class="value">${value}</div>
+        <button class="btn-reveal" data-reveal="${value}" title="Im Dateimanager öffnen">…</button>
       </div>
-    `).join('')
+    </div>`
+
+  const rows = []
+  rows.push(field('URL', app.url))
+  rows.push(field('Profil', app.profile))
+  if (app.icon)       rows.push(field('Icon', app.icon))
+  if (app.geometry) {
+    const w = app.geometry.width  ? `${app.geometry.width} px`  : '—'
+    const h = app.geometry.height ? `${app.geometry.height} px` : '—'
+    rows.push(field('Fenstergröße', `${w} × ${h}`))
   }
+  if (app.userAgent)  rows.push(field('User-Agent', app.userAgent))
+  if (app.internalDomains) {
+    const domains = Array.isArray(app.internalDomains)
+      ? app.internalDomains.join(', ')
+      : app.internalDomains
+    rows.push(field('Interne Domains', domains))
+  }
+  if (app.crossOriginIsolation) rows.push(field('Cross-Origin Isolation', 'Ja'))
+  if (app.built) {
+    rows.push(pathField('App-Image',     app.appImagePath))
+    rows.push(pathField('Profil-Ordner', app.profilePath))
+  }
+
+  fieldsEl.innerHTML = rows.join('')
+  fieldsEl.querySelectorAll('[data-reveal]').forEach(btn =>
+    btn.addEventListener('click', () => window.managerAPI.revealPath(btn.dataset.reveal))
+  )
   overlay.classList.remove('hidden')
 }
 
@@ -282,26 +332,30 @@ function createCard(app) {
   card.querySelector('[data-action="info"]')?.addEventListener('click', () => openDialog(app, name))
 
   card.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
-    const confirmed = await showConfirm(`
+    const { confirmed, deleteConfig } = await showConfirm(`
       <p>App-Image und Desktop-Eintrag für <strong>${name}</strong> wirklich löschen?</p>
       <p>Das Profil-Verzeichnis bleibt erhalten.</p>
-    `)
+    `, app.isPrivate ? { toggle: { label: 'Konfiguration löschen' } } : {})
     if (!confirmed) return
     const btn = card.querySelector('[data-action="delete"]')
     btn.disabled = true
     btn.classList.add('loading')
-    const result = await window.managerAPI.deleteApp(app.profile)
+    const result = await window.managerAPI.deleteApp({ profile: app.profile, configLabel: app.configLabel, deleteConfig })
     btn.classList.remove('loading')
     if (result.success) {
-      app.built = false
-      app.installed = false
-      card.dataset.installed = 'false'
-      card.querySelector('[data-role="build-badge"]').textContent = 'Nicht gebaut'
-      card.querySelector('[data-role="build-badge"]').classList.replace('built', 'not-built')
-      card.querySelector('[data-action="build"]').title = 'Bauen'
-      card.querySelector('[data-action="install"]')?.setAttribute('disabled', '')
-      card.querySelector('[data-role="install-badge"]')?.remove()
-      iconEl.classList.replace('launchable', 'unavailable')
+      if (deleteConfig) {
+        card.remove()
+      } else {
+        app.built = false
+        app.installed = false
+        card.dataset.installed = 'false'
+        card.querySelector('[data-role="build-badge"]').textContent = 'Nicht gebaut'
+        card.querySelector('[data-role="build-badge"]').classList.replace('built', 'not-built')
+        card.querySelector('[data-action="build"]').title = 'Bauen'
+        card.querySelector('[data-action="install"]')?.setAttribute('disabled', '')
+        card.querySelector('[data-role="install-badge"]')?.remove()
+        iconEl.classList.replace('launchable', 'unavailable')
+      }
     } else {
       btn.disabled = false
     }
@@ -401,6 +455,34 @@ createOverlay.innerHTML = `
         <label>Icon (GNOME-Theme)</label>
         <input type="text" id="create-icon" placeholder="application-x-executable" autocomplete="off" spellcheck="false">
       </div>
+      <hr class="dialog-section-divider">
+      <div class="dialog-section-label">Erweitert (optional)</div>
+      <div class="dialog-field dialog-field-row">
+        <div class="dialog-field">
+          <label>Breite (px)</label>
+          <input type="number" id="create-width" placeholder="1280">
+          <span class="field-hint" id="create-width-hint"></span>
+        </div>
+        <div class="dialog-field">
+          <label>Höhe (px)</label>
+          <input type="number" id="create-height" placeholder="1024">
+          <span class="field-hint" id="create-height-hint"></span>
+        </div>
+      </div>
+      <div class="dialog-field">
+        <label>User-Agent</label>
+        <select id="create-useragent">
+          <option value="">— Standard (nicht gesetzt) —</option>
+        </select>
+      </div>
+      <div class="dialog-field">
+        <label>Interne Domains (kommagetrennt)</label>
+        <input type="text" id="create-domains" placeholder="accounts.google.com, github.com" autocomplete="off" spellcheck="false">
+      </div>
+      <button type="button" class="dialog-field-toggle" id="create-coi">
+        <span class="toggle-switch"></span>
+        <span>Cross-Origin Isolation (SharedArrayBuffer / WASM)</span>
+      </button>
     </div>
     <div class="confirm-actions">
       <button class="btn-cancel" id="create-cancel">Abbrechen</button>
@@ -410,8 +492,18 @@ createOverlay.innerHTML = `
 `
 document.body.appendChild(createOverlay)
 
+const uaSelect = document.getElementById('create-useragent')
+for (const { label, value } of uaPresets) {
+  const opt = document.createElement('option')
+  opt.value = value
+  opt.textContent = label
+  uaSelect.appendChild(opt)
+}
+
 let profileValid = false
-let urlValid = false
+let urlValid     = false
+let widthValid   = true
+let heightValid  = true
 let profileCheckTimer = null
 
 const createProfileInput = document.getElementById('create-profile')
@@ -421,7 +513,31 @@ const createUrlHint      = document.getElementById('create-url-hint')
 const createSaveBtn      = document.getElementById('create-save')
 
 function updateCreateSaveBtn() {
-  createSaveBtn.disabled = !(profileValid && urlValid)
+  createSaveBtn.disabled = !(profileValid && urlValid && widthValid && heightValid)
+}
+
+function validateDimension(inputEl, hintEl, min, max, flagSetter) {
+  const val = inputEl.value.trim()
+  if (!val) {
+    inputEl.className = ''
+    hintEl.textContent = ''
+    flagSetter(true)
+    updateCreateSaveBtn()
+    return
+  }
+  const n = Number(val)
+  if (!Number.isInteger(n) || n < min || n > max) {
+    inputEl.className = 'invalid'
+    hintEl.textContent = `${min}–${max} px`
+    hintEl.className = 'field-hint error'
+    flagSetter(false)
+  } else {
+    inputEl.className = 'valid'
+    hintEl.textContent = ''
+    hintEl.className = 'field-hint'
+    flagSetter(true)
+  }
+  updateCreateSaveBtn()
 }
 
 createProfileInput.addEventListener('input', () => {
@@ -491,6 +607,18 @@ createUrlInput.addEventListener('input', () => {
   updateCreateSaveBtn()
 })
 
+document.getElementById('create-width').addEventListener('input', e =>
+  validateDimension(e.target, document.getElementById('create-width-hint'), 400, 7680, v => { widthValid = v })
+)
+
+document.getElementById('create-height').addEventListener('input', e =>
+  validateDimension(e.target, document.getElementById('create-height-hint'), 300, 4320, v => { heightValid = v })
+)
+
+document.getElementById('create-coi').addEventListener('click', e =>
+  e.currentTarget.classList.toggle('active')
+)
+
 function openCreateDialog() {
   createProfileInput.value = ''
   createProfileInput.className = ''
@@ -502,8 +630,15 @@ function openCreateDialog() {
   createUrlHint.textContent = ''
   createUrlHint.className = 'field-hint'
   document.getElementById('create-icon').value = ''
+  document.getElementById('create-width').value = ''
+  document.getElementById('create-height').value = ''
+  document.getElementById('create-useragent').value = ''
+  document.getElementById('create-domains').value = ''
+  document.getElementById('create-coi').classList.remove('active')
   profileValid = false
-  urlValid = false
+  urlValid     = false
+  widthValid   = true
+  heightValid  = true
   updateCreateSaveBtn()
   createOverlay.classList.remove('hidden')
   createProfileInput.focus()
@@ -520,12 +655,17 @@ document.getElementById('create-cancel').addEventListener('click', closeCreateDi
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCreateDialog() })
 
 createSaveBtn.addEventListener('click', async () => {
-  const profile = createProfileInput.value.trim()
-  const name    = document.getElementById('create-name').value.trim()
-  const url     = createUrlInput.value.trim()
-  const icon    = document.getElementById('create-icon').value.trim()
+  const profile    = createProfileInput.value.trim()
+  const name       = document.getElementById('create-name').value.trim()
+  const url        = createUrlInput.value.trim()
+  const icon       = document.getElementById('create-icon').value.trim()
+  const width      = document.getElementById('create-width').value.trim()
+  const height     = document.getElementById('create-height').value.trim()
+  const userAgent  = document.getElementById('create-useragent').value.trim()
+  const internalDomains      = document.getElementById('create-domains').value.trim()
+  const crossOriginIsolation = document.getElementById('create-coi').classList.contains('active')
   createSaveBtn.disabled = true
-  const result = await window.managerAPI.createApp({ profile, name, url, icon })
+  const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation })
   if (result.success) {
     closeCreateDialog()
     insertCard(createCard(result.app))

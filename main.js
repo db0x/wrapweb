@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -46,7 +46,7 @@ if (profile) {
         }
         const appImagePath = path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath }
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, internalDomains: cfg.internalDomains || null }
       })
 
     configs.sort((a, b) => {
@@ -73,7 +73,8 @@ if (profile) {
     })
   })
 
-  ipcMain.handle('manager:version', () => pkg.version)
+  ipcMain.handle('manager:version',    () => pkg.version)
+  ipcMain.handle('manager:ua-presets', () => pkg.uaPresets ?? [])
 
   ipcMain.handle('manager:ui-icons', () => {
     const r = resolveIconsByGtk([
@@ -102,12 +103,14 @@ if (profile) {
     return { success: true }
   })
 
-  ipcMain.handle('manager:delete', (event, profile) => {
+  ipcMain.handle('manager:delete', (event, { profile, configLabel, deleteConfig }) => {
     const desktopFile  = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${profile}.desktop`)
     const appImageFile = path.join(__dirname, 'dist', `wrapweb.${profile}`)
+    const configFile   = configLabel ? path.join(__dirname, `build.${configLabel}.json`) : null
     try {
-      if (fs.existsSync(desktopFile))  fs.rmSync(desktopFile)
-      if (fs.existsSync(appImageFile)) fs.rmSync(appImageFile)
+      if (fs.existsSync(desktopFile))                   fs.rmSync(desktopFile)
+      if (fs.existsSync(appImageFile))                  fs.rmSync(appImageFile)
+      if (deleteConfig && configFile && fs.existsSync(configFile)) fs.rmSync(configFile)
       return { success: true }
     } catch (err) {
       return { success: false, error: err.message }
@@ -125,17 +128,35 @@ if (profile) {
     })
   })
 
+  ipcMain.handle('manager:reveal-path', (event, targetPath) => {
+    const isDir = fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()
+    isDir ? shell.openPath(targetPath) : shell.showItemInFolder(targetPath)
+  })
+
   ipcMain.handle('manager:check-profile', (event, profile) => {
     return [`build.private.${profile}.json`, `build.${profile}.json`]
       .some(f => fs.existsSync(path.join(__dirname, f)))
   })
 
-  ipcMain.handle('manager:create-app', (event, { profile, name, url, icon }) => {
+  ipcMain.handle('manager:create-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation }) => {
     const filePath = path.join(__dirname, `build.private.${profile}.json`)
     if (fs.existsSync(filePath)) return { success: false, error: 'exists' }
     const cfg = { profile, url }
-    if (name) cfg.name = name
-    if (icon) cfg.icon = icon
+    if (name)  cfg.name = name
+    if (icon)  cfg.icon = icon
+    const w = parseInt(width), h = parseInt(height)
+    if (w > 0 || h > 0) {
+      cfg.geometry = {}
+      if (w > 0) cfg.geometry.width  = w
+      if (h > 0) cfg.geometry.height = h
+    }
+    if (userAgent) cfg.userAgent = userAgent
+    if (crossOriginIsolation) cfg.crossOriginIsolation = true
+    if (internalDomains) {
+      const domains = internalDomains.split(',').map(d => d.trim()).filter(Boolean)
+      if (domains.length === 1) cfg.internalDomains = domains[0]
+      else if (domains.length > 1) cfg.internalDomains = domains
+    }
     try {
       fs.writeFileSync(filePath, JSON.stringify(cfg, null, 4), 'utf8')
     } catch (err) {
@@ -157,6 +178,11 @@ if (profile) {
         installed: false,
         isPrivate: true,
         iconPath,
+        icon:                icon || null,
+        geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
+        userAgent:           userAgent || null,
+        crossOriginIsolation: crossOriginIsolation || false,
+        internalDomains:     internalDomains ? cfg.internalDomains : null,
       }
     }
   })
@@ -197,10 +223,12 @@ for name in sys.argv[1:]:
   return Object.fromEntries(names.map((name, i) => [name, lines[i] || null]))
 }
 
+const { t } = require('./src/i18n')
+
 function openManager() {
   const win = new BrowserWindow({
     width: 780,
-    height: 640,
+    height: 820,
     resizable: false,
     title: 'wrapweb',
     webPreferences: {
@@ -209,6 +237,21 @@ function openManager() {
       nodeIntegration: false,
     },
   })
+  win.webContents.on('context-menu', (_event, params) => {
+    const i18n = t()
+    if (params.isEditable) {
+      Menu.buildFromTemplate([
+        { role: 'cut',   label: i18n.cut   },
+        { role: 'copy',  label: i18n.copy  },
+        { role: 'paste', label: i18n.paste },
+      ]).popup({ window: win })
+    } else if (params.selectionText) {
+      Menu.buildFromTemplate([
+        { role: 'copy', label: i18n.copy },
+      ]).popup({ window: win })
+    }
+  })
+
   win.loadFile(path.join(__dirname, 'src', 'manager', 'manager.html'))
 }
 
