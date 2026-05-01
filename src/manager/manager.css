@@ -782,3 +782,170 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
 body.dark .dialog-field-toggle {
   color: var(--card-url);
 }
+
+/* ── Icon picker ── */
+
+.icon-picker-overlay {
+  z-index: 300;
+}
+
+.icon-picker-dialog {
+  position: relative;
+  width: 730px;
+  height: 660px;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.icon-picker-dialog .dialog-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--card-shadow);
+  flex-shrink: 0;
+}
+
+.icon-search-bar {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--card-shadow);
+  flex-shrink: 0;
+}
+
+#icon-search {
+  width: 100%;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--badge-unbuilt-bg);
+  color: var(--card-fg);
+  border: 1.5px solid transparent;
+  padding: 7px 10px;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s;
+  user-select: text;
+}
+
+#icon-search:focus {
+  border-color: #3584e4;
+}
+
+.icon-picker-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+}
+
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 60px);
+  justify-content: center;
+  align-content: flex-start;
+  gap: 4px;
+  padding: 10px 14px;
+}
+
+.icon-picker-loader {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: var(--card-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.icon-picker-loader.hidden {
+  display: none;
+}
+
+.picker-spinner {
+  border-color: rgba(0,0,0,0.12);
+  border-top-color: #3584e4;
+}
+
+body.dark .picker-spinner {
+  border-color: rgba(255,255,255,0.12);
+  border-top-color: #3584e4;
+}
+
+.icon-item {
+  width: 60px;
+  height: 60px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.12s;
+}
+
+.icon-item:hover {
+  background: var(--card-shadow);
+}
+
+.icon-item img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+/* Icon picker form field */
+
+.icon-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-field-preview {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.icon-picker-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--badge-unbuilt-bg);
+  color: var(--card-fg);
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
+  line-height: 1;
+}
+
+.icon-picker-btn:hover,
+.icon-picker-btn:focus {
+  border-color: #3584e4;
+  outline: none;
+}
+
+.icon-picker-placeholder {
+  color: var(--card-url);
+}
+
+.icon-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--card-url);
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s;
+}
+
+.icon-clear-btn:hover {
+  color: var(--card-fg);
+  background: var(--card-shadow);
+}

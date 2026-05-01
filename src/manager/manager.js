@@ -457,7 +457,13 @@ createOverlay.innerHTML = `
       </div>
       <div class="dialog-field">
         <label>${i18n.createIcon}</label>
-        <input type="text" id="create-icon" placeholder="application-x-executable" autocomplete="off" spellcheck="false">
+        <div class="icon-picker-row">
+          <img id="create-icon-preview" src="${appDefaultSrc}" alt="" class="icon-field-preview">
+          <button type="button" id="create-icon-btn" class="icon-picker-btn">
+            <span id="create-icon-name" class="icon-picker-placeholder">${i18n.createIconChoose}</span>
+          </button>
+          <button type="button" id="create-icon-clear" class="icon-clear-btn" style="display:none">✕</button>
+        </div>
       </div>
       <hr class="dialog-section-divider">
       <div class="dialog-section-label">${i18n.createAdvanced}</div>
@@ -633,7 +639,11 @@ function openCreateDialog() {
   createUrlInput.className = ''
   createUrlHint.textContent = ''
   createUrlHint.className = 'field-hint'
-  document.getElementById('create-icon').value = ''
+  selectedIconName = ''
+  document.getElementById('create-icon-preview').src = appDefaultSrc
+  document.getElementById('create-icon-name').textContent = i18n.createIconChoose
+  document.getElementById('create-icon-name').className = 'icon-picker-placeholder'
+  document.getElementById('create-icon-clear').style.display = 'none'
   document.getElementById('create-width').value = ''
   document.getElementById('create-height').value = ''
   document.getElementById('create-useragent').value = ''
@@ -656,13 +666,17 @@ function closeCreateDialog() {
 createOverlay.addEventListener('click', e => { if (e.target === createOverlay) closeCreateDialog() })
 document.getElementById('create-close').addEventListener('click', closeCreateDialog)
 document.getElementById('create-cancel').addEventListener('click', closeCreateDialog)
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCreateDialog() })
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return
+  if (iconPickerOverlay && !iconPickerOverlay.classList.contains('hidden')) closeIconPicker()
+  else closeCreateDialog()
+})
 
 createSaveBtn.addEventListener('click', async () => {
   const profile    = createProfileInput.value.trim()
   const name       = document.getElementById('create-name').value.trim()
   const url        = createUrlInput.value.trim()
-  const icon       = document.getElementById('create-icon').value.trim()
+  const icon       = selectedIconName
   const width      = document.getElementById('create-width').value.trim()
   const height     = document.getElementById('create-height').value.trim()
   const userAgent  = document.getElementById('create-useragent').value.trim()
@@ -680,6 +694,114 @@ createSaveBtn.addEventListener('click', async () => {
 })
 
 addCard.addEventListener('click', openCreateDialog)
+
+// ── Icon Picker ───────────────────────────────────────────────
+
+let selectedIconName = ''
+let allIconsCache    = null
+let iconPickerOverlay = null
+
+const createIconBtn   = document.getElementById('create-icon-btn')
+const createIconClear = document.getElementById('create-icon-clear')
+const createIconPreview = document.getElementById('create-icon-preview')
+const createIconNameEl  = document.getElementById('create-icon-name')
+
+createIconBtn.addEventListener('click', openIconPicker)
+
+createIconClear.addEventListener('click', () => {
+  selectedIconName = ''
+  createIconPreview.src = appDefaultSrc
+  createIconNameEl.textContent = i18n.createIconChoose
+  createIconNameEl.className = 'icon-picker-placeholder'
+  createIconClear.style.display = 'none'
+})
+
+async function openIconPicker() {
+  if (!iconPickerOverlay) {
+    iconPickerOverlay = document.createElement('div')
+    iconPickerOverlay.className = 'dialog-overlay icon-picker-overlay hidden'
+    iconPickerOverlay.innerHTML = `
+      <div class="dialog icon-picker-dialog">
+        <div class="dialog-header">
+          <span class="dialog-title">${i18n.createIconChoose}</span>
+          <button class="dialog-close" id="icon-picker-close">✕</button>
+        </div>
+        <div class="icon-search-bar">
+          <input type="text" id="icon-search" placeholder="${i18n.iconPickerSearch}" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="icon-picker-scroll-wrapper" id="icon-picker-scroll-wrapper">
+          <div class="icon-picker-grid" id="icon-picker-grid"></div>
+        </div>
+        <div class="icon-picker-loader hidden" id="icon-picker-loader">
+          <div class="build-spinner picker-spinner"></div>
+        </div>
+      </div>
+    `
+    document.body.appendChild(iconPickerOverlay)
+    OverlayScrollbars(document.getElementById('icon-picker-scroll-wrapper'), { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })
+    iconPickerOverlay.addEventListener('click', e => { if (e.target === iconPickerOverlay) closeIconPicker() })
+    document.getElementById('icon-picker-close').addEventListener('click', closeIconPicker)
+    document.getElementById('icon-search').addEventListener('input', e =>
+      filterIconGrid(e.target.value.trim().toLowerCase())
+    )
+  }
+
+  iconPickerOverlay.classList.remove('hidden')
+
+  if (!allIconsCache) {
+    const loader = document.getElementById('icon-picker-loader')
+    loader.classList.remove('hidden')
+    allIconsCache = await window.managerAPI.getAllIcons()
+    renderIconGrid(allIconsCache)
+    loader.classList.add('hidden')
+  }
+
+  document.getElementById('icon-search').value = ''
+  filterIconGrid('')
+  document.getElementById('icon-search').focus()
+}
+
+function closeIconPicker() {
+  iconPickerOverlay?.classList.add('hidden')
+}
+
+function renderIconGrid(icons) {
+  const grid = document.getElementById('icon-picker-grid')
+  const frag = document.createDocumentFragment()
+  for (const { name, path } of icons) {
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'icon-item'
+    btn.title = name
+    btn.dataset.name = name
+    const img = document.createElement('img')
+    img.src = `file://${path}`
+    img.width = 32
+    img.height = 32
+    img.alt = ''
+    img.loading = 'lazy'
+    img.decoding = 'async'
+    btn.appendChild(img)
+    btn.addEventListener('click', () => selectIcon(name, path))
+    frag.appendChild(btn)
+  }
+  grid.replaceChildren(frag)
+}
+
+function filterIconGrid(query) {
+  for (const btn of document.getElementById('icon-picker-grid').querySelectorAll('.icon-item')) {
+    btn.style.display = !query || btn.dataset.name.includes(query) ? '' : 'none'
+  }
+}
+
+function selectIcon(name, path) {
+  selectedIconName = name
+  createIconPreview.src = `file://${path}`
+  createIconNameEl.textContent = name
+  createIconNameEl.className = ''
+  createIconClear.style.display = ''
+  closeIconPicker()
+}
 
 // apply saved filter after all cards are in the DOM
 applyFilter(currentFilter)

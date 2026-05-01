@@ -188,6 +188,28 @@ if (profile) {
     }
   })
 
+  ipcMain.handle('manager:all-icons', () => {
+    const script = `
+import gi, sys
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+theme = Gtk.IconTheme.get_default()
+for name in sorted(theme.list_icons(None)):
+    info = theme.lookup_icon(name, 48, 0)
+    if info:
+        fn = info.get_filename()
+        if fn:
+            sys.stdout.write(name + '\\t' + fn + '\\n')
+`
+    const r = spawnSync('python3', ['-c', script], { encoding: 'utf8', timeout: 15000, maxBuffer: 32 * 1024 * 1024 })
+    if (r.error || r.status !== 0) return []
+    return (r.stdout || '').trim().split('\n').filter(Boolean).map(line => {
+      const tab = line.indexOf('\t')
+      if (tab === -1) return null
+      return { name: line.slice(0, tab), path: line.slice(tab + 1) }
+    }).filter(Boolean)
+  })
+
   ipcMain.handle('manager:build', (event, configLabel) => {
     return new Promise((resolve) => {
       const child = spawn('node', [path.join(__dirname, 'scripts', 'build.js'), configLabel], { cwd: __dirname })

@@ -75,6 +75,11 @@ const translations = {
     validChecking: '…',
     validUrl:      'Keine gültige URL',
     validDimRange: '{min}–{max} px',
+
+    // Icon picker
+    createIconChoose:  'Icon wählen …',
+    iconPickerSearch:  'Suchen …',
+    iconPickerLoading: 'Lädt Icons …',
   },
 
   en: {
@@ -151,6 +156,11 @@ const translations = {
     validChecking: '…',
     validUrl:      'Not a valid URL',
     validDimRange: '{min}–{max} px',
+
+    // Icon picker
+    createIconChoose:  'Choose icon …',
+    iconPickerSearch:  'Search …',
+    iconPickerLoading: 'Loading icons …',
   },
 }
 
