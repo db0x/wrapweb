@@ -733,7 +733,7 @@ async function openIconPicker() {
           <div class="icon-picker-grid" id="icon-picker-grid"></div>
         </div>
         <div class="icon-picker-loader hidden" id="icon-picker-loader">
-          <div class="build-spinner picker-spinner"></div>
+          <div class="build-spinner"></div>
         </div>
       </div>
     `

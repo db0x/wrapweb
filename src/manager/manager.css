@@ -846,7 +846,7 @@ body.dark .dialog-field-toggle {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  background: var(--card-bg);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -855,16 +855,6 @@ body.dark .dialog-field-toggle {
 
 .icon-picker-loader.hidden {
   display: none;
-}
-
-.picker-spinner {
-  border-color: rgba(0,0,0,0.12);
-  border-top-color: #3584e4;
-}
-
-body.dark .picker-spinner {
-  border-color: rgba(255,255,255,0.12);
-  border-top-color: #3584e4;
 }
 
 .icon-item {

@@ -27,27 +27,57 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 
 ## Manager
 
-Running `npm start` (without a profile) opens the **wrapweb Manager** — a graphical overview of all configured apps.
+Running `npm start` (without a profile) opens the **wrapweb Manager** — a graphical overview of all configured apps. The Manager is the primary interface for adding, configuring, building, installing, and launching apps. The UI language follows the system locale (German and English supported).
 
 ![Manager UI](assets/manager.png)
 
-Each app is shown as a card with its icon, name, URL, and status badges. Hovering a card reveals a toolbar with four actions:
+### App cards
+
+Each app is shown as a card with its icon, name, URL, and status badges. Hovering a card reveals a toolbar:
 
 | Button | Action | Active when |
 |---|---|---|
-| Info | Shows AppImage path and profile directory | always |
+| Info | Shows all config values and filesystem paths | always |
 | Build | Builds (or rebuilds) the AppImage | always |
 | Install | Creates the `.desktop` launcher entry | built, not yet installed |
-| Delete | Removes the AppImage and `.desktop` file (profile data is kept) | built |
+| Delete | Removes AppImage and `.desktop` file; profile data is kept | built |
 
-Clicking the app icon directly **launches** the app — if it is installed. Uninstalled apps have a grayed-out icon.
+Clicking the app icon directly **launches** the app — only if it is installed. Uninstalled apps show a grayed-out icon.
 
-The hamburger menu (top right) offers:
+Only one build can run at a time; a full-screen overlay blocks other actions while a build is in progress.
+
+### Info dialog
+
+The info button opens a dialog showing every configured value for that app: URL, profile, icon, window geometry, user-agent, internal domains, and Cross-Origin Isolation. If the app is built, the AppImage path and profile directory are shown with **Open in file manager** buttons.
+
+### Delete
+
+For **user apps** (added via the Manager or private JSON configs), the delete dialog offers an additional toggle to also remove the configuration file. Without it, the card reappears on next launch and the app can be rebuilt.
+
+### Adding a new app
+
+Click the **+** card at the end of the grid to open the **Create App** dialog. All configuration options are available from within the Manager:
+
+| Field | Notes |
+|---|---|
+| Profile | Unique identifier — lowercase letters, digits and hyphens; checked for uniqueness live |
+| Name | Optional display name (derived from profile if left empty) |
+| URL | The URL loaded on startup |
+| Icon | Opens a searchable icon picker showing all icons available in the system's GNOME icon theme |
+| Width / Height | Initial window size (optional) |
+| User-Agent | Choose from presets or leave empty for the default Electron UA |
+| Internal domains | Comma-separated list of extra domains that open inside the app window (e.g. OAuth redirects) |
+| Cross-Origin Isolation | Enables `SharedArrayBuffer` — required for multi-threaded WASM |
+
+New apps are saved as `build.private.<profile>.json` and are gitignored automatically.
+
+### Hamburger menu
+
+The menu (top right) offers:
+
 - **Light / Dark mode** toggle — preference is saved across sessions
-- **Visibility filter** — show all apps, embedded-only, or user apps only
-- **Hide uninstalled** — toggle to suppress apps that haven't been installed yet
-
-The manager's WM class is `wrapweb`; each app's WM class is `wrapweb-<profile>`.
+- **Visibility filter** — All Apps / Embedded Apps / User Apps
+- **Hide uninstalled** — suppress apps that haven't been installed yet
 
 ## Included app configs
 
@@ -68,7 +98,7 @@ The manager's WM class is `wrapweb`; each app's WM class is `wrapweb-<profile>`.
 - **Node.js ≥ 18**
 - **Linux** (GNOME/Wayland recommended — see note above)
 - **FUSE** — required to run AppImages (`sudo apt install fuse` or `fuse3`)
-- **python3-gi** — GTK bindings used by the Manager to resolve system icon theme icons (`sudo apt install python3-gi`)
+- **python3-gi** — GTK bindings used by the Manager to resolve and enumerate system icon theme icons (`sudo apt install python3-gi`)
 - **gtk-update-icon-cache** and **update-desktop-database** — called after installing an app; usually already present via `libgtk-3-bin` and `desktop-file-utils`
 - **aspell** — spell-check suggestions in text fields (optional; `sudo apt install aspell-de` for German, etc.)
 
@@ -84,35 +114,24 @@ npm install
 | [electron-builder](https://www.electron.build/) | AppImage packaging |
 | [OverlayScrollbars](https://github.com/KingSora/OverlayScrollbars) | Native-style overlay scrollbars in the Manager |
 
-## Building
+## Building via CLI
 
-Build all apps or a single one by profile label:
+The Manager handles build and install for most cases. For scripted or headless workflows, the CLI scripts remain available:
 
 ```bash
-npm run build                        # all configs
-npm run build -- whatsapp
+npm run build                        # build all configs
+npm run build -- whatsapp            # build a single app
 npm run build -- private.myapp
-```
 
-Output lands in `dist/` as a self-contained AppImage. A `.desktop` entry is written to `~/.local/share/applications/` automatically.
-
-To (re-)install the launcher entry without rebuilding:
-
-```bash
-npm run install-app -- whatsapp
+npm run install-app -- whatsapp      # (re-)install launcher entry without rebuilding
 npm run install-app                  # all configs
 ```
 
-## Adding your own app
+Output lands in `dist/` as a self-contained AppImage.
 
-Create a `build.<name>.json` in the project root:
+## Manual config (advanced)
 
-```json
-{
-    "profile": "myapp",
-    "url": "https://app.example.com"
-}
-```
+Apps can also be configured by placing a JSON file in the project root. This is useful for bulk setup, version-controlled shared configs, or options not yet exposed in the Manager UI.
 
 For apps you don't want to commit, use `build.private.<name>.json` — it is gitignored automatically.
 
@@ -123,7 +142,7 @@ For apps you don't want to commit, use `build.private.<name>.json` — it is git
 | `profile` | string | **Required.** Unique identifier — used for the session, userData path, and app IDs |
 | `url` | string | **Required.** URL to load on startup |
 | `name` | string | Human-readable display name (default: derived from `profile`) |
-| `icon` | string | Icon name resolved from the system icon theme (default: `profile` name) |
+| `icon` | string | Icon name resolved from the system icon theme |
 | `userAgent` | string | Override the user-agent string |
 | `geometry.width/height` | number | Initial window size (default: 1280 × 1024) |
 | `geometry.x/y` | number | Initial window position |
