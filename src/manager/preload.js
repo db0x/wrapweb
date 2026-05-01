@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('managerAPI', {
   getApps:      () => ipcRenderer.invoke('manager:apps'),
   getVersion:   () => ipcRenderer.invoke('manager:version'),
   getUiIcons:   () => ipcRenderer.invoke('manager:ui-icons'),
+  getI18n:      () => ipcRenderer.invoke('manager:i18n'),
   getUaPresets: () => ipcRenderer.invoke('manager:ua-presets'),
   buildApp:   (profile) => ipcRenderer.invoke('manager:build',   profile),
   installApp: (profile) => ipcRenderer.invoke('manager:install', profile),

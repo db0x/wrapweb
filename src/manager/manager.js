@@ -11,12 +11,16 @@ function toDisplayName(profile) {
 const dark = localStorage.getItem('dark') === '1'
 if (dark) document.body.classList.add('dark')
 
-const [apps, version, uiIcons, uaPresets] = await Promise.all([
+const [apps, version, uiIcons, i18n, uaPresets] = await Promise.all([
   window.managerAPI.getApps(),
   window.managerAPI.getVersion(),
   window.managerAPI.getUiIcons(),
+  window.managerAPI.getI18n(),
   window.managerAPI.getUaPresets(),
 ])
+
+const tr = (key, params = {}) =>
+  (i18n[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ''))
 
 document.getElementById('version').textContent = `v${version}`
 
@@ -51,28 +55,28 @@ document.body.appendChild(backdrop)
 const drawer = document.createElement('div')
 drawer.className = 'drawer'
 drawer.innerHTML = `
-  <div class="drawer-section-label">Darstellung</div>
+  <div class="drawer-section-label">${i18n.drawerAppearance}</div>
   <button class="menu-item" id="menu-darkmode">
     <img id="menu-darkmode-icon" src="" alt="">
     <span id="menu-darkmode-label"></span>
   </button>
   <hr class="drawer-divider">
-  <div class="drawer-section-label">Sichtbarkeit</div>
+  <div class="drawer-section-label">${i18n.drawerVisibility}</div>
   <button class="menu-item" data-filter="all">
     ${filterAllSrc    ? `<img src="${filterAllSrc}"    alt="">` : ''}
-    <span>Alle Apps</span>
+    <span>${i18n.drawerAllApps}</span>
   </button>
   <button class="menu-item" data-filter="public">
     ${filterPublicSrc ? `<img src="${filterPublicSrc}" alt="">` : ''}
-    <span>Embedded Apps</span>
+    <span>${i18n.drawerEmbeddedApps}</span>
   </button>
   <button class="menu-item" data-filter="private">
     ${filterPrivateSrc ? `<img src="${filterPrivateSrc}" alt="">` : ''}
-    <span>Benutzer Apps</span>
+    <span>${i18n.drawerUserApps}</span>
   </button>
   <button class="menu-item menu-toggle" id="menu-hide-uninstalled">
     <span class="toggle-switch"></span>
-    <span>Nicht installierte ausblenden</span>
+    <span>${i18n.drawerHideUninstalled}</span>
   </button>
 `
 document.body.appendChild(drawer)
@@ -94,7 +98,7 @@ function applyDarkmodeMenuItem() {
   const label = document.getElementById('menu-darkmode-label')
   icon.src = isDark ? (sunSrc ?? '') : (moonSrc ?? '')
   icon.style.display = (sunSrc || moonSrc) ? '' : 'none'
-  label.textContent = isDark ? 'Light Mode' : 'Dark Mode'
+  label.textContent = isDark ? i18n.drawerLightMode : i18n.drawerDarkMode
 }
 
 applyDarkmodeMenuItem()
@@ -161,8 +165,8 @@ confirmOverlay.innerHTML = `
       </button>
     </div>
     <div class="confirm-actions">
-      <button class="btn-cancel" id="confirm-cancel">Abbrechen</button>
-      <button class="btn-confirm-delete" id="confirm-ok">Löschen</button>
+      <button class="btn-cancel" id="confirm-cancel">${i18n.confirmCancel}</button>
+      <button class="btn-confirm-delete" id="confirm-ok">${i18n.confirmDelete}</button>
     </div>
   </div>
 `
@@ -214,7 +218,7 @@ buildOverlay.innerHTML = `
 document.body.appendChild(buildOverlay)
 
 function showBuildOverlay(name) {
-  document.getElementById('build-overlay-label').textContent = `Baut ${name} …`
+  document.getElementById('build-overlay-label').textContent = tr('buildingApp', { name })
   buildOverlay.classList.remove('hidden')
 }
 
@@ -259,30 +263,30 @@ function openDialog(app, name) {
       <label>${label}</label>
       <div class="dialog-field-path">
         <div class="value">${value}</div>
-        <button class="btn-reveal" data-reveal="${value}" title="Im Dateimanager öffnen">…</button>
+        <button class="btn-reveal" data-reveal="${value}" title="${i18n.infoReveal}">…</button>
       </div>
     </div>`
 
   const rows = []
-  rows.push(field('URL', app.url))
-  rows.push(field('Profil', app.profile))
-  if (app.icon)       rows.push(field('Icon', app.icon))
+  rows.push(field(i18n.infoUrl, app.url))
+  rows.push(field(i18n.infoProfile, app.profile))
+  if (app.icon)       rows.push(field(i18n.infoIcon, app.icon))
   if (app.geometry) {
     const w = app.geometry.width  ? `${app.geometry.width} px`  : '—'
     const h = app.geometry.height ? `${app.geometry.height} px` : '—'
-    rows.push(field('Fenstergröße', `${w} × ${h}`))
+    rows.push(field(i18n.infoGeometry, `${w} × ${h}`))
   }
-  if (app.userAgent)  rows.push(field('User-Agent', app.userAgent))
+  if (app.userAgent)  rows.push(field(i18n.infoUserAgent, app.userAgent))
   if (app.internalDomains) {
     const domains = Array.isArray(app.internalDomains)
       ? app.internalDomains.join(', ')
       : app.internalDomains
-    rows.push(field('Interne Domains', domains))
+    rows.push(field(i18n.infoDomains, domains))
   }
-  if (app.crossOriginIsolation) rows.push(field('Cross-Origin Isolation', 'Ja'))
+  if (app.crossOriginIsolation) rows.push(field(i18n.infoCoi, i18n.infoCoiYes))
   if (app.built) {
-    rows.push(pathField('App-Image',     app.appImagePath))
-    rows.push(pathField('Profil-Ordner', app.profilePath))
+    rows.push(pathField(i18n.infoAppImage,   app.appImagePath))
+    rows.push(pathField(i18n.infoProfileDir, app.profilePath))
   }
 
   fieldsEl.innerHTML = rows.join('')
@@ -312,15 +316,15 @@ function createCard(app) {
     <span class="name">${name}</span>
     <span class="url">${hostname}</span>
     <div class="badges">
-      <span class="badge ${app.built ? 'built' : 'not-built'}" data-role="build-badge">${app.built ? 'Gebaut' : 'Nicht gebaut'}</span>
-      ${app.installed ? '<span class="badge installed" data-role="install-badge">Installiert</span>' : ''}
-      ${app.isPrivate ? '<span class="badge private">Benutzer</span>' : ''}
+      <span class="badge ${app.built ? 'built' : 'not-built'}" data-role="build-badge">${app.built ? i18n.badgeBuilt : i18n.badgeNotBuilt}</span>
+      ${app.installed ? `<span class="badge installed" data-role="install-badge">${i18n.badgeInstalled}</span>` : ''}
+      ${app.isPrivate ? `<span class="badge private">${i18n.badgeUser}</span>` : ''}
     </div>
     <div class="card-toolbar">
-      ${infoSrc    ? `<button class="toolbar-btn" data-action="info"    title="Informationen"><img src="${infoSrc}"    alt="Info"></button>`    : ''}
-      ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   title="${app.built ? 'Neu bauen' : 'Bauen'}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
-      ${installSrc ? `<button class="toolbar-btn" data-action="install" title="Installieren" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="Install"></button>` : ''}
-      ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="Löschen" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="Löschen"></button>` : ''}
+      ${infoSrc    ? `<button class="toolbar-btn" data-action="info"    title="${i18n.btnInfo}"><img src="${infoSrc}"    alt="${i18n.btnInfo}"></button>`    : ''}
+      ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   title="${app.built ? i18n.btnRebuild : i18n.btnBuild}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
+      ${installSrc ? `<button class="toolbar-btn" data-action="install" title="${i18n.btnInstall}" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="${i18n.btnInstall}"></button>` : ''}
+      ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="${i18n.btnDelete}" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="${i18n.btnDelete}"></button>` : ''}
     </div>
   `
 
@@ -332,10 +336,10 @@ function createCard(app) {
   card.querySelector('[data-action="info"]')?.addEventListener('click', () => openDialog(app, name))
 
   card.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
-    const { confirmed, deleteConfig } = await showConfirm(`
-      <p>App-Image und Desktop-Eintrag für <strong>${name}</strong> wirklich löschen?</p>
-      <p>Das Profil-Verzeichnis bleibt erhalten.</p>
-    `, app.isPrivate ? { toggle: { label: 'Konfiguration löschen' } } : {})
+    const { confirmed, deleteConfig } = await showConfirm(
+      tr('confirmDeleteMsg', { name }),
+      app.isPrivate ? { toggle: { label: i18n.confirmDeleteConfig } } : {}
+    )
     if (!confirmed) return
     const btn = card.querySelector('[data-action="delete"]')
     btn.disabled = true
@@ -349,9 +353,9 @@ function createCard(app) {
         app.built = false
         app.installed = false
         card.dataset.installed = 'false'
-        card.querySelector('[data-role="build-badge"]').textContent = 'Nicht gebaut'
+        card.querySelector('[data-role="build-badge"]').textContent = i18n.badgeNotBuilt
         card.querySelector('[data-role="build-badge"]').classList.replace('built', 'not-built')
-        card.querySelector('[data-action="build"]').title = 'Bauen'
+        card.querySelector('[data-action="build"]').title = i18n.btnBuild
         card.querySelector('[data-action="install"]')?.setAttribute('disabled', '')
         card.querySelector('[data-role="install-badge"]')?.remove()
         iconEl.classList.replace('launchable', 'unavailable')
@@ -375,7 +379,7 @@ function createCard(app) {
       const installBadge = document.createElement('span')
       installBadge.className = 'badge installed'
       installBadge.dataset.role = 'install-badge'
-      installBadge.textContent = 'Installiert'
+      installBadge.textContent = i18n.badgeInstalled
       buildBadge.insertAdjacentElement('afterend', installBadge)
     } else {
       btn.disabled = false
@@ -397,9 +401,9 @@ function createCard(app) {
     hideBuildOverlay()
     if (result.success) {
       app.built = true
-      badge.textContent = 'Gebaut'
+      badge.textContent = i18n.badgeBuilt
       badge.classList.replace('not-built', 'built')
-      btn.title = 'Neu bauen'
+      btn.title = i18n.btnRebuild
       const installBtn = card.querySelector('[data-action="install"]')
       if (installBtn && !app.installed) installBtn.disabled = false
       const deleteBtn = card.querySelector('[data-action="delete"]')
@@ -433,60 +437,60 @@ createOverlay.className = 'dialog-overlay hidden'
 createOverlay.innerHTML = `
   <div class="dialog">
     <div class="dialog-header">
-      <span class="dialog-title">Neue WebApp hinzufügen</span>
+      <span class="dialog-title">${i18n.createTitle}</span>
       <button class="dialog-close" id="create-close">✕</button>
     </div>
     <div class="dialog-fields">
       <div class="dialog-field">
-        <label>Profil *</label>
+        <label>${i18n.createProfile} *</label>
         <input type="text" id="create-profile" placeholder="meine-app" autocomplete="off" spellcheck="false">
         <span class="field-hint" id="create-profile-hint"></span>
       </div>
       <div class="dialog-field">
-        <label>Name</label>
+        <label>${i18n.createName}</label>
         <input type="text" id="create-name" placeholder="Meine App">
       </div>
       <div class="dialog-field">
-        <label>URL *</label>
+        <label>${i18n.createUrl} *</label>
         <input type="text" id="create-url" placeholder="https://app.example.com" autocomplete="off" spellcheck="false">
         <span class="field-hint" id="create-url-hint"></span>
       </div>
       <div class="dialog-field">
-        <label>Icon (GNOME-Theme)</label>
+        <label>${i18n.createIcon}</label>
         <input type="text" id="create-icon" placeholder="application-x-executable" autocomplete="off" spellcheck="false">
       </div>
       <hr class="dialog-section-divider">
-      <div class="dialog-section-label">Erweitert (optional)</div>
+      <div class="dialog-section-label">${i18n.createAdvanced}</div>
       <div class="dialog-field dialog-field-row">
         <div class="dialog-field">
-          <label>Breite (px)</label>
+          <label>${i18n.createWidth}</label>
           <input type="number" id="create-width" placeholder="1280">
           <span class="field-hint" id="create-width-hint"></span>
         </div>
         <div class="dialog-field">
-          <label>Höhe (px)</label>
+          <label>${i18n.createHeight}</label>
           <input type="number" id="create-height" placeholder="1024">
           <span class="field-hint" id="create-height-hint"></span>
         </div>
       </div>
       <div class="dialog-field">
-        <label>User-Agent</label>
+        <label>${i18n.createUAgent}</label>
         <select id="create-useragent">
-          <option value="">— Standard (nicht gesetzt) —</option>
+          <option value="">${i18n.createUaDefault}</option>
         </select>
       </div>
       <div class="dialog-field">
-        <label>Interne Domains (kommagetrennt)</label>
+        <label>${i18n.createDomains}</label>
         <input type="text" id="create-domains" placeholder="accounts.google.com, github.com" autocomplete="off" spellcheck="false">
       </div>
       <button type="button" class="dialog-field-toggle" id="create-coi">
         <span class="toggle-switch"></span>
-        <span>Cross-Origin Isolation (SharedArrayBuffer / WASM)</span>
+        <span>${i18n.createCoi}</span>
       </button>
     </div>
     <div class="confirm-actions">
-      <button class="btn-cancel" id="create-cancel">Abbrechen</button>
-      <button class="btn-save" id="create-save" disabled>Speichern</button>
+      <button class="btn-cancel" id="create-cancel">${i18n.createCancel}</button>
+      <button class="btn-save" id="create-save" disabled>${i18n.createSave}</button>
     </div>
   </div>
 `
@@ -528,7 +532,7 @@ function validateDimension(inputEl, hintEl, min, max, flagSetter) {
   const n = Number(val)
   if (!Number.isInteger(n) || n < min || n > max) {
     inputEl.className = 'invalid'
-    hintEl.textContent = `${min}–${max} px`
+    hintEl.textContent = tr('validDimRange', { min, max })
     hintEl.className = 'field-hint error'
     flagSetter(false)
   } else {
@@ -554,7 +558,7 @@ createProfileInput.addEventListener('input', () => {
 
   if (!/^[a-z0-9-]+$/.test(val)) {
     createProfileInput.className = 'invalid'
-    createProfileHint.textContent = 'Nur Kleinbuchstaben, Ziffern und Bindestriche'
+    createProfileHint.textContent = i18n.validPattern
     createProfileHint.className = 'field-hint error'
     clearTimeout(profileCheckTimer)
     updateCreateSaveBtn()
@@ -563,7 +567,7 @@ createProfileInput.addEventListener('input', () => {
 
   clearTimeout(profileCheckTimer)
   createProfileInput.className = ''
-  createProfileHint.textContent = '…'
+  createProfileHint.textContent = i18n.validChecking
   createProfileHint.className = 'field-hint'
 
   profileCheckTimer = setTimeout(async () => {
@@ -571,12 +575,12 @@ createProfileInput.addEventListener('input', () => {
     if (createProfileInput.value.trim() !== val) return
     if (exists) {
       createProfileInput.className = 'invalid'
-      createProfileHint.textContent = 'Profil existiert bereits'
+      createProfileHint.textContent = i18n.validExists
       createProfileHint.className = 'field-hint error'
       profileValid = false
     } else {
       createProfileInput.className = 'valid'
-      createProfileHint.textContent = `→ build.private.${val}.json`
+      createProfileHint.textContent = tr('validHint', { profile: val })
       createProfileHint.className = 'field-hint'
       profileValid = true
     }
@@ -600,7 +604,7 @@ createUrlInput.addEventListener('input', () => {
     } catch {
       urlValid = false
       createUrlInput.className = 'invalid'
-      createUrlHint.textContent = 'Keine gültige URL'
+      createUrlHint.textContent = i18n.validUrl
       createUrlHint.className = 'field-hint error'
     }
   }

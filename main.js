@@ -74,6 +74,7 @@ if (profile) {
   })
 
   ipcMain.handle('manager:version',    () => pkg.version)
+  ipcMain.handle('manager:i18n',       () => t())
   ipcMain.handle('manager:ua-presets', () => pkg.uaPresets ?? [])
 
   ipcMain.handle('manager:ui-icons', () => {
