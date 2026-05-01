@@ -77,6 +77,10 @@ drawer.innerHTML = `
     <span class="toggle-switch"></span>
     <span>${i18n.drawerHideUninstalled}</span>
   </button>
+  <hr class="drawer-divider">
+  <button class="menu-item" id="menu-profiles">
+    <span>${i18n.drawerProfiles}</span>
+  </button>
   <div class="drawer-version">v${version}</div>
 `
 document.body.appendChild(drawer)
@@ -203,6 +207,83 @@ function showConfirm(message, options = {}) {
     confirmOverlay.addEventListener('click', e => { if (e.target === confirmOverlay) cleanup(false) }, { once: true })
   })
 }
+
+// ── Profiles dialog ───────────────────────────────────────────
+
+const profilesOverlay = document.createElement('div')
+profilesOverlay.className = 'dialog-overlay hidden'
+profilesOverlay.innerHTML = `
+  <div class="dialog profiles-dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">${i18n.profilesTitle}</span>
+      <button class="dialog-close" id="profiles-dialog-close">✕</button>
+    </div>
+    <div class="profiles-scroll-wrapper" id="profiles-scroll-wrapper">
+      <div id="profiles-list" class="profiles-list">
+        <div class="build-spinner" style="margin: 24px auto;"></div>
+      </div>
+    </div>
+  </div>
+`
+document.body.appendChild(profilesOverlay)
+
+profilesOverlay.addEventListener('click', e => { if (e.target === profilesOverlay) closeProfilesDialog() })
+document.getElementById('profiles-dialog-close').addEventListener('click', closeProfilesDialog)
+
+function closeProfilesDialog() { profilesOverlay.classList.add('hidden') }
+
+function fmtBytes(b) {
+  if (b >= 1e9) return (b / 1e9).toFixed(1) + ' GB'
+  if (b >= 1e6) return (b / 1e6).toFixed(1) + ' MB'
+  if (b >= 1e3) return (b / 1e3).toFixed(0) + ' KB'
+  return b + ' B'
+}
+
+let profilesScrollbarInited = false
+
+async function openProfilesDialog() {
+  profilesOverlay.classList.remove('hidden')
+  closeDrawer()
+  if (!profilesScrollbarInited) {
+    OverlayScrollbars(document.getElementById('profiles-scroll-wrapper'), { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })
+    profilesScrollbarInited = true
+  }
+  const listEl = document.getElementById('profiles-list')
+  listEl.innerHTML = '<div class="build-spinner" style="margin: 24px auto;"></div>'
+
+  const sizes = await window.managerAPI.getProfileSizes()
+  sizes.sort((a, b) => b.bytes - a.bytes)
+  const total = sizes.reduce((s, p) => s + p.bytes, 0)
+
+  const iconByProfile = Object.fromEntries(apps.map(a => [a.profile, a.iconPath]))
+
+  const rows = sizes.map(p => {
+    const label    = p.name || p.profile.replace(/^private\./, '').replace(/-/g, ' ')
+    const pct      = total > 0 && p.exists ? Math.max(2, Math.round(p.bytes / total * 100)) : 0
+    const sizeStr  = p.exists ? fmtBytes(p.bytes) : i18n.profilesEmpty
+    const iconPath = iconByProfile[p.profile]
+    const iconHtml = iconPath
+      ? `<img src="file://${iconPath}" width="24" height="24" class="profile-size-icon" alt="">`
+      : `<img src="${appDefaultSrc}" width="24" height="24" class="profile-size-icon" alt="">`
+    return `
+      <div class="profile-size-row">
+        <div class="profile-size-name">${iconHtml}<span>${label}</span></div>
+        <div class="profile-size-bar-wrap">
+          <div class="profile-size-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="profile-size-value">${sizeStr}</div>
+      </div>`
+  }).join('')
+
+  listEl.innerHTML = `
+    ${rows}
+    <div class="profile-size-total">
+      <span>${i18n.profilesTotal}</span>
+      <span>${fmtBytes(total)}</span>
+    </div>`
+}
+
+document.getElementById('menu-profiles').addEventListener('click', openProfilesDialog)
 
 // ── Build overlay ─────────────────────────────────────────────
 

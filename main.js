@@ -210,6 +210,22 @@ for name in sorted(theme.list_icons(None)):
     }).filter(Boolean)
   })
 
+  ipcMain.handle('manager:profile-sizes', () => {
+    const configs = fs.readdirSync(__dirname)
+      .filter(f => /^build\..+\.json$/.test(f))
+      .map(f => {
+        const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'))
+        return { profile: cfg.profile, name: cfg.name || null }
+      })
+    return configs.map(({ profile, name }) => {
+      const dir = path.join(app.getPath('appData'), 'wrapweb', profile)
+      if (!fs.existsSync(dir)) return { profile, name, bytes: 0, exists: false }
+      const r = spawnSync('du', ['-sb', dir], { encoding: 'utf8' })
+      const bytes = r.status === 0 ? parseInt((r.stdout || '').split('\t')[0]) || 0 : 0
+      return { profile, name, bytes, exists: true }
+    })
+  })
+
   ipcMain.handle('manager:build', (event, configLabel) => {
     return new Promise((resolve) => {
       const child = spawn('node', [path.join(__dirname, 'scripts', 'build.js'), configLabel], { cwd: __dirname })

@@ -947,3 +947,84 @@ body.dark .dialog-field-toggle {
   color: var(--card-fg);
   background: var(--card-shadow);
 }
+
+/* ── Profiles dialog ── */
+
+.profiles-dialog {
+  width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.profiles-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  max-height: 60vh;
+}
+
+.profiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-size-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-size-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 0;
+}
+
+.profile-size-name span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-size-icon {
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.profile-size-bar-wrap {
+  height: 8px;
+  background: var(--badge-unbuilt-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.profile-size-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--header-from), var(--header-to));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.profile-size-value {
+  font-size: 12px;
+  color: var(--card-url);
+  text-align: right;
+  white-space: nowrap;
+  min-width: 64px;
+}
+
+.profile-size-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--badge-unbuilt-bg);
+  font-size: 13px;
+  font-weight: 600;
+}

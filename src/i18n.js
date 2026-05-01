@@ -80,6 +80,12 @@ const translations = {
     createIconChoose:  'Icon wählen …',
     iconPickerSearch:  'Suchen …',
     iconPickerLoading: 'Lädt Icons …',
+
+    // Profile sizes dialog
+    drawerProfiles:    'Profile',
+    profilesTitle:     'Profil-Verzeichnisse',
+    profilesTotal:     'Gesamt',
+    profilesEmpty:     'Kein Datenverzeichnis vorhanden',
   },
 
   en: {
@@ -161,6 +167,12 @@ const translations = {
     createIconChoose:  'Choose icon …',
     iconPickerSearch:  'Search …',
     iconPickerLoading: 'Loading icons …',
+
+    // Profile sizes dialog
+    drawerProfiles:    'Profiles',
+    profilesTitle:     'Profile directories',
+    profilesTotal:     'Total',
+    profilesEmpty:     'No data directory',
   },
 }
 
