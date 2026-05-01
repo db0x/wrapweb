@@ -252,7 +252,8 @@ function openManager() {
   const win = new BrowserWindow({
     width: 780,
     height: 820,
-    resizable: false,
+    minWidth: 400,
+    minHeight: 400,
     title: 'wrapweb',
     webPreferences: {
       preload: path.join(__dirname, 'src', 'manager', 'preload.js'),
