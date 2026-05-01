@@ -22,7 +22,6 @@ const [apps, version, uiIcons, i18n, uaPresets] = await Promise.all([
 const tr = (key, params = {}) =>
   (i18n[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ''))
 
-document.getElementById('version').textContent = `v${version}`
 
 const s = k => uiIcons[k] ? `file://${uiIcons[k]}` : null
 
@@ -78,6 +77,7 @@ drawer.innerHTML = `
     <span class="toggle-switch"></span>
     <span>${i18n.drawerHideUninstalled}</span>
   </button>
+  <div class="drawer-version">v${version}</div>
 `
 document.body.appendChild(drawer)
 
