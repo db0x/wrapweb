@@ -28,6 +28,10 @@ function installIcon() {
   }
 }
 
+function escapeDesktop(s) {
+  return String(s).replace(/\\/g, '\\\\')
+}
+
 function installDesktop(app) {
   const desktopName = `wrapweb-${app.profile}`
   const desktopsDir = path.join(os.homedir(), '.local', 'share', 'applications')
@@ -39,7 +43,7 @@ function installDesktop(app) {
   }
 
   const appImagePath = path.resolve('dist', `wrapweb.${app.profile}`)
-  const displayName = app.name || toDisplayName(app.profile)
+  const displayName = escapeDesktop(app.name || toDisplayName(app.profile))
   const icon = app.icon || 'wrapweb'
 
   const content = [

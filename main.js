@@ -248,10 +248,29 @@ for name in sys.argv[1:]:
 
 const { t } = require('./src/i18n')
 
+const managerStatePath = path.join(app.getPath('appData'), 'wrapweb', 'manager-state.json')
+
+function loadManagerBounds() {
+  try {
+    const { width, height } = JSON.parse(fs.readFileSync(managerStatePath, 'utf8'))
+    if (width > 0 && height > 0) return { width, height }
+  } catch {}
+  return null
+}
+
+function saveManagerBounds(win) {
+  try {
+    const { width, height } = win.getBounds()
+    fs.mkdirSync(path.dirname(managerStatePath), { recursive: true })
+    fs.writeFileSync(managerStatePath, JSON.stringify({ width, height }), 'utf8')
+  } catch {}
+}
+
 function openManager() {
+  const saved = loadManagerBounds()
   const win = new BrowserWindow({
-    width: 780,
-    height: 820,
+    width:  saved?.width  ?? 780,
+    height: saved?.height ?? 820,
     minWidth: 400,
     minHeight: 400,
     title: 'wrapweb',
@@ -261,6 +280,7 @@ function openManager() {
       nodeIntegration: false,
     },
   })
+  win.on('close', () => saveManagerBounds(win))
   win.webContents.on('context-menu', (_event, params) => {
     const i18n = t()
     if (params.isEditable) {

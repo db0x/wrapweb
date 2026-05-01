@@ -71,7 +71,7 @@ Click the **+** card at the end of the grid to open the **Create App** dialog. A
 
 New apps are saved as `build.private.<profile>.json` and are gitignored automatically.
 
-### Hamburger menu
+### Side menu
 
 The menu (top right) offers:
 
