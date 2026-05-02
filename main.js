@@ -85,6 +85,7 @@ if (profile) {
       'application-default-icon', 'open-menu-symbolic',
       'view-app-grid-symbolic', 'applications-internet-symbolic',
       'avatar-default-symbolic', 'view-filter-symbolic',
+      'github',
     ])
     return {
       sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
@@ -93,6 +94,7 @@ if (profile) {
       appDefault: r['application-default-icon'], menu: r['open-menu-symbolic'],
       filterAll: r['view-app-grid-symbolic'], filterPublic: r['applications-internet-symbolic'],
       filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
+      github: r['github'],
     }
   })
 
@@ -208,6 +210,11 @@ for name in sorted(theme.list_icons(None)):
       if (tab === -1) return null
       return { name: line.slice(0, tab), path: line.slice(tab + 1) }
     }).filter(Boolean)
+  })
+
+  ipcMain.handle('manager:open-external', (event, url) => {
+    const allowed = /^https:\/\/github\.com\//
+    if (allowed.test(url)) shell.openExternal(url)
   })
 
   ipcMain.handle('manager:profile-sizes', () => {

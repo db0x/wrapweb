@@ -85,12 +85,12 @@ The menu (top right) offers:
 |---|---|
 | `build.claude.json` | Claude (Anthropic) |
 | `build.whatsapp.json` | WhatsApp Web |
-| `build.teams.json` | Microsoft Teams |
 | `build.google-docs.json` | Google Docs |
 | `build.google-spreadsheets.json` | Google Spreadsheets |
 | `build.google-gemini.json` | Google Gemini |
 | `build.google-earth.json` | Google Earth |
 | `build.openai.json` | ChatGPT / OpenAI |
+| `build.teams.json` | Microsoft Teams |
 | `build.outlook.json` | Microsoft Outlook |
 
 ## Requirements
@@ -114,7 +114,7 @@ npm install
 | [electron-builder](https://www.electron.build/) | AppImage packaging |
 | [OverlayScrollbars](https://github.com/KingSora/OverlayScrollbars) | Native-style overlay scrollbars in the Manager |
 
-## Building via CLI
+## Building AppImages via CLI
 
 The Manager handles build and install for most cases. For scripted or headless workflows, the CLI scripts remain available:
 
@@ -145,7 +145,7 @@ For apps you don't want to commit, use `build.private.<name>.json` — it is git
 | `icon` | string | Icon name resolved from the system icon theme |
 | `userAgent` | string | Override the user-agent string |
 | `geometry.width/height` | number | Initial window size (default: 1280 × 1024) |
-| `geometry.x/y` | number | Initial window position |
+| `geometry.x/y` | number | Initial window position — _deprecated will be removed with remove of x11 in Gnome_ |
 | `internalDomains` | string \| array | Extra domains allowed to open inside the app window (e.g. OAuth providers) |
 | `crossOriginIsolation` | boolean | Enable `SharedArrayBuffer` — required for multi-threaded WASM (Google Earth) |
 

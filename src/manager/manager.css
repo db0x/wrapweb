@@ -144,13 +144,9 @@ header img {
   box-shadow: -4px 0 24px rgba(0,0,0,0.25);
 }
 
-.drawer-version {
+.drawer-about-btn {
   margin-top: auto;
-  padding: 14px 18px;
-  font-size: 12px;
-  color: var(--card-url);
-  text-align: center;
-  user-select: text;
+  justify-content: center;
 }
 
 .drawer-section-label {
@@ -1027,4 +1023,67 @@ body.dark .dialog-field-toggle {
   border-top: 1px solid var(--badge-unbuilt-bg);
   font-size: 13px;
   font-weight: 600;
+}
+
+/* ── About dialog ── */
+
+.about-dialog {
+  width: 520px;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  position: relative;
+}
+
+.about-dialog .dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.about-icon-wrap {
+  margin-top: 8px;
+}
+
+.about-icon {
+  width: 72px;
+  height: 72px;
+}
+
+.about-ascii {
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Mono', monospace;
+  font-size: 13px;
+  line-height: 1.1;
+  color: var(--card-fg);
+  margin: 0;
+  text-align: left;
+}
+
+.about-version {
+  font-size: 13px;
+  color: var(--card-url);
+}
+
+.about-license {
+  font-size: 12px;
+  color: var(--card-url);
+}
+
+.about-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #3584e4;
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.about-github:hover {
+  text-decoration: underline;
+}
+
+.about-github-icon {
+  flex-shrink: 0;
+  object-fit: contain;
 }

@@ -81,6 +81,11 @@ const translations = {
     iconPickerSearch:  'Suchen …',
     iconPickerLoading: 'Lädt Icons …',
 
+    // About dialog
+    drawerAbout:       'Über wrapweb',
+    aboutLicense:      'MIT-Lizenz',
+    aboutGithub:       'wrapweb bei GitHub',
+
     // Profile sizes dialog
     drawerProfiles:    'Profile',
     profilesTitle:     'Profil-Verzeichnisse',
@@ -167,6 +172,11 @@ const translations = {
     createIconChoose:  'Choose icon …',
     iconPickerSearch:  'Search …',
     iconPickerLoading: 'Loading icons …',
+
+    // About dialog
+    drawerAbout:       'About wrapweb',
+    aboutLicense:      'MIT License',
+    aboutGithub:       'wrapweb on GitHub',
 
     // Profile sizes dialog
     drawerProfiles:    'Profiles',

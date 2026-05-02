@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('managerAPI', {
   revealPath:   (p)       => ipcRenderer.invoke('manager:reveal-path',    p),
   checkProfile: (profile) => ipcRenderer.invoke('manager:check-profile', profile),
   createApp:    (data)    => ipcRenderer.invoke('manager:create-app',    data),
-  getAllIcons:    ()       => ipcRenderer.invoke('manager:all-icons'),
+  getAllIcons:     ()      => ipcRenderer.invoke('manager:all-icons'),
   getProfileSizes: ()     => ipcRenderer.invoke('manager:profile-sizes'),
+  openExternal:    (url)  => ipcRenderer.invoke('manager:open-external', url),
 })

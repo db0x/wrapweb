@@ -3,8 +3,9 @@
   "description": "PWA Wrapper",
   "keywords": [],
   "main": "./main.js",
-  "version": "0.4.0",
-  "author": "db0x",
+  "version": "0.9.0",
+  "author": { "name": "db0x", "url": "https://github.com/db0x" },
+  "license": "MIT",
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
