@@ -5,10 +5,7 @@
 |__,__/_/  \_,_/ .__/__,__/\__/_.__/🐧
               /_/                   
 ```
-
-# wrapweb
-
-Turn any web app into a standalone Linux desktop application — packaged as an AppImage, with its own window, session, and taskbar entry.
+Turn any *web app* into a standalone Linux *desktop application* — packaged as an AppImage, with its own window, session, and taskbar entry.
 
 Built on [Electron](https://www.electronjs.org/). Each app gets an isolated browser profile so WhatsApp, Teams, Google Earth and your own internal tools can all run side by side without interfering.
 
@@ -93,6 +90,32 @@ The menu (top right) offers:
 | `build.teams.json` | Microsoft Teams |
 | `build.outlook.json` | Microsoft Outlook |
 
+## Installation
+
+The quickest way to get started is the install script:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/db0x/wrapweb/main/install.sh)
+```
+
+The script:
+- checks for **Node.js ≥ 18** — if missing, offers to install it automatically via [nvm](https://github.com/nvm-sh/nvm)
+- checks for optional dependencies (FUSE, python3-gi, aspell) and prints install hints if any are absent
+- clones the repository to `~/.local/share/wrapweb` (or a custom path passed as the first argument)
+- runs `npm install`
+- creates a `wrapweb` launcher entry in the application menu
+
+Re-running the script on an existing installation does a `git pull` and reinstalls dependencies.
+
+### Manual setup
+
+```bash
+git clone https://github.com/db0x/wrapweb.git
+cd wrapweb
+npm install
+npm start
+```
+
 ## Requirements
 
 - **Node.js ≥ 18**
@@ -101,10 +124,6 @@ The menu (top right) offers:
 - **python3-gi** — GTK bindings used by the Manager to resolve and enumerate system icon theme icons (`sudo apt install python3-gi`)
 - **gtk-update-icon-cache** and **update-desktop-database** — called after installing an app; usually already present via `libgtk-3-bin` and `desktop-file-utils`
 - **aspell** — spell-check suggestions in text fields (optional; `sudo apt install aspell-de` for German, etc.)
-
-```bash
-npm install
-```
 
 ## Libraries
 

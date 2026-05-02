@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO="https://github.com/db0x/wrapweb.git"
+DEFAULT_DEST="$HOME/.local/share/wrapweb"
+DESKTOP_DIR="$HOME/.local/share/applications"
+ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
+
+# ── colours ──────────────────────────────────────────────────────────────────
+if [ -t 1 ]; then
+  RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'
+  CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
+else
+  RED=''; YELLOW=''; GREEN=''; CYAN=''; BOLD=''; RESET=''
+fi
+
+info()  { echo -e "  ${CYAN}→${RESET} $*"; }
+ok()    { echo -e "  ${GREEN}✓${RESET} $*"; }
+warn()  { echo -e "  ${YELLOW}⚠${RESET} $*"; }
+die()   { echo -e "  ${RED}✗${RESET} $*" >&2; exit 1; }
+header(){ echo -e "\n${BOLD}$*${RESET}"; }
+
+# ── distro detection ──────────────────────────────────────────────────────────
+detect_pm() {
+  if   command -v apt-get &>/dev/null; then PM=apt;    SUDO=sudo
+  elif command -v dnf     &>/dev/null; then PM=dnf;    SUDO=sudo
+  elif command -v pacman  &>/dev/null; then PM=pacman; SUDO=sudo
+  elif command -v zypper  &>/dev/null; then PM=zypper; SUDO=sudo
+  else                                      PM=unknown; SUDO=''
+  fi
+}
+
+# pkg_hint <apt-pkg> <dnf-pkg> <pacman-pkg> <zypper-pkg> <description>
+pkg_hint() {
+  local apt_pkg="$1" dnf_pkg="$2" pac_pkg="$3" zyp_pkg="$4" desc="$5"
+  case "$PM" in
+    apt)    warn "$desc\n         sudo apt install $apt_pkg" ;;
+    dnf)    warn "$desc\n         sudo dnf install $dnf_pkg" ;;
+    pacman) warn "$desc\n         sudo pacman -S $pac_pkg" ;;
+    zypper) warn "$desc\n         sudo zypper install $zyp_pkg" ;;
+    *)      warn "$desc — install the appropriate package for your distro." ;;
+  esac
+}
+
+# ── required: node ≥ 18 ──────────────────────────────────────────────────────
+install_node_via_nvm() {
+  info "Installing nvm + Node.js LTS …"
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  export NVM_DIR="$HOME/.nvm"
+  # shellcheck source=/dev/null
+  \. "$NVM_DIR/nvm.sh"
+  nvm install --lts
+  nvm use --lts
+  ok "Node.js $(node -e 'process.stdout.write(process.versions.node)') installed via nvm"
+}
+
+check_node() {
+  if ! command -v node &>/dev/null; then
+    warn "Node.js not found."
+    echo ""
+    read -rp "  Install Node.js LTS via nvm now? [y/N] " _answer
+    if [[ "$_answer" =~ ^[yY]$ ]]; then
+      install_node_via_nvm
+    else
+      die "Node.js is required. Install it from https://nodejs.org/ and re-run."
+    fi
+  fi
+  local ver
+  ver=$(node -e 'process.stdout.write(process.versions.node)')
+  local major="${ver%%.*}"
+  if [ "$major" -lt 18 ]; then
+    die "Node.js $ver found, but ≥ 18 is required."
+  fi
+  ok "Node.js $ver"
+}
+
+# ── optional dependencies ─────────────────────────────────────────────────────
+check_optional() {
+  if ! command -v fusermount &>/dev/null && ! command -v fusermount3 &>/dev/null; then
+    pkg_hint "fuse" "fuse" "fuse3" "fuse" \
+      "FUSE not found — required to run AppImages."
+  else
+    ok "FUSE"
+  fi
+
+  if ! python3 -c 'import gi' &>/dev/null 2>&1; then
+    pkg_hint "python3-gi" "python3-gobject" "python-gobject" "python3-gobject" \
+      "python3-gi not found — icon theme integration unavailable."
+  else
+    ok "python3-gi"
+  fi
+
+  if ! command -v aspell &>/dev/null; then
+    pkg_hint "aspell" "aspell" "aspell" "aspell" \
+      "aspell not found — spell-check suggestions unavailable (optional)."
+  else
+    ok "aspell"
+  fi
+}
+
+# ── clone or update ───────────────────────────────────────────────────────────
+install_or_update() {
+  local dest="$1"
+
+  if [ -d "$dest/.git" ]; then
+    info "Updating existing installation at $dest …"
+    git -C "$dest" pull --ff-only
+    ok "Repository updated"
+  else
+    info "Cloning $REPO → $dest …"
+    git clone --depth=1 "$REPO" "$dest"
+    ok "Repository cloned"
+  fi
+
+  info "Installing npm dependencies …"
+  npm install --prefix "$dest" --silent
+  ok "Dependencies installed"
+}
+
+# ── desktop entry for the manager ────────────────────────────────────────────
+install_desktop_entry() {
+  local dest="$1"
+
+  mkdir -p "$ICON_DIR"
+  cp "$dest/assets/wrapweb.svg" "$ICON_DIR/wrapweb.svg"
+  gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" &>/dev/null || true
+
+  mkdir -p "$DESKTOP_DIR"
+  local desktop_file="$DESKTOP_DIR/wrapweb-manager.desktop"
+  cat > "$desktop_file" <<EOF
+[Desktop Entry]
+Version=1.0
+Name=wrapweb
+Comment=Web App Manager (wrapweb)
+Exec=bash -c 'cd "$dest" && npm start'
+Terminal=false
+Type=Application
+Icon=wrapweb
+StartupWMClass=wrapweb
+EOF
+  update-desktop-database "$DESKTOP_DIR" &>/dev/null || true
+  ok "Desktop entry created: $desktop_file"
+}
+
+# ── main ──────────────────────────────────────────────────────────────────────
+echo -e "\n${BOLD}wrapweb installer${RESET}"
+echo    "  https://github.com/db0x/wrapweb"
+
+DEST="${1:-$DEFAULT_DEST}"
+
+detect_pm
+
+header "Checking requirements …"
+check_node
+check_optional
+
+header "Installing wrapweb …"
+install_or_update "$DEST"
+
+header "Setting up launcher …"
+install_desktop_entry "$DEST"
+
+echo -e "\n${GREEN}${BOLD}Done.${RESET} Launch wrapweb from your application menu, or run:\n"
+echo    "    cd \"$DEST\" && npm start"
+echo
