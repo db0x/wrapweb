@@ -107,6 +107,14 @@ The script:
 
 Re-running the script on an existing installation does a `git pull` and reinstalls dependencies.
 
+### Uninstall
+
+```bash
+~/.local/share/wrapweb/install.sh --uninstall
+```
+
+The script removes the desktop entry and icon, then asks interactively whether to also delete the installation directory and the app profile data (`~/.config/wrapweb/`).
+
 ### Manual setup
 
 ```bash

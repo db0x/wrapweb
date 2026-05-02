@@ -142,11 +142,70 @@ EOF
   ok "Desktop entry created: $desktop_file"
 }
 
+# ── uninstall ─────────────────────────────────────────────────────────────────
+uninstall() {
+  local dest="$1"
+
+  header "Removing wrapweb …"
+
+  local desktop_file="$DESKTOP_DIR/wrapweb-manager.desktop"
+  local icon_file="$ICON_DIR/wrapweb.svg"
+
+  [ -f "$desktop_file" ] && { rm -f "$desktop_file"; ok "Desktop entry removed"; } \
+                          || info "Desktop entry not found, skipping"
+  [ -f "$icon_file"    ] && { rm -f "$icon_file";    ok "Icon removed"; } \
+                          || info "Icon not found, skipping"
+  update-desktop-database "$DESKTOP_DIR" &>/dev/null || true
+  gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" &>/dev/null || true
+
+  if [ -d "$dest" ]; then
+    echo ""
+    read -rp "  Remove installation directory $dest? [y/N] " _answer
+    if [[ "$_answer" =~ ^[yY]$ ]]; then
+      rm -rf "$dest"
+      ok "Installation directory removed"
+    else
+      info "Kept $dest"
+    fi
+  else
+    info "Installation directory not found, skipping"
+  fi
+
+  local profile_dir="$HOME/.config/wrapweb"
+  if [ -d "$profile_dir" ]; then
+    echo ""
+    read -rp "  Remove app profile data at $profile_dir? [y/N] " _answer
+    if [[ "$_answer" =~ ^[yY]$ ]]; then
+      rm -rf "$profile_dir"
+      ok "Profile data removed"
+    else
+      info "Kept $profile_dir"
+    fi
+  fi
+
+  echo -e "\n${GREEN}${BOLD}Done.${RESET} wrapweb has been uninstalled.\n"
+}
+
 # ── main ──────────────────────────────────────────────────────────────────────
 echo -e "\n${BOLD}wrapweb installer${RESET}"
 echo    "  https://github.com/db0x/wrapweb"
 
-DEST="${1:-$DEFAULT_DEST}"
+MODE=install
+DEST=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --uninstall|-u) MODE=uninstall ;;
+    *)              DEST="$arg" ;;
+  esac
+done
+
+DEST="${DEST:-$DEFAULT_DEST}"
+
+if [ "$MODE" = uninstall ]; then
+  uninstall "$DEST"
+  exit 0
+fi
 
 detect_pm
 
