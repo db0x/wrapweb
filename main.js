@@ -217,6 +217,16 @@ for name in sorted(theme.list_icons(None)):
     if (allowed.test(url)) shell.openExternal(url)
   })
 
+  ipcMain.handle('manager:delete-profile-data', (event, profile) => {
+    const dir = path.join(app.getPath('appData'), 'wrapweb', profile)
+    try {
+      if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err.message }
+    }
+  })
+
   ipcMain.handle('manager:profile-sizes', () => {
     const configs = fs.readdirSync(__dirname)
       .filter(f => /^build\..+\.json$/.test(f))

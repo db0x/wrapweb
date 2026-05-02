@@ -56,7 +56,7 @@ const drawer       = initDrawer(ctx)
 const buildOverlay = initBuildOverlay(ctx)
 const confirm      = initConfirmDialog(ctx)
 const info         = initInfoDialog(ctx)
-const profiles     = initProfilesDialog(ctx)
+const profiles     = initProfilesDialog(ctx, { showConfirm: confirm.showConfirm })
 const iconPicker   = initIconPicker(ctx)
 const about        = initAboutDialog(ctx)
 

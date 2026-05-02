@@ -91,6 +91,7 @@ const translations = {
     profilesTitle:     'Profil-Verzeichnisse',
     profilesTotal:     'Gesamt',
     profilesEmpty:     'Kein Datenverzeichnis vorhanden',
+    profilesDeleteConfirm: '<p>Profildaten von <strong>{name}</strong> wirklich löschen?</p><p>Cookies, Login-Sessions und lokale Daten gehen verloren. Die App bleibt installiert.</p>',
   },
 
   en: {
@@ -183,6 +184,7 @@ const translations = {
     profilesTitle:     'Profile directories',
     profilesTotal:     'Total',
     profilesEmpty:     'No data directory',
+    profilesDeleteConfirm: '<p>Really delete profile data for <strong>{name}</strong>?</p><p>Cookies, login sessions and local data will be lost. The app remains installed.</p>',
   },
 }
 

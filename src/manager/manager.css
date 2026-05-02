@@ -968,9 +968,18 @@ body.dark .dialog-field-toggle {
 
 .profile-size-row {
   display: grid;
-  grid-template-columns: 1fr 2fr auto;
+  grid-template-columns: 1fr 2fr auto auto;
   align-items: center;
   gap: 10px;
+}
+
+.profile-delete-btn {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.profile-size-row:hover .profile-delete-btn {
+  opacity: 1;
 }
 
 .profile-size-name {
