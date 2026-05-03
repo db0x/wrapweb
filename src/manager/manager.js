@@ -6,6 +6,7 @@ import { initInfoDialog }      from './dialogs/info.js'
 import { initProfilesDialog }  from './dialogs/profiles.js'
 import { initIconPicker }      from './dialogs/icon-picker.js'
 import { initCreateDialog }    from './dialogs/create.js'
+import { initEditDialog }      from './dialogs/edit.js'
 import { initAboutDialog }     from './dialogs/about.js'
 import { initCards }           from './cards.js'
 
@@ -40,6 +41,7 @@ const ctx = {
     sun:          s('sun'),
     moon:         s('moon'),
     info:         s('info'),
+    edit:         s('edit'),
     build:        s('build'),
     install:      s('install'),
     delete:       s('delete'),
@@ -59,12 +61,14 @@ const info         = initInfoDialog(ctx)
 const profiles     = initProfilesDialog(ctx, { showConfirm: confirm.showConfirm })
 const iconPicker   = initIconPicker(ctx)
 const about        = initAboutDialog(ctx)
+const editDialog   = initEditDialog(ctx, { iconPicker, showConfirm: confirm.showConfirm })
 
 const cards = initCards(ctx, {
   showConfirm:      confirm.showConfirm,
   openInfoDialog:   info.openInfoDialog,
   showBuildOverlay: buildOverlay.showBuildOverlay,
   hideBuildOverlay: buildOverlay.hideBuildOverlay,
+  openEditDialog:   editDialog.openEditDialog,
 })
 
 const createDialog = initCreateDialog(ctx, {

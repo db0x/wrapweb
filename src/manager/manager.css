@@ -944,6 +944,22 @@ body.dark .dialog-field-toggle {
   background: var(--card-shadow);
 }
 
+/* ── Edit dialog ── */
+
+.edit-dialog {
+  max-height: 90vh;
+}
+
+.edit-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  max-height: calc(90vh - 120px);
+}
+
+.edit-scroll-wrapper .dialog-fields {
+  padding-right: 14px;
+}
+
 /* ── Profiles dialog ── */
 
 .profiles-dialog {

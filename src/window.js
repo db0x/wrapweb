@@ -73,6 +73,13 @@ function createWindow(pkg) {
   })
 
   mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.insertCSS(`
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.7); }
+      ::-webkit-scrollbar-corner { background: transparent; }
+    `)
     mainWindow.webContents.executeJavaScript(`
       window.addEventListener('wheel', (e) => {
         if (e.ctrlKey) window.electronAPI.adjustZoom(e.deltaY < 0 ? 1 : -1);

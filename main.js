@@ -85,7 +85,7 @@ if (profile) {
       'application-default-icon', 'open-menu-symbolic',
       'view-app-grid-symbolic', 'applications-internet-symbolic',
       'avatar-default-symbolic', 'view-filter-symbolic',
-      'github',
+      'document-edit-symbolic', 'github',
     ])
     return {
       sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
@@ -94,7 +94,7 @@ if (profile) {
       appDefault: r['application-default-icon'], menu: r['open-menu-symbolic'],
       filterAll: r['view-app-grid-symbolic'], filterPublic: r['applications-internet-symbolic'],
       filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
-      github: r['github'],
+      edit: r['document-edit-symbolic'], github: r['github'],
     }
   })
 
@@ -182,6 +182,50 @@ if (profile) {
         isPrivate: true,
         iconPath,
         icon:                icon || null,
+        geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
+        userAgent:           userAgent || null,
+        crossOriginIsolation: crossOriginIsolation || false,
+        internalDomains:     internalDomains ? cfg.internalDomains : null,
+      }
+    }
+  })
+
+  ipcMain.handle('manager:update-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation }) => {
+    const filePath = path.join(__dirname, `build.private.${profile}.json`)
+    if (!fs.existsSync(filePath)) return { success: false, error: 'not found' }
+    const cfg = { profile, url }
+    if (name)  cfg.name = name
+    if (icon)  cfg.icon = icon
+    const w = parseInt(width), h = parseInt(height)
+    if (w > 0 || h > 0) {
+      cfg.geometry = {}
+      if (w > 0) cfg.geometry.width  = w
+      if (h > 0) cfg.geometry.height = h
+    }
+    if (userAgent) cfg.userAgent = userAgent
+    if (crossOriginIsolation) cfg.crossOriginIsolation = true
+    if (internalDomains) {
+      const domains = internalDomains.split(',').map(d => d.trim()).filter(Boolean)
+      if (domains.length === 1) cfg.internalDomains = domains[0]
+      else if (domains.length > 1) cfg.internalDomains = domains
+    }
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(cfg, null, 4), 'utf8')
+    } catch (err) {
+      return { success: false, error: err.message }
+    }
+    let iconPath = null
+    if (icon) {
+      const resolved = resolveIconsByGtk([icon])
+      iconPath = resolved[icon] || null
+    }
+    return {
+      success: true,
+      app: {
+        name:                name || null,
+        url,
+        icon:                icon || null,
+        iconPath,
         geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
         userAgent:           userAgent || null,
         crossOriginIsolation: crossOriginIsolation || false,

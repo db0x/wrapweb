@@ -1,5 +1,5 @@
-export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons }, { showConfirm, openInfoDialog, showBuildOverlay, hideBuildOverlay }) {
-  const { info: infoSrc, build: buildSrc, install: installSrc, delete: deleteSrc } = icons
+export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons }, { showConfirm, openInfoDialog, showBuildOverlay, hideBuildOverlay, openEditDialog }) {
+  const { info: infoSrc, build: buildSrc, install: installSrc, delete: deleteSrc, edit: editSrc } = icons
 
   const grid = document.getElementById('grid')
 
@@ -30,7 +30,8 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         ${app.isPrivate ? `<span class="badge private">${i18n.badgeUser}</span>` : ''}
       </div>
       <div class="card-toolbar">
-        ${infoSrc    ? `<button class="toolbar-btn" data-action="info"    title="${i18n.btnInfo}"><img src="${infoSrc}"    alt="${i18n.btnInfo}"></button>`    : ''}
+        ${!app.isPrivate && infoSrc ? `<button class="toolbar-btn" data-action="info" title="${i18n.btnInfo}"><img src="${infoSrc}" alt="${i18n.btnInfo}"></button>` : ''}
+        ${app.isPrivate && editSrc  ? `<button class="toolbar-btn" data-action="edit" title="${i18n.btnEdit}"><img src="${editSrc}" alt="${i18n.btnEdit}"></button>` : ''}
         ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   title="${app.built ? i18n.btnRebuild : i18n.btnBuild}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
         ${installSrc ? `<button class="toolbar-btn" data-action="install" title="${i18n.btnInstall}" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="${i18n.btnInstall}"></button>` : ''}
         ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="${i18n.btnDelete}" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="${i18n.btnDelete}"></button>` : ''}
@@ -43,6 +44,23 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
     })
 
     card.querySelector('[data-action="info"]')?.addEventListener('click', () => openInfoDialog(app, name))
+
+    card.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+      openEditDialog(app, async (updatedApp, { rebuild, install }) => {
+        Object.assign(app, updatedApp)
+        const newName = app.name || toDisplayName(app.profile)
+        const newHostname = (() => { try { return new URL(app.url).hostname } catch { return app.url } })()
+        card.dataset.sortname = newName.toLowerCase()
+        card.querySelector('.name').textContent = newName
+        card.querySelector('.url').textContent  = newHostname
+        iconEl.alt = newName
+        iconEl.src = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
+        if (rebuild) {
+          const built = await doBuild()
+          if (built && install) await doInstall()
+        }
+      })
+    })
 
     card.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
       const { confirmed, deleteConfig } = await showConfirm(
@@ -74,31 +92,13 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
       }
     })
 
-    card.querySelector('[data-action="install"]')?.addEventListener('click', async () => {
-      const btn = card.querySelector('[data-action="install"]')
-      btn.disabled = true
-      btn.classList.add('loading')
-      const result = await window.managerAPI.installApp(app.configLabel)
-      btn.classList.remove('loading')
-      if (result.success) {
-        app.installed = true
-        card.dataset.installed = 'true'
-        iconEl.classList.replace('unavailable', 'launchable')
-        const buildBadge = card.querySelector('[data-role="build-badge"]')
-        const installBadge = document.createElement('span')
-        installBadge.className = 'badge installed'
-        installBadge.dataset.role = 'install-badge'
-        installBadge.textContent = i18n.badgeInstalled
-        buildBadge.insertAdjacentElement('afterend', installBadge)
-      } else {
-        btn.disabled = false
-      }
-    })
+    card.querySelector('[data-action="install"]')?.addEventListener('click', () => doInstall())
 
-    card.querySelector('[data-action="build"]')?.addEventListener('click', async () => {
-      if (isBuildRunning) return
+    async function doBuild() {
+      if (isBuildRunning) return false
       isBuildRunning = true
-      showBuildOverlay(name)
+      const currentName = app.name || toDisplayName(app.profile)
+      showBuildOverlay(currentName)
       const btn   = card.querySelector('[data-action="build"]')
       const badge = card.querySelector('[data-role="build-badge"]')
       btn.disabled = true
@@ -113,12 +113,38 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         badge.textContent = i18n.badgeBuilt
         badge.classList.replace('not-built', 'built')
         btn.title = i18n.btnRebuild
-        const installBtn = card.querySelector('[data-action="install"]')
-        if (installBtn && !app.installed) installBtn.disabled = false
-        const deleteBtn = card.querySelector('[data-action="delete"]')
-        if (deleteBtn) deleteBtn.disabled = false
+        card.querySelector('[data-action="install"]')?.removeAttribute('disabled')
+        card.querySelector('[data-action="delete"]')?.removeAttribute('disabled')
       }
-    })
+      return result.success
+    }
+
+    async function doInstall() {
+      const btn = card.querySelector('[data-action="install"]')
+      if (!btn || btn.disabled) return false
+      btn.disabled = true
+      btn.classList.add('loading')
+      const result = await window.managerAPI.installApp(app.configLabel)
+      btn.classList.remove('loading')
+      if (result.success) {
+        app.installed = true
+        card.dataset.installed = 'true'
+        iconEl.classList.replace('unavailable', 'launchable')
+        const buildBadge = card.querySelector('[data-role="build-badge"]')
+        if (!card.querySelector('[data-role="install-badge"]')) {
+          const installBadge = document.createElement('span')
+          installBadge.className = 'badge installed'
+          installBadge.dataset.role = 'install-badge'
+          installBadge.textContent = i18n.badgeInstalled
+          buildBadge.insertAdjacentElement('afterend', installBadge)
+        }
+      } else {
+        btn.disabled = false
+      }
+      return result.success
+    }
+
+    card.querySelector('[data-action="build"]')?.addEventListener('click', () => doBuild())
 
     return card
   }

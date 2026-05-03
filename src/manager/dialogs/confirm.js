@@ -38,6 +38,8 @@ export function initConfirmDialog({ i18n }) {
       overlay.classList.remove('hidden')
       const ok     = document.getElementById('confirm-ok')
       const cancel = document.getElementById('confirm-cancel')
+      ok.textContent = options.okLabel ?? i18n.confirmDelete
+      ok.className   = options.okClass ?? 'btn-confirm-delete'
       const cleanup = result => {
         overlay.classList.add('hidden')
         ok.replaceWith(ok.cloneNode(true))

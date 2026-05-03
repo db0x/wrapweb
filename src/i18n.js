@@ -24,6 +24,7 @@ const translations = {
 
     // Toolbar buttons
     btnInfo:    'Informationen',
+    btnEdit:    'Bearbeiten',
     btnBuild:   'Bauen',
     btnRebuild: 'Neu bauen',
     btnInstall: 'Installieren',
@@ -51,6 +52,13 @@ const translations = {
     infoProfileDir: 'Profil-Ordner',
     infoNotBuilt:   'App ist nicht gebaut.',
     infoReveal:     'Im Dateimanager öffnen',
+
+    // Edit dialog
+    editTitle:             'App bearbeiten',
+    editSave:              'Speichern',
+    editRebuildPrompt:     '<p>Konfiguration von <strong>{name}</strong> gespeichert.</p><p>AppImage jetzt neu erstellen?</p>',
+    editRebuild:           'Neu bauen',
+    editInstallAfterBuild: 'Nach dem Bauen installieren',
 
     // Create dialog
     createTitle:    'Neue WebApp hinzufügen',
@@ -117,6 +125,7 @@ const translations = {
 
     // Toolbar buttons
     btnInfo:    'Information',
+    btnEdit:    'Edit',
     btnBuild:   'Build',
     btnRebuild: 'Rebuild',
     btnInstall: 'Install',
@@ -144,6 +153,13 @@ const translations = {
     infoProfileDir: 'Profile directory',
     infoNotBuilt:   'App is not built.',
     infoReveal:     'Open in file manager',
+
+    // Edit dialog
+    editTitle:             'Edit app',
+    editSave:              'Save',
+    editRebuildPrompt:     '<p>Configuration of <strong>{name}</strong> saved.</p><p>Rebuild the AppImage now?</p>',
+    editRebuild:           'Rebuild',
+    editInstallAfterBuild: 'Install after build',
 
     // Create dialog
     createTitle:    'Add new WebApp',
