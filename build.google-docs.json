@@ -1,4 +1,6 @@
 {
     "profile": "google-docs",
+    "name": "Google Docs",
+    "icon":"x-office-document",
     "url": "https://docs.google.com"
 }

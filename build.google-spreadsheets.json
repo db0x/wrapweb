@@ -1,4 +1,6 @@
 {
     "profile": "google-spreadsheets",
+    "naeme": "Google Spreadsheets",
+    "icon":"x-office-spreadsheet",
     "url": "https://spreadsheets.google.com"
 }

@@ -123,6 +123,8 @@ install_desktop_entry() {
 
   mkdir -p "$ICON_DIR"
   cp "$dest/assets/wrapweb.svg" "$ICON_DIR/wrapweb.svg"
+  cp "$dest/assets/claude.svg"  "$ICON_DIR/claude.svg"
+  cp "$dest/assets/chatgpt.svg" "$ICON_DIR/chatgpt.svg"
   gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" &>/dev/null || true
 
   mkdir -p "$DESKTOP_DIR"
@@ -149,12 +151,13 @@ uninstall() {
   header "Removing wrapweb …"
 
   local desktop_file="$DESKTOP_DIR/wrapweb-manager.desktop"
-  local icon_file="$ICON_DIR/wrapweb.svg"
 
   [ -f "$desktop_file" ] && { rm -f "$desktop_file"; ok "Desktop entry removed"; } \
                           || info "Desktop entry not found, skipping"
-  [ -f "$icon_file"    ] && { rm -f "$icon_file";    ok "Icon removed"; } \
-                          || info "Icon not found, skipping"
+  for icon in wrapweb claude chatgpt; do
+    local f="$ICON_DIR/${icon}.svg"
+    [ -f "$f" ] && { rm -f "$f"; ok "Icon removed: ${icon}.svg"; } || true
+  done
   update-desktop-database "$DESKTOP_DIR" &>/dev/null || true
   gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" &>/dev/null || true
 

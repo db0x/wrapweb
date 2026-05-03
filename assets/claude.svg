@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Claude</title>
+  <defs>
+    <linearGradient id="claudeBase" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#D8836A"/>
+      <stop offset="1" stop-color="#BC6649"/>
+    </linearGradient>
+    <linearGradient id="topHL" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <path id="petal" d="M 0 -16 C 3 -8 3 -2 0 0 C -3 -2 -3 -8 0 -16 Z"/>
+    <path id="smallPetal" d="M 0 -10 C 2 -5 2 -1 0 0 C -2 -1 -2 -5 0 -10 Z"/>
+  </defs>
+
+  <!-- Soft drop shadow -->
+  <rect x="4" y="5" width="56" height="56" rx="9" fill="#000000" opacity="0.14"/>
+
+  <!-- Main coral base with subtle vertical gradient (Papirus semi-3D feel) -->
+  <rect x="4" y="3" width="56" height="56" rx="9" fill="url(#claudeBase)"/>
+
+  <!-- Inset darker outline for definition -->
+  <rect x="4.4" y="3.4" width="55.2" height="55.2" rx="8.6"
+        fill="none" stroke="#8F4733" stroke-width="0.8" opacity="0.45"/>
+
+  <!-- Top highlight stripe for raised-edge effect -->
+  <rect x="4" y="3" width="56" height="22" rx="9" fill="url(#topHL)"/>
+
+  <!-- Claude spark symbol -->
+  <g transform="translate(32 32)">
+    <g fill="#F5F0E8">
+      <use href="#petal"/>
+      <use href="#petal" transform="rotate(90)"/>
+      <use href="#petal" transform="rotate(180)"/>
+      <use href="#petal" transform="rotate(270)"/>
+    </g>
+    <g fill="#F5F0E8" opacity="0.92">
+      <use href="#smallPetal" transform="rotate(45)"/>
+      <use href="#smallPetal" transform="rotate(135)"/>
+      <use href="#smallPetal" transform="rotate(225)"/>
+      <use href="#smallPetal" transform="rotate(315)"/>
+    </g>
+  </g>
+</svg>
