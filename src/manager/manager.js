@@ -9,6 +9,7 @@ import { initCreateDialog }    from './dialogs/create.js'
 import { initEditDialog }      from './dialogs/edit.js'
 import { initAboutDialog }     from './dialogs/about.js'
 import { initCards }           from './cards.js'
+import { initTooltip }         from './tooltip.js'
 
 function toDisplayName(profile) {
   return profile
@@ -90,3 +91,4 @@ document.getElementById('menu-about').addEventListener('click', () => {
 
 OverlayScrollbars(document.getElementById('grid-wrapper'), { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })
 drawer.applyInitialFilter()
+initTooltip()

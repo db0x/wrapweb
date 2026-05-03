@@ -1,6 +1,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
 :root {
+  --tooltip-bg: rgba(28, 28, 28, 0.93);
+  --tooltip-fg: #f0f0f0;
   --bg:          #f0f0f0;
   --fg:          #2d2d2d;
   --card-bg:     white;
@@ -21,6 +23,8 @@
 }
 
 body.dark {
+  --tooltip-bg: rgba(68, 68, 68, 0.96);
+  --tooltip-fg: #f0f0f0;
   --bg:          #1e1e1e;
   --fg:          #e0e0e0;
   --card-bg:     #2c2c2c;
@@ -494,10 +498,15 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   align-items: center;
   justify-content: center;
   z-index: 200;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
 .confirm-overlay.hidden {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .confirm-dialog {
@@ -511,6 +520,12 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transform: scale(1);
+  transition: transform 0.15s ease;
+}
+
+.confirm-overlay.hidden .confirm-dialog {
+  transform: scale(0.96);
 }
 
 .confirm-dialog p {
@@ -563,10 +578,15 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
 .dialog-overlay.hidden {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .dialog {
@@ -580,6 +600,12 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transform: scale(1);
+  transition: transform 0.15s ease;
+}
+
+.dialog-overlay.hidden .dialog {
+  transform: scale(0.96);
 }
 
 .dialog-header {
@@ -741,6 +767,102 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
 .btn-save:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ── Domain list widget ── */
+
+.domain-field-wrapper {
+  background: var(--badge-unbuilt-bg);
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.domain-field-wrapper:focus-within {
+  border-color: #3584e4;
+}
+
+.domain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.domain-list:not(:empty) {
+  border-bottom: 1px solid var(--card-shadow);
+}
+
+.domain-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.domain-item:hover {
+  background: var(--card-shadow);
+}
+
+.domain-item span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.domain-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--card-url);
+  font-size: 15px;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 3px;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.domain-remove-btn:hover {
+  opacity: 1;
+  color: #e05555;
+}
+
+.domain-add-row {
+  display: flex;
+  align-items: center;
+}
+
+.domain-add-row input {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: auto;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+  color: var(--card-fg);
+}
+
+.domain-add-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--card-url);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 12px 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.domain-add-btn:hover {
+  color: #3584e4;
 }
 
 .dialog-section-divider {
@@ -973,6 +1095,30 @@ body.dark .dialog-field-toggle {
   flex: 1;
   min-height: 0;
   max-height: 60vh;
+}
+
+/* ── Custom tooltip ── */
+
+.app-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 5px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease, visibility 0.1s ease;
+}
+
+.app-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 .profiles-list {

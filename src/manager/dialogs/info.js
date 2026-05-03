@@ -36,7 +36,7 @@ export function initInfoDialog({ i18n, icons }) {
         <label>${label}</label>
         <div class="dialog-field-path">
           <div class="value">${value}</div>
-          <button class="btn-reveal" data-reveal="${value}" title="${i18n.infoReveal}">…</button>
+          <button class="btn-reveal" data-reveal="${value}" data-tooltip="${i18n.infoReveal}">…</button>
         </div>
       </div>`
 

@@ -30,11 +30,11 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         ${app.isPrivate ? `<span class="badge private">${i18n.badgeUser}</span>` : ''}
       </div>
       <div class="card-toolbar">
-        ${!app.isPrivate && infoSrc ? `<button class="toolbar-btn" data-action="info" title="${i18n.btnInfo}"><img src="${infoSrc}" alt="${i18n.btnInfo}"></button>` : ''}
-        ${app.isPrivate && editSrc  ? `<button class="toolbar-btn" data-action="edit" title="${i18n.btnEdit}"><img src="${editSrc}" alt="${i18n.btnEdit}"></button>` : ''}
-        ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   title="${app.built ? i18n.btnRebuild : i18n.btnBuild}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
-        ${installSrc ? `<button class="toolbar-btn" data-action="install" title="${i18n.btnInstall}" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="${i18n.btnInstall}"></button>` : ''}
-        ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" title="${i18n.btnDelete}" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="${i18n.btnDelete}"></button>` : ''}
+        ${!app.isPrivate && infoSrc ? `<button class="toolbar-btn" data-action="info" data-tooltip="${i18n.btnInfo}"><img src="${infoSrc}" alt="${i18n.btnInfo}"></button>` : ''}
+        ${app.isPrivate && editSrc  ? `<button class="toolbar-btn" data-action="edit" data-tooltip="${i18n.btnEdit}"><img src="${editSrc}" alt="${i18n.btnEdit}"></button>` : ''}
+        ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   data-tooltip="${app.built ? i18n.btnRebuild : i18n.btnBuild}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
+        ${installSrc ? `<button class="toolbar-btn" data-action="install" data-tooltip="${tr('btnInstallTooltip', { name })}" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="${i18n.btnInstall}"></button>` : ''}
+        ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" data-tooltip="${i18n.btnDelete}" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="${i18n.btnDelete}"></button>` : ''}
       </div>
     `
 
@@ -63,15 +63,18 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
     })
 
     card.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
-      const { confirmed, deleteConfig } = await showConfirm(
+      const toggles = []
+      if (app.isPrivate) toggles.push({ key: 'deleteConfig',      label: i18n.confirmDeleteConfig })
+      toggles.push(      { key: 'deleteProfileData', label: i18n.confirmDeleteProfileData, defaultOn: false })
+      const { confirmed, deleteConfig, deleteProfileData } = await showConfirm(
         tr('confirmDeleteMsg', { name }),
-        app.isPrivate ? { toggle: { label: i18n.confirmDeleteConfig } } : {}
+        { toggles }
       )
       if (!confirmed) return
       const btn = card.querySelector('[data-action="delete"]')
       btn.disabled = true
       btn.classList.add('loading')
-      const result = await window.managerAPI.deleteApp({ profile: app.profile, configLabel: app.configLabel, deleteConfig })
+      const result = await window.managerAPI.deleteApp({ profile: app.profile, configLabel: app.configLabel, deleteConfig, deleteProfileData })
       btn.classList.remove('loading')
       if (result.success) {
         if (deleteConfig) {
@@ -82,7 +85,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
           card.dataset.installed = 'false'
           card.querySelector('[data-role="build-badge"]').textContent = i18n.badgeNotBuilt
           card.querySelector('[data-role="build-badge"]').classList.replace('built', 'not-built')
-          card.querySelector('[data-action="build"]').title = i18n.btnBuild
+          card.querySelector('[data-action="build"]').dataset.tooltip = i18n.btnBuild
           card.querySelector('[data-action="install"]')?.setAttribute('disabled', '')
           card.querySelector('[data-role="install-badge"]')?.remove()
           iconEl.classList.replace('launchable', 'unavailable')
@@ -112,7 +115,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         app.built = true
         badge.textContent = i18n.badgeBuilt
         badge.classList.replace('not-built', 'built')
-        btn.title = i18n.btnRebuild
+        btn.dataset.tooltip = i18n.btnRebuild
         card.querySelector('[data-action="install"]')?.removeAttribute('disabled')
         card.querySelector('[data-action="delete"]')?.removeAttribute('disabled')
       }

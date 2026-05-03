@@ -106,14 +106,16 @@ if (profile) {
     return { success: true }
   })
 
-  ipcMain.handle('manager:delete', (event, { profile, configLabel, deleteConfig }) => {
+  ipcMain.handle('manager:delete', (event, { profile, configLabel, deleteConfig, deleteProfileData }) => {
     const desktopFile  = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${profile}.desktop`)
     const appImageFile = path.join(__dirname, 'dist', `wrapweb.${profile}`)
     const configFile   = configLabel ? path.join(__dirname, `build.${configLabel}.json`) : null
+    const profileDir   = path.join(app.getPath('appData'), 'wrapweb', profile)
     try {
-      if (fs.existsSync(desktopFile))                   fs.rmSync(desktopFile)
-      if (fs.existsSync(appImageFile))                  fs.rmSync(appImageFile)
-      if (deleteConfig && configFile && fs.existsSync(configFile)) fs.rmSync(configFile)
+      if (fs.existsSync(desktopFile))                                    fs.rmSync(desktopFile)
+      if (fs.existsSync(appImageFile))                                   fs.rmSync(appImageFile)
+      if (deleteConfig     && configFile && fs.existsSync(configFile))   fs.rmSync(configFile)
+      if (deleteProfileData && fs.existsSync(profileDir))                fs.rmSync(profileDir, { recursive: true })
       return { success: true }
     } catch (err) {
       return { success: false, error: err.message }

@@ -1,3 +1,5 @@
+import { initDomainList } from '../domain-list.js'
+
 export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPicker, applyVisibility, createCard, insertCard }) {
   const overlay = document.createElement('div')
   overlay.className = 'dialog-overlay hidden'
@@ -54,7 +56,13 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
         </div>
         <div class="dialog-field">
           <label>${i18n.createDomains}</label>
-          <input type="text" id="create-domains" placeholder="accounts.google.com, github.com" autocomplete="off" spellcheck="false">
+          <div class="domain-field-wrapper">
+            <ul class="domain-list" id="create-domain-list"></ul>
+            <div class="domain-add-row">
+              <input type="text" id="create-domain-input" placeholder="accounts.google.com" autocomplete="off" spellcheck="false">
+              <button type="button" id="create-domain-add" class="domain-add-btn">+</button>
+            </div>
+          </div>
         </div>
         <button type="button" class="dialog-field-toggle" id="create-coi">
           <span class="toggle-switch"></span>
@@ -76,6 +84,8 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     opt.textContent = label
     uaSelect.appendChild(opt)
   }
+
+  const domainList = initDomainList('create-domain-list', 'create-domain-input', 'create-domain-add', () => {})
 
   let profileValid = false
   let urlValid     = false
@@ -230,7 +240,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     document.getElementById('create-width').value = ''
     document.getElementById('create-height').value = ''
     document.getElementById('create-useragent').value = ''
-    document.getElementById('create-domains').value = ''
+    domainList.reset()
     document.getElementById('create-coi').classList.remove('active')
     profileValid = false
     urlValid     = false
@@ -263,7 +273,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     const width               = document.getElementById('create-width').value.trim()
     const height              = document.getElementById('create-height').value.trim()
     const userAgent           = document.getElementById('create-useragent').value.trim()
-    const internalDomains     = document.getElementById('create-domains').value.trim()
+    const internalDomains     = domainList.get().join(', ')
     const crossOriginIsolation = document.getElementById('create-coi').classList.contains('active')
     saveBtn.disabled = true
     const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation })

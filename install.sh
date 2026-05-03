@@ -42,6 +42,27 @@ pkg_hint() {
   esac
 }
 
+# ── required: git ────────────────────────────────────────────────────────────
+check_git() {
+  if command -v git &>/dev/null; then ok "git"; return; fi
+
+  warn "git not found."
+  echo ""
+  read -rp "  Install git now? [y/N] " _answer
+  if [[ "$_answer" =~ ^[yY]$ ]]; then
+    case "$PM" in
+      apt)    sudo apt-get install -y git ;;
+      dnf)    sudo dnf install -y git ;;
+      pacman) sudo pacman -S --noconfirm git ;;
+      zypper) sudo zypper install -y git ;;
+      *)      die "Cannot install git automatically. Please install it manually and re-run." ;;
+    esac
+    ok "git installed"
+  else
+    die "git is required. Install it and re-run."
+  fi
+}
+
 # ── required: node ≥ 18 ──────────────────────────────────────────────────────
 install_node_via_nvm() {
   info "Installing nvm + Node.js LTS …"
@@ -214,6 +235,7 @@ fi
 detect_pm
 
 header "Checking requirements …"
+check_git
 check_node
 check_optional
 

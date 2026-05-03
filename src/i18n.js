@@ -23,18 +23,20 @@ const translations = {
     badgeUser:      'Benutzer',
 
     // Toolbar buttons
-    btnInfo:    'Informationen',
-    btnEdit:    'Bearbeiten',
-    btnBuild:   'Bauen',
-    btnRebuild: 'Neu bauen',
-    btnInstall: 'Installieren',
-    btnDelete:  'Löschen',
+    btnInfo:           'Informationen',
+    btnEdit:           'Bearbeiten',
+    btnBuild:          'Bauen',
+    btnRebuild:        'AppImage neu erstellen',
+    btnInstall:        'Installieren',
+    btnInstallTooltip: '{name} als Applikation im System installieren',
+    btnDelete:         'Löschen',
 
     // Confirm dialog
     confirmCancel:       'Abbrechen',
     confirmDelete:       'Löschen',
     confirmDeleteMsg:    '<p>App-Image und Desktop-Eintrag für <strong>{name}</strong> wirklich löschen?</p><p>Das Profil-Verzeichnis bleibt erhalten.</p>',
-    confirmDeleteConfig: 'Konfiguration löschen',
+    confirmDeleteConfig:      'Konfiguration löschen',
+    confirmDeleteProfileData: 'Profil-Daten löschen (Cookies, Sessions, lokale Daten)',
 
     // Build overlay
     buildingApp: 'Baut {name} …',
@@ -70,7 +72,7 @@ const translations = {
     createWidth:    'Breite (px)',
     createHeight:   'Höhe (px)',
     createUAgent:   'User-Agent',
-    createDomains:  'Interne Domains (kommagetrennt)',
+    createDomains:  'Interne Domains',
     createCoi:      'Cross-Origin Isolation (SharedArrayBuffer / WASM)',
     createCancel:   'Abbrechen',
     createSave:     'Speichern',
@@ -124,18 +126,20 @@ const translations = {
     badgeUser:      'User',
 
     // Toolbar buttons
-    btnInfo:    'Information',
-    btnEdit:    'Edit',
-    btnBuild:   'Build',
-    btnRebuild: 'Rebuild',
-    btnInstall: 'Install',
-    btnDelete:  'Delete',
+    btnInfo:           'Information',
+    btnEdit:           'Edit',
+    btnBuild:          'Build',
+    btnRebuild:        'Rebuild AppImage',
+    btnInstall:        'Install',
+    btnInstallTooltip: 'Install {name} as system application',
+    btnDelete:         'Delete',
 
     // Confirm dialog
     confirmCancel:       'Cancel',
     confirmDelete:       'Delete',
     confirmDeleteMsg:    '<p>Really delete AppImage and desktop entry for <strong>{name}</strong>?</p><p>The profile directory will be kept.</p>',
-    confirmDeleteConfig: 'Delete configuration',
+    confirmDeleteConfig:      'Delete configuration',
+    confirmDeleteProfileData: 'Delete profile data (cookies, sessions, local data)',
 
     // Build overlay
     buildingApp: 'Building {name} …',
@@ -171,7 +175,7 @@ const translations = {
     createWidth:    'Width (px)',
     createHeight:   'Height (px)',
     createUAgent:   'User-Agent',
-    createDomains:  'Internal domains (comma-separated)',
+    createDomains:  'Internal domains',
     createCoi:      'Cross-Origin Isolation (SharedArrayBuffer / WASM)',
     createCancel:   'Cancel',
     createSave:     'Save',

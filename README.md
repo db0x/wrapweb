@@ -63,7 +63,7 @@ Click the **+** card at the end of the grid to open the **Create App** dialog. A
 | Icon | Opens a searchable icon picker showing all icons available in the system's GNOME icon theme |
 | Width / Height | Initial window size (optional) |
 | User-Agent | Choose from presets or leave empty for the default Electron UA |
-| Internal domains | Comma-separated list of extra domains that open inside the app window (e.g. OAuth redirects) |
+| Internal domains | Extra domains that open inside the app window (e.g. OAuth redirects) — added one by one via the list widget |
 | Cross-Origin Isolation | Enables `SharedArrayBuffer` — required for multi-threaded WASM |
 
 New apps are saved as `build.private.<profile>.json` and are gitignored automatically.
@@ -126,6 +126,7 @@ npm start
 
 ## Requirements
 
+- **git** — required by `install.sh` to clone and update the repository
 - **Node.js ≥ 18**
 - **Linux** (GNOME/Wayland recommended — see note above)
 - **FUSE** — required to run AppImages (`sudo apt install fuse` or `fuse3`)

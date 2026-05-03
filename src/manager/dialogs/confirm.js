@@ -4,12 +4,7 @@ export function initConfirmDialog({ i18n }) {
   overlay.innerHTML = `
     <div class="confirm-dialog">
       <div id="confirm-message"></div>
-      <div id="confirm-toggle-row" style="display:none">
-        <button type="button" class="dialog-field-toggle" id="confirm-toggle-btn">
-          <span class="toggle-switch"></span>
-          <span id="confirm-toggle-label"></span>
-        </button>
-      </div>
+      <div id="confirm-toggles"></div>
       <div class="confirm-actions">
         <button class="btn-cancel" id="confirm-cancel">${i18n.confirmCancel}</button>
         <button class="btn-confirm-delete" id="confirm-ok">${i18n.confirmDelete}</button>
@@ -18,34 +13,43 @@ export function initConfirmDialog({ i18n }) {
   `
   document.body.appendChild(overlay)
 
-  document.getElementById('confirm-toggle-btn').addEventListener('click', e =>
-    e.currentTarget.classList.toggle('active')
-  )
-
   function showConfirm(message, options = {}) {
     return new Promise(resolve => {
       document.getElementById('confirm-message').innerHTML = message
-      const toggleRow = document.getElementById('confirm-toggle-row')
-      const toggleBtn = document.getElementById('confirm-toggle-btn')
-      if (options.toggle) {
-        document.getElementById('confirm-toggle-label').textContent = options.toggle.label
-        toggleBtn.classList.toggle('active', options.toggle.defaultOn ?? false)
-        toggleRow.style.display = ''
-      } else {
-        toggleRow.style.display = 'none'
-        toggleBtn.classList.remove('active')
+
+      const toggleDefs = options.toggles
+        ?? (options.toggle ? [{ key: 'deleteConfig', ...options.toggle }] : [])
+
+      const container = document.getElementById('confirm-toggles')
+      container.innerHTML = ''
+      for (const def of toggleDefs) {
+        const btn = document.createElement('button')
+        btn.type = 'button'
+        btn.className = 'dialog-field-toggle' + (def.defaultOn ? ' active' : '')
+        btn.dataset.key = def.key
+        btn.innerHTML = `<span class="toggle-switch"></span><span>${def.label}</span>`
+        btn.addEventListener('click', e => e.currentTarget.classList.toggle('active'))
+        container.appendChild(btn)
       }
-      overlay.classList.remove('hidden')
+
       const ok     = document.getElementById('confirm-ok')
       const cancel = document.getElementById('confirm-cancel')
       ok.textContent = options.okLabel ?? i18n.confirmDelete
       ok.className   = options.okClass ?? 'btn-confirm-delete'
-      const cleanup = result => {
+
+      overlay.classList.remove('hidden')
+
+      const cleanup = confirmed => {
         overlay.classList.add('hidden')
         ok.replaceWith(ok.cloneNode(true))
         cancel.replaceWith(cancel.cloneNode(true))
-        resolve({ confirmed: result, deleteConfig: toggleBtn.classList.contains('active') })
+        const result = { confirmed }
+        for (const btn of container.querySelectorAll('[data-key]'))
+          result[btn.dataset.key] = btn.classList.contains('active')
+        if (!('deleteConfig' in result)) result.deleteConfig = false
+        resolve(result)
       }
+
       document.getElementById('confirm-ok').addEventListener('click',    () => cleanup(true))
       document.getElementById('confirm-cancel').addEventListener('click', () => cleanup(false))
       overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(false) }, { once: true })

@@ -66,12 +66,12 @@ export function initProfilesDialog({ i18n, tr, apps, appDefaultSrc, icons }, { s
       row.className = 'profile-size-row'
       row.dataset.profile = p.profile
       row.innerHTML = `
-        <div class="profile-size-name">${iconHtml}<span>${label}</span></div>
+        <div class="profile-size-name">${iconHtml}<span data-tooltip="${label}">${label}</span></div>
         <div class="profile-size-bar-wrap">
           <div class="profile-size-bar" style="width:${pct}%"></div>
         </div>
         <div class="profile-size-value">${fmtBytes(p.bytes)}</div>
-        <button class="profile-delete-btn toolbar-btn danger" title="${i18n.btnDelete}">
+        <button class="profile-delete-btn toolbar-btn danger" data-tooltip="${i18n.btnDelete}">
           ${deleteSrc ? `<img src="${deleteSrc}" alt="${i18n.btnDelete}">` : '✕'}
         </button>`
 

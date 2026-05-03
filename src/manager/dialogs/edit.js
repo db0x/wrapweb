@@ -1,4 +1,5 @@
 import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
+import { initDomainList }    from '../domain-list.js'
 
 export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPicker, showConfirm }) {
   const overlay = document.createElement('div')
@@ -56,7 +57,13 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
         </div>
         <div class="dialog-field">
           <label>${i18n.createDomains}</label>
-          <input type="text" id="edit-domains" placeholder="accounts.google.com, github.com" autocomplete="off" spellcheck="false">
+          <div class="domain-field-wrapper">
+            <ul class="domain-list" id="edit-domain-list"></ul>
+            <div class="domain-add-row">
+              <input type="text" id="edit-domain-input" placeholder="accounts.google.com" autocomplete="off" spellcheck="false">
+              <button type="button" id="edit-domain-add" class="domain-add-btn">+</button>
+            </div>
+          </div>
         </div>
         <button type="button" class="dialog-field-toggle" id="edit-coi">
           <span class="toggle-switch"></span>
@@ -81,6 +88,8 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
     opt.textContent = label
     uaSelect.appendChild(opt)
   }
+
+  const domainList    = initDomainList('edit-domain-list', 'edit-domain-input', 'edit-domain-add', () => updateSaveBtn())
 
   let scrollbarInited  = false
   let urlValid         = true
@@ -107,7 +116,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
       width:              document.getElementById('edit-width').value.trim(),
       height:             document.getElementById('edit-height').value.trim(),
       userAgent:          uaSelect.value.trim(),
-      internalDomains:    document.getElementById('edit-domains').value.trim(),
+      internalDomains:    domainList.get().join(','),
       crossOriginIsolation: document.getElementById('edit-coi').classList.contains('active'),
     }
   }
@@ -176,7 +185,6 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
     validateDimension(e.target, document.getElementById('edit-height-hint'), 300, 4320, v => { heightValid = v })
   )
   uaSelect.addEventListener('change', updateSaveBtn)
-  document.getElementById('edit-domains').addEventListener('input', updateSaveBtn)
   document.getElementById('edit-coi').addEventListener('click', e => {
     e.currentTarget.classList.toggle('active')
     updateSaveBtn()
@@ -209,7 +217,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
         <label>${label}</label>
         <div class="dialog-field-path">
           <div class="value">${value}</div>
-          <button class="btn-reveal" data-reveal="${value}" title="${i18n.infoReveal}">…</button>
+          <button class="btn-reveal" data-reveal="${value}" data-tooltip="${i18n.infoReveal}">…</button>
         </div>
       </div>`
 
@@ -266,11 +274,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
     heightValid = true
 
     uaSelect.value = app.userAgent || ''
-
-    const domains = Array.isArray(app.internalDomains)
-      ? app.internalDomains.join(', ')
-      : (app.internalDomains || '')
-    document.getElementById('edit-domains').value = domains
+    domainList.set(app.internalDomains || [])
 
     const coiBtn = document.getElementById('edit-coi')
     if (app.crossOriginIsolation) coiBtn.classList.add('active')
