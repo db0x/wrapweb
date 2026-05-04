@@ -18,8 +18,14 @@ const test = base.extend({
 
     const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrapweb-test-'))
     const app = await electron.launch({
-      args:  [ROOT, '--no-sandbox', `--user-data-dir=${userDataDir}`],
-      env:   { ...process.env, WRAPWEB_TEST: '1' },
+      args: [
+        ROOT,
+        '--no-sandbox',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        `--user-data-dir=${userDataDir}`,
+      ],
+      env: { ...process.env, WRAPWEB_TEST: '1' },
     })
     await use(app)
     await app.close()
@@ -32,7 +38,7 @@ const test = base.extend({
   // Manager window, ready after IPC data is loaded
   managerPage: async ({ electronApp }, use) => {
     const page = await electronApp.firstWindow()
-    await page.waitForSelector('.card-add', { timeout: 15_000 })
+    await page.waitForSelector('.card-add', { timeout: 30_000 })
     await use(page)
   },
 })
