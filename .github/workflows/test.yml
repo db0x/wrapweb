@@ -39,7 +39,7 @@ jobs:
 
       - name: Start virtual display and D-Bus session
         run: |
-          Xvfb :99 -screen 0 1280x1024x24 &
+          Xvfb :99 -screen 0 1280x1024x24 -extension MIT-SHM &
           sleep 1
           eval $(dbus-launch --sh-syntax)
           echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> $GITHUB_ENV

@@ -23,6 +23,7 @@ const test = base.extend({
         '--no-sandbox',
         '--disable-gpu',
         '--disable-dev-shm-usage',
+        '--disable-features=ShmImageTransportFactory',
         `--user-data-dir=${userDataDir}`,
       ],
       env: { ...process.env, WRAPWEB_TEST: '1' },
