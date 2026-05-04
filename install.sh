@@ -125,6 +125,7 @@ install_or_update() {
 
   if [ -d "$dest/.git" ]; then
     info "Updating existing installation at $dest …"
+    git -C "$dest" checkout -- package-lock.json 2>/dev/null || true
     git -C "$dest" pull --ff-only
     ok "Repository updated"
   else
