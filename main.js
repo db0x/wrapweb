@@ -80,6 +80,7 @@ if (profile) {
   ipcMain.handle('manager:ua-presets', () => pkg.uaPresets ?? [])
 
   ipcMain.handle('manager:ui-icons', () => {
+    if (process.env.WRAPWEB_TEST) return {}
     const r = resolveIconsByGtk([
       'weather-clear-symbolic', 'weather-clear-night-symbolic',
       'dialog-information-symbolic', 'system-run-symbolic',
