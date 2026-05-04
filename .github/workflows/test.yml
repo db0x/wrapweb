@@ -33,16 +33,20 @@ jobs:
             libxtst6 \
             xauth \
             xvfb \
+            dbus-x11 \
             libgbm1 \
             libasound2t64
 
-      - name: Start virtual display
+      - name: Start virtual display and D-Bus session
         run: |
           Xvfb :99 -screen 0 1280x1024x24 &
-          sleep 2
+          sleep 1
+          eval $(dbus-launch --sh-syntax)
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> $GITHUB_ENV
 
       - name: Run tests
         timeout-minutes: 5
         env:
           DISPLAY: ':99'
+          LIBGL_ALWAYS_SOFTWARE: '1'
         run: npm test
