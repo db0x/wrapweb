@@ -36,5 +36,13 @@ jobs:
             libgbm1 \
             libasound2t64
 
+      - name: Start virtual display
+        run: |
+          Xvfb :99 -screen 0 1280x1024x24 &
+          sleep 2
+
       - name: Run tests
-        run: xvfb-run --auto-servernum npm test
+        timeout-minutes: 5
+        env:
+          DISPLAY: ':99'
+        run: npm test
