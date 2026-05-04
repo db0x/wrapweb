@@ -7,12 +7,14 @@ const pkg = require(app.getAppPath() + '/package.json')
 
 Menu.setApplicationMenu(null)
 
-app.commandLine.appendSwitch('ozone-platform-hint', 'wayland')
-app.commandLine.appendSwitch('use-gl',              'angle')
-app.commandLine.appendSwitch('disable-vulkan')
-app.commandLine.appendSwitch('disable-features',   'Vulkan,UseSkiaRenderer')
-app.commandLine.appendSwitch('enable-features',    'WebRTCPipeWireCapturer')
-app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer')
+if (!process.env.WRAPWEB_TEST) {
+  app.commandLine.appendSwitch('ozone-platform-hint', 'wayland')
+  app.commandLine.appendSwitch('use-gl',              'angle')
+  app.commandLine.appendSwitch('disable-vulkan')
+  app.commandLine.appendSwitch('disable-features',   'Vulkan,UseSkiaRenderer')
+  app.commandLine.appendSwitch('enable-features',    'WebRTCPipeWireCapturer')
+  app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer')
+}
 
 const { profile } = pkg
 

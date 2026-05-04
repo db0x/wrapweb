@@ -3,15 +3,20 @@
   "description": "PWA Wrapper",
   "keywords": [],
   "main": "./main.js",
-  "version": "0.9.6",
-  "author": { "name": "db0x", "url": "https://github.com/db0x" },
+  "version": "0.9.7",
+  "author": {
+    "name": "db0x",
+    "url": "https://github.com/db0x"
+  },
   "license": "MIT",
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
-    "install-app": "node scripts/install.js"
+    "install-app": "node scripts/install.js",
+    "test": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "electron": "41.3.0",
     "electron-builder": "^26.4.0"
   },
@@ -19,11 +24,29 @@
     "overlayscrollbars": "^2.15.1"
   },
   "uaPresets": [
-    { "label": "Chrome 142 · Linux x86_64",  "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" },
-    { "label": "Chrome 142 · Windows 10/11", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" },
-    { "label": "Chrome 142 · macOS",         "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" },
-    { "label": "Firefox 138 · Linux x86_64", "value": "Mozilla/5.0 (X11; Linux x86_64; rv:138.0) Gecko/20100101 Firefox/138.0" },
-    { "label": "Firefox 138 · Windows 10/11","value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0" },
-    { "label": "Safari 18 · macOS",          "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15" }
+    {
+      "label": "Chrome 142 · Linux x86_64",
+      "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+    },
+    {
+      "label": "Chrome 142 · Windows 10/11",
+      "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+    },
+    {
+      "label": "Chrome 142 · macOS",
+      "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+    },
+    {
+      "label": "Firefox 138 · Linux x86_64",
+      "value": "Mozilla/5.0 (X11; Linux x86_64; rv:138.0) Gecko/20100101 Firefox/138.0"
+    },
+    {
+      "label": "Firefox 138 · Windows 10/11",
+      "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:138.0) Gecko/20100101 Firefox/138.0"
+    },
+    {
+      "label": "Safari 18 · macOS",
+      "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15"
+    }
   ]
 }
