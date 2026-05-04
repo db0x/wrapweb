@@ -6,7 +6,6 @@ export function initDrawer({ i18n, icons }) {
   const menuBtn  = document.getElementById('menu-btn')
   const menuIcon = document.getElementById('menu-icon')
   if (menuSrc) menuIcon.src = menuSrc
-  else menuBtn.style.display = 'none'
 
   const backdrop = document.createElement('div')
   backdrop.className = 'drawer-backdrop'

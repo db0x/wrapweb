@@ -30,11 +30,11 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         ${app.isPrivate ? `<span class="badge private">${i18n.badgeUser}</span>` : ''}
       </div>
       <div class="card-toolbar">
-        ${!app.isPrivate && infoSrc ? `<button class="toolbar-btn" data-action="info" data-tooltip="${i18n.btnInfo}"><img src="${infoSrc}" alt="${i18n.btnInfo}"></button>` : ''}
-        ${app.isPrivate && editSrc  ? `<button class="toolbar-btn" data-action="edit" data-tooltip="${i18n.btnEdit}"><img src="${editSrc}" alt="${i18n.btnEdit}"></button>` : ''}
-        ${buildSrc   ? `<button class="toolbar-btn" data-action="build"   data-tooltip="${app.built ? i18n.btnRebuild : i18n.btnBuild}"><img src="${buildSrc}"   alt="Build"></button>`   : ''}
-        ${installSrc ? `<button class="toolbar-btn" data-action="install" data-tooltip="${tr('btnInstallTooltip', { name })}" ${app.built && !app.installed ? '' : 'disabled'}><img src="${installSrc}" alt="${i18n.btnInstall}"></button>` : ''}
-        ${deleteSrc  ? `<button class="toolbar-btn danger" data-action="delete" data-tooltip="${i18n.btnDelete}" ${app.built ? '' : 'disabled'}><img src="${deleteSrc}"  alt="${i18n.btnDelete}"></button>` : ''}
+        ${!app.isPrivate ? `<button class="toolbar-btn" data-action="info"    data-tooltip="${i18n.btnInfo}">${infoSrc    ? `<img src="${infoSrc}"    alt="${i18n.btnInfo}">` : ''}</button>` : ''}
+        ${app.isPrivate  ? `<button class="toolbar-btn" data-action="edit"    data-tooltip="${i18n.btnEdit}">${editSrc    ? `<img src="${editSrc}"    alt="${i18n.btnEdit}">` : ''}</button>` : ''}
+        <button class="toolbar-btn" data-action="build"   data-tooltip="${app.built ? i18n.btnRebuild : i18n.btnBuild}">${buildSrc   ? `<img src="${buildSrc}"   alt="Build">` : ''}</button>
+        <button class="toolbar-btn" data-action="install" data-tooltip="${tr('btnInstallTooltip', { name })}" ${app.built && !app.installed ? '' : 'disabled'}>${installSrc ? `<img src="${installSrc}" alt="${i18n.btnInstall}">` : ''}</button>
+        <button class="toolbar-btn danger" data-action="delete" data-tooltip="${i18n.btnDelete}" ${app.built ? '' : 'disabled'}>${deleteSrc  ? `<img src="${deleteSrc}"  alt="${i18n.btnDelete}">` : ''}</button>
       </div>
     `
 
