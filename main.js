@@ -24,15 +24,54 @@ if (profile) {
   app.commandLine.appendSwitch('wm-class', `wrapweb-${profile}`)
   app.setPath('userData', path.join(app.getPath('appData'), 'wrapweb', profile))
 
+  function resolveUrl(raw) {
+    if (!raw) return null
+    if (raw.startsWith('mailto:') && pkg.mailtoTemplate) {
+      try {
+        const m = new URL(raw)
+        const map = pkg.mailtoParamMap || {}
+        const params = new URLSearchParams()
+        if (m.pathname) params.set('to', decodeURIComponent(m.pathname))
+        for (const [k, v] of m.searchParams) params.set(map[k] ?? k, v)
+        const sep = pkg.mailtoTemplate.includes('?') ? '&' : '?'
+        return `${pkg.mailtoTemplate}${sep}${params.toString()}`
+      } catch { return null }
+    }
+    return raw
+  }
+
+  const urlArg = resolveUrl(process.argv.find(a => /^(https?:|mailto:)/.test(a)))
+
+  if (pkg.singleInstance) {
+    const gotLock = app.requestSingleInstanceLock()
+    if (!gotLock) { app.quit(); return }
+    app.on('second-instance', (event, argv) => {
+      const url = resolveUrl(argv.find(a => /^(https?:|mailto:)/.test(a)))
+      const win = BrowserWindow.getAllWindows()[0]
+      if (win) {
+        if (url) win.webContents.loadURL(url)
+        if (win.isMinimized()) win.restore()
+        win.focus()
+      }
+    })
+  }
+
   const { createWindow } = require('./src/window')
   app.whenReady().then(() => {
-    createWindow(pkg)
+    createWindow(urlArg ? { ...pkg, url: urlArg } : pkg)
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow(pkg)
     })
   })
 } else {
   ipcMain.handle('manager:apps', () => {
+    const defaultMailDesktop = (() => {
+      try {
+        const r = spawnSync('xdg-mime', ['query', 'default', 'x-scheme-handler/mailto'], { encoding: 'utf8', timeout: 2000 })
+        return r.stdout.trim() || null
+      } catch { return null }
+    })()
+
     const configs = fs.readdirSync(__dirname)
       .filter(f => /^build\..+\.json$/.test(f))
       .map(f => {
@@ -48,7 +87,8 @@ if (profile) {
         }
         const appImagePath = path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, internalDomains: cfg.internalDomains || null }
+        const isDefaultMailHandler = defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, isDefaultMailHandler }
       })
 
     configs.sort((a, b) => {
@@ -125,13 +165,19 @@ if (profile) {
     }
   })
 
-  ipcMain.handle('manager:install', (event, configLabel) => {
+  ipcMain.handle('manager:install', (event, configLabel, setAsMailHandler) => {
     return new Promise((resolve) => {
       const child = spawn('node', [path.join(__dirname, 'scripts', 'install.js'), configLabel], { cwd: __dirname })
       let stdout = '', stderr = ''
       child.stdout?.on('data', d => { stdout += d.toString() })
       child.stderr?.on('data', d => { stderr += d.toString() })
-      child.on('close', code => resolve({ success: code === 0, stdout, stderr }))
+      child.on('close', code => {
+        if (code === 0 && setAsMailHandler) {
+          const desktopName = `wrapweb-${configLabel.replace(/^private\./, '')}.desktop`
+          spawnSync('xdg-mime', ['default', desktopName, 'x-scheme-handler/mailto'], { timeout: 2000 })
+        }
+        resolve({ success: code === 0, stdout, stderr })
+      })
       child.on('error', err => resolve({ success: false, stdout, stderr: err.message }))
     })
   })
@@ -146,7 +192,7 @@ if (profile) {
       .some(f => fs.existsSync(path.join(__dirname, f)))
   })
 
-  ipcMain.handle('manager:create-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation }) => {
+  ipcMain.handle('manager:create-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance }) => {
     const filePath = path.join(__dirname, `build.private.${profile}.json`)
     if (fs.existsSync(filePath)) return { success: false, error: 'exists' }
     const cfg = { profile, url }
@@ -160,6 +206,7 @@ if (profile) {
     }
     if (userAgent) cfg.userAgent = userAgent
     if (crossOriginIsolation) cfg.crossOriginIsolation = true
+    if (singleInstance) cfg.singleInstance = true
     if (internalDomains) {
       const domains = internalDomains.split(',').map(d => d.trim()).filter(Boolean)
       if (domains.length === 1) cfg.internalDomains = domains[0]
@@ -190,12 +237,13 @@ if (profile) {
         geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
         userAgent:           userAgent || null,
         crossOriginIsolation: crossOriginIsolation || false,
+        singleInstance:      singleInstance || false,
         internalDomains:     internalDomains ? cfg.internalDomains : null,
       }
     }
   })
 
-  ipcMain.handle('manager:update-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation }) => {
+  ipcMain.handle('manager:update-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance }) => {
     const filePath = path.join(__dirname, `build.private.${profile}.json`)
     if (!fs.existsSync(filePath)) return { success: false, error: 'not found' }
     const cfg = { profile, url }
@@ -209,6 +257,7 @@ if (profile) {
     }
     if (userAgent) cfg.userAgent = userAgent
     if (crossOriginIsolation) cfg.crossOriginIsolation = true
+    if (singleInstance) cfg.singleInstance = true
     if (internalDomains) {
       const domains = internalDomains.split(',').map(d => d.trim()).filter(Boolean)
       if (domains.length === 1) cfg.internalDomains = domains[0]
@@ -234,6 +283,7 @@ if (profile) {
         geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
         userAgent:           userAgent || null,
         crossOriginIsolation: crossOriginIsolation || false,
+        singleInstance:      singleInstance || false,
         internalDomains:     internalDomains ? cfg.internalDomains : null,
       }
     }

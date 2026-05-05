@@ -20,6 +20,8 @@
   --badge-private-fg:   #7a5f00;
   --badge-installed-bg: #cce5ff;
   --badge-installed-fg: #004085;
+  --badge-mail-bg:      #fde8f0;
+  --badge-mail-fg:      #8b1a4a;
 }
 
 body.dark {
@@ -42,6 +44,8 @@ body.dark {
   --badge-private-fg:   #f0c040;
   --badge-installed-bg: #1a2f4a;
   --badge-installed-fg: #7ab8f5;
+  --badge-mail-bg:      #3a1828;
+  --badge-mail-fg:      #f07ab0;
 }
 
 body {
@@ -339,7 +343,9 @@ body.dark .os-theme-dark {
 .badge.built      { background: var(--badge-built-bg);     color: var(--badge-built-fg); }
 .badge.not-built  { background: var(--badge-unbuilt-bg);   color: var(--badge-unbuilt-fg); }
 .badge.private    { background: var(--badge-private-bg);   color: var(--badge-private-fg); }
-.badge.installed  { background: var(--badge-installed-bg); color: var(--badge-installed-fg); }
+.badge.installed     { background: var(--badge-installed-bg); color: var(--badge-installed-fg); }
+.badge.mail-handler        { background: var(--badge-mail-bg);  color: var(--badge-mail-fg); opacity: 0.55; }
+.badge.mail-handler.active { opacity: 1; font-weight: 600; }
 
 /* ── Card toolbar ── */
 

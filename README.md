@@ -20,6 +20,8 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 - **Zoom** — `Ctrl+Scroll` per window
 - **Screen sharing** — WebRTC / PipeWire capture works out of the box
 - **DevTools** — `F12` to toggle
+- **Single-instance enforcement** — optionally prevent a second window from opening; the existing window is focused and raised instead
+- **System-wide protocol handlers** — register any app as the system's default `mailto:` handler; clicking a mail link anywhere on the desktop opens a compose window in the configured web app (Outlook, Gmail, …) — with no external mail client required
 - **Private builds** — configs matching `build.private.*.json` are gitignored
 
 ## Manager
@@ -35,8 +37,8 @@ Each app is shown as a card with its icon, name, URL, and status badges. Hoverin
 | Button | Action | Active when |
 |---|---|---|
 | Info | Shows all config values and filesystem paths | always |
-| Build | Builds (or rebuilds) the AppImage | always |
-| Install | Creates the `.desktop` launcher entry | built, not yet installed |
+| Build / Rebuild | Builds (or rebuilds) the AppImage | always |
+| Install / Reinstall | Creates or overwrites the `.desktop` launcher entry — no rebuild required | built |
 | Delete | Removes AppImage and `.desktop` file; profile data is kept | built |
 
 Clicking the app icon directly **launches** the app — only if it is installed. Uninstalled apps show a grayed-out icon.
@@ -65,6 +67,7 @@ Click the **+** card at the end of the grid to open the **Create App** dialog. A
 | User-Agent | Choose from presets or leave empty for the default Electron UA |
 | Internal domains | Extra domains that open inside the app window (e.g. OAuth redirects) — added one by one via the list widget |
 | Cross-Origin Isolation | Enables `SharedArrayBuffer` — required for multi-threaded WASM |
+| Single instance | Prevent more than one window of this app from opening at the same time |
 
 New apps are saved as `build.private.<profile>.json` and are gitignored automatically.
 
@@ -75,6 +78,41 @@ The menu (top right) offers:
 - **Light / Dark mode** toggle — preference is saved across sessions
 - **Visibility filter** — All Apps / Embedded Apps / User Apps
 - **Hide uninstalled** — suppress apps that haven't been installed yet
+
+## System mail handler
+
+wrapweb can register any web mail app as the system-wide default handler for `mailto:` links. Once registered, clicking a `mailto:` link in any application — browser, PDF viewer, terminal, Teams, … — opens a compose window in the configured web app. No native mail client required.
+
+### How it works
+
+The app's `.desktop` file declares `MimeType=x-scheme-handler/mailto`, which makes it available as a handler. When the app is installed via the Manager, a prompt asks whether it should also become the **active default**. Confirming sets the system preference via `xdg-mime default`.
+
+The `mailto:` URL is converted to the web app's compose URL before loading. Each provider uses its own format — this is configured via `mailtoTemplate` and an optional `mailtoParamMap` in the app config (see [Config reference](#config-reference)).
+
+The Manager displays a **Mail handler** badge on every app capable of handling `mailto:` links. The currently active default is highlighted with a **✓**. Installing any other mail-capable app and choosing to set it as default automatically transfers the role.
+
+### Included mail-capable apps
+
+| Config | App | Compose URL base |
+|---|---|---|
+| `build.outlook.json` | Microsoft Outlook | `https://outlook.cloud.microsoft/mail/deeplink/compose` |
+| `build.google-mail.json`* | Google Mail | `https://mail.google.com/mail/?view=cm&fs=1` |
+
+\* Private config — copy from `build.google-mail.json` and adjust to your account if needed.
+
+### Adding mailto support to a custom app
+
+```json
+{
+    "profile": "mymail",
+    "url": "https://mail.example.com",
+    "mimeTypes": ["x-scheme-handler/mailto"],
+    "mailtoTemplate": "https://mail.example.com/compose",
+    "mailtoParamMap": { "subject": "su" }
+}
+```
+
+`mailtoParamMap` is optional — use it when the provider expects different query parameter names than the standard `mailto:` fields (`to`, `subject`, `body`, `cc`, `bcc`).
 
 ## Included app configs
 
@@ -176,6 +214,10 @@ For apps you don't want to commit, use `build.private.<name>.json` — it is git
 | `geometry.x/y` | number | Initial window position — _deprecated will be removed with remove of x11 in Gnome_ |
 | `internalDomains` | string \| array | Extra domains allowed to open inside the app window (e.g. OAuth providers) |
 | `crossOriginIsolation` | boolean | Enable `SharedArrayBuffer` — required for multi-threaded WASM (Google Earth) |
+| `singleInstance` | boolean | Allow only one running instance; a second launch focuses the existing window instead |
+| `mimeTypes` | array | Protocol schemes this app can handle (e.g. `["x-scheme-handler/mailto"]`) |
+| `mailtoTemplate` | string | Base URL for the compose window — `mailto:` parameters are appended as a query string |
+| `mailtoParamMap` | object | Rename `mailto:` parameters before appending (e.g. `{ "subject": "su" }` for Gmail) |
 
 ### Examples
 

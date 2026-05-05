@@ -25,6 +25,10 @@ function expandConfig(app) {
       ...(app.geometry            && { geometry:  app.geometry  }),
       ...(app.internalDomains     && { internalDomains: app.internalDomains }),
       ...(app.crossOriginIsolation && { crossOriginIsolation: true }),
+      ...(app.singleInstance      && { singleInstance:       true }),
+      ...(app.mimeTypes?.length  && { mimeTypes:            app.mimeTypes }),
+      ...(app.mailtoTemplate    && { mailtoTemplate:       app.mailtoTemplate }),
+      ...(app.mailtoParamMap   && { mailtoParamMap:       app.mailtoParamMap }),
     },
   }
 }

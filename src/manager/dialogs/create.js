@@ -68,6 +68,10 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
           <span class="toggle-switch"></span>
           <span>${i18n.createCoi}</span>
         </button>
+        <button type="button" class="dialog-field-toggle" id="create-single-instance">
+          <span class="toggle-switch"></span>
+          <span>${i18n.createSingleInstance}</span>
+        </button>
       </div>
       <div class="confirm-actions">
         <button class="btn-cancel" id="create-cancel">${i18n.createCancel}</button>
@@ -203,6 +207,9 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
   document.getElementById('create-coi').addEventListener('click', e =>
     e.currentTarget.classList.toggle('active')
   )
+  document.getElementById('create-single-instance').addEventListener('click', e =>
+    e.currentTarget.classList.toggle('active')
+  )
 
   document.getElementById('create-icon-btn').addEventListener('click', () => {
     iconPicker.openIconPicker((name, path) => {
@@ -242,6 +249,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     document.getElementById('create-useragent').value = ''
     domainList.reset()
     document.getElementById('create-coi').classList.remove('active')
+    document.getElementById('create-single-instance').classList.remove('active')
     profileValid = false
     urlValid     = false
     widthValid   = true
@@ -275,8 +283,9 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     const userAgent           = document.getElementById('create-useragent').value.trim()
     const internalDomains     = domainList.get().join(', ')
     const crossOriginIsolation = document.getElementById('create-coi').classList.contains('active')
+    const singleInstance       = document.getElementById('create-single-instance').classList.contains('active')
     saveBtn.disabled = true
-    const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation })
+    const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance })
     if (result.success) {
       closeCreateDialog()
       insertCard(createCard(result.app))

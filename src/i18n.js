@@ -17,19 +17,21 @@ const translations = {
     drawerHideUninstalled: 'Nicht installierte ausblenden',
 
     // Badges
-    badgeBuilt:     'Gebaut',
-    badgeNotBuilt:  'Nicht gebaut',
-    badgeInstalled: 'Installiert',
-    badgeUser:      'Benutzer',
+    badgeBuilt:       'Gebaut',
+    badgeNotBuilt:    'Nicht gebaut',
+    badgeInstalled:   'Installiert',
+    badgeUser:        'Benutzer',
+    badgeMailHandler: 'Mail-Handler',
 
     // Toolbar buttons
     btnInfo:           'Informationen',
     btnEdit:           'Bearbeiten',
-    btnBuild:          'Bauen',
+    btnBuild:          'AppImage erzeugen',
     btnRebuild:        'AppImage neu erstellen',
-    btnInstall:        'Installieren',
-    btnInstallTooltip: '{name} als Applikation im System installieren',
-    btnDelete:         'Löschen',
+    btnInstall:           'Installieren',
+    btnInstallTooltip:    '{name} als Applikation im System installieren',
+    btnReinstallTooltip:  '{name} neu installieren',
+    btnDelete:            'Löschen',
 
     // Confirm dialog
     confirmCancel:       'Abbrechen',
@@ -62,6 +64,11 @@ const translations = {
     editRebuild:           'Neu bauen',
     editInstallAfterBuild: 'Nach dem Bauen installieren',
 
+    // Install confirm
+    installConfirmMsg:       '<p><strong>{name}</strong> als Applikation im System installieren?</p>',
+    installConfirmOk:        'Installieren',
+    installSetMailHandler:   'Als Standard-Mail-Handler registrieren',
+
     // Create dialog
     createTitle:    'Neue WebApp hinzufügen',
     createProfile:  'Profil',
@@ -73,8 +80,9 @@ const translations = {
     createHeight:   'Höhe (px)',
     createUAgent:   'User-Agent',
     createDomains:  'Interne Domains',
-    createCoi:      'Cross-Origin Isolation (SharedArrayBuffer / WASM)',
-    createCancel:   'Abbrechen',
+    createCoi:            'Cross-Origin Isolation (SharedArrayBuffer / WASM)',
+    createSingleInstance: 'Nur eine Instanz erlauben',
+    createCancel:         'Abbrechen',
     createSave:     'Speichern',
     createUaDefault:'— Standard (nicht gesetzt) —',
 
@@ -120,19 +128,21 @@ const translations = {
     drawerHideUninstalled: 'Hide uninstalled',
 
     // Badges
-    badgeBuilt:     'Built',
-    badgeNotBuilt:  'Not built',
-    badgeInstalled: 'Installed',
-    badgeUser:      'User',
+    badgeBuilt:       'Built',
+    badgeNotBuilt:    'Not built',
+    badgeInstalled:   'Installed',
+    badgeUser:        'User',
+    badgeMailHandler: 'Mail handler',
 
     // Toolbar buttons
     btnInfo:           'Information',
     btnEdit:           'Edit',
-    btnBuild:          'Build',
+    btnBuild:          'Create AppImage',
     btnRebuild:        'Rebuild AppImage',
-    btnInstall:        'Install',
-    btnInstallTooltip: 'Install {name} as system application',
-    btnDelete:         'Delete',
+    btnInstall:           'Install',
+    btnInstallTooltip:    'Install {name} as system application',
+    btnReinstallTooltip:  'Reinstall {name}',
+    btnDelete:            'Delete',
 
     // Confirm dialog
     confirmCancel:       'Cancel',
@@ -165,6 +175,11 @@ const translations = {
     editRebuild:           'Rebuild',
     editInstallAfterBuild: 'Install after build',
 
+    // Install confirm
+    installConfirmMsg:       '<p>Install <strong>{name}</strong> as a system application?</p>',
+    installConfirmOk:        'Install',
+    installSetMailHandler:   'Register as default mail handler',
+
     // Create dialog
     createTitle:    'Add new WebApp',
     createProfile:  'Profile',
@@ -176,8 +191,9 @@ const translations = {
     createHeight:   'Height (px)',
     createUAgent:   'User-Agent',
     createDomains:  'Internal domains',
-    createCoi:      'Cross-Origin Isolation (SharedArrayBuffer / WASM)',
-    createCancel:   'Cancel',
+    createCoi:            'Cross-Origin Isolation (SharedArrayBuffer / WASM)',
+    createSingleInstance: 'Allow only one instance',
+    createCancel:         'Cancel',
     createSave:     'Save',
     createUaDefault:'— Default (not set) —',
 

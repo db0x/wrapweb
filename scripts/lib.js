@@ -37,30 +37,27 @@ function installDesktop(app) {
   const desktopsDir = path.join(os.homedir(), '.local', 'share', 'applications')
   const desktopFile = path.join(desktopsDir, `${desktopName}.desktop`)
 
-  if (fs.existsSync(desktopFile)) {
-    console.log(`  Already installed, skipping: ${desktopFile}`)
-    return
-  }
-
   const appImagePath = path.resolve('dist', `wrapweb.${app.profile}`)
   const displayName = escapeDesktop(app.name || toDisplayName(app.profile))
   const icon = app.icon || 'wrapweb'
+  const mimeTypes = app.mimeTypes?.length ? app.mimeTypes.join(';') + ';' : null
 
-  const content = [
+  const lines = [
     '[Desktop Entry]',
     'Version=1.0',
     `Name=${displayName}`,
     `Comment=${displayName}`,
-    `Exec=${appImagePath} --no-sandbox`,
+    `Exec=${appImagePath} --no-sandbox %u`,
     'Terminal=false',
     'Type=Application',
     `Icon=${icon}`,
     `StartupWMClass=${desktopName}`,
-    '',
-  ].join('\n')
+  ]
+  if (mimeTypes) lines.push(`MimeType=${mimeTypes}`)
+  lines.push('')
 
   fs.mkdirSync(desktopsDir, { recursive: true })
-  fs.writeFileSync(desktopFile, content, 'utf8')
+  fs.writeFileSync(desktopFile, lines.join('\n'), 'utf8')
   console.log(`  Installed: ${desktopFile}`)
 
   try {

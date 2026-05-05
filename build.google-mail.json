@@ -1,0 +1,10 @@
+{
+    "profile": "google-mail",
+    "url": "https://mail.google.com/mail/u/0/#inbox",
+    "name": "Google Mail",
+    "icon": "web-google-gmail",
+    "crossOriginIsolation": true,
+    "mimeTypes": ["x-scheme-handler/mailto"],
+    "mailtoTemplate": "https://mail.google.com/mail/?view=cm&fs=1",
+    "mailtoParamMap": { "subject": "su" }
+}

@@ -69,6 +69,10 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
           <span class="toggle-switch"></span>
           <span>${i18n.createCoi}</span>
         </button>
+        <button type="button" class="dialog-field-toggle" id="edit-single-instance">
+          <span class="toggle-switch"></span>
+          <span>${i18n.createSingleInstance}</span>
+        </button>
         <hr class="dialog-section-divider">
         <div id="edit-info-section"></div>
       </div>
@@ -118,6 +122,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
       userAgent:          uaSelect.value.trim(),
       internalDomains:    domainList.get().join(','),
       crossOriginIsolation: document.getElementById('edit-coi').classList.contains('active'),
+      singleInstance:       document.getElementById('edit-single-instance').classList.contains('active'),
     }
   }
 
@@ -186,6 +191,10 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
   )
   uaSelect.addEventListener('change', updateSaveBtn)
   document.getElementById('edit-coi').addEventListener('click', e => {
+    e.currentTarget.classList.toggle('active')
+    updateSaveBtn()
+  })
+  document.getElementById('edit-single-instance').addEventListener('click', e => {
     e.currentTarget.classList.toggle('active')
     updateSaveBtn()
   })
@@ -279,6 +288,10 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
     const coiBtn = document.getElementById('edit-coi')
     if (app.crossOriginIsolation) coiBtn.classList.add('active')
     else coiBtn.classList.remove('active')
+
+    const siBtn = document.getElementById('edit-single-instance')
+    if (app.singleInstance) siBtn.classList.add('active')
+    else siBtn.classList.remove('active')
 
     renderInfoSection(app)
     initialSnapshot = snapshot()
