@@ -32,14 +32,61 @@ function escapeDesktop(s) {
   return String(s).replace(/\\/g, '\\\\')
 }
 
+function resolveIconToHicolor(iconName, desktopName) {
+  if (!iconName || iconName === 'wrapweb') return iconName
+
+  const hicolorDir = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor', 'scalable', 'apps')
+  const destName = desktopName  // e.g. 'wrapweb-teams'
+  const destSvg  = path.join(hicolorDir, `${destName}.svg`)
+  const destPng  = path.join(hicolorDir, `${destName}.png`)
+
+  // Already installed under this name
+  if (fs.existsSync(destSvg) || fs.existsSync(destPng)) return destName
+
+  // Search icon themes for a matching file (apps/ subdir first, then root of icons dirs)
+  const searchDirs = [
+    path.join(os.homedir(), '.local', 'share', 'icons'),
+    '/usr/local/share/icons',
+    '/usr/share/icons',
+  ]
+  const exts = ['svg', 'png']
+  const candidates = []
+  for (const base of searchDirs) {
+    for (const ext of exts) {
+      // Standard theme path: <theme>/<size>/apps/<name>.<ext>
+      candidates.push({ cmd: `find "${base}" -name "${iconName}.${ext}" -path "*/apps/*" 2>/dev/null | head -1` })
+      // Non-standard: directly in icons root, e.g. ~/.local/share/icons/<name>.<ext>
+      const rootFile = path.join(base, `${iconName}.${ext}`)
+      if (fs.existsSync(rootFile)) candidates.unshift({ file: rootFile, ext })
+    }
+  }
+  for (const c of candidates) {
+    try {
+      const found = c.file ?? execSync(c.cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+      if (!found) continue
+      const ext = c.ext ?? (found.endsWith('.svg') ? 'svg' : 'png')
+      fs.mkdirSync(hicolorDir, { recursive: true })
+      const dest = ext === 'svg' ? destSvg : destPng
+      fs.copyFileSync(found, dest)
+      console.log(`  Icon copied to hicolor: ${dest}`)
+      try {
+        const hicolor = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor')
+        execSync(`gtk-update-icon-cache -f -t "${hicolor}"`, { stdio: 'ignore' })
+      } catch { /* non-fatal */ }
+      return destName
+    } catch { /* non-fatal */ }
+  }
+  return iconName  // fallback: use original name unchanged
+}
+
 function installDesktop(app) {
   const desktopName = `wrapweb-${app.profile}`
   const desktopsDir = path.join(os.homedir(), '.local', 'share', 'applications')
   const desktopFile = path.join(desktopsDir, `${desktopName}.desktop`)
 
-  const appImagePath = path.resolve('dist', `wrapweb.${app.profile}`)
+  const appImagePath = path.resolve('dist', `wrapweb-${app.profile}`)
   const displayName = escapeDesktop(app.name || toDisplayName(app.profile))
-  const icon = app.icon || 'wrapweb'
+  const icon = resolveIconToHicolor(app.icon || 'wrapweb', desktopName)
   const mimeTypes = app.mimeTypes?.length ? app.mimeTypes.join(';') + ';' : null
 
   const lines = [

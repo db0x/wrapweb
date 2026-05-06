@@ -9,7 +9,7 @@ const CONFIGS_DIR = path.join(__dirname, '..', 'webapps')
 
 function expandConfig(app) {
   const appId = `${APP_ID_BASE}.${app.profile}`
-  const productName = `wrapweb.${app.profile}`
+  const productName = `wrapweb-${app.profile}`
   return {
     appId,
     productName,

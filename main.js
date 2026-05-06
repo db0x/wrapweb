@@ -78,7 +78,7 @@ if (profile) {
       .map(f => {
         const cfg = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, f), 'utf8'))
         const configLabel = f.replace(/^build\.(.+)\.json$/, '$1')
-        const built = fs.existsSync(path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`))
+        const built = fs.existsSync(path.join(__dirname, 'dist', `wrapweb-${cfg.profile}`))
         const desktopFile = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${cfg.profile}.desktop`)
         const installed = fs.existsSync(desktopFile)
         let iconValue = cfg.icon || null
@@ -86,7 +86,7 @@ if (profile) {
           const m = fs.readFileSync(desktopFile, 'utf8').match(/^Icon=(.+)$/m)
           if (m) iconValue = m[1].trim()
         }
-        const appImagePath = path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`)
+        const appImagePath = path.join(__dirname, 'dist', `wrapweb-${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
         const isDefaultMailHandler = defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`
         return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, isDefaultMailHandler, category: cfg.category || null }
@@ -148,7 +148,7 @@ if (profile) {
   })
 
   ipcMain.handle('manager:launch', (event, profile) => {
-    const appImagePath = path.join(__dirname, 'dist', `wrapweb.${profile}`)
+    const appImagePath = path.join(__dirname, 'dist', `wrapweb-${profile}`)
     if (!fs.existsSync(appImagePath)) return { success: false }
     const child = spawn(appImagePath, ['--no-sandbox'], { detached: true, stdio: 'ignore' })
     child.unref()
@@ -157,7 +157,7 @@ if (profile) {
 
   ipcMain.handle('manager:delete', (event, { profile, configLabel, deleteConfig, deleteProfileData }) => {
     const desktopFile  = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${profile}.desktop`)
-    const appImageFile = path.join(__dirname, 'dist', `wrapweb.${profile}`)
+    const appImageFile = path.join(__dirname, 'dist', `wrapweb-${profile}`)
     const configFile   = configLabel ? path.join(CONFIGS_DIR, `build.${configLabel}.json`) : null
     const profileDir   = path.join(app.getPath('appData'), 'wrapweb', profile)
     try {
