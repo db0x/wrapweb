@@ -34,8 +34,8 @@ node_modules
 current
 dist
 node_modules
-build.private.*.json
-!build.private.test-user-app.json
+webapps/build.private.*.json
+!webapps/build.private.test-user-app.json
 test-results/
 playwright-report/
 .claude

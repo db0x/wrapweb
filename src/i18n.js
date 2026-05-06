@@ -14,6 +14,8 @@ const translations = {
     drawerAllApps:         'Alle Apps',
     drawerEmbeddedApps:    'Embedded Apps',
     drawerUserApps:        'Benutzer Apps',
+    drawerMicrosoft:       'Microsoft Apps',
+    drawerGoogle:          'Google Apps',
     drawerHideUninstalled: 'Nicht installierte ausblenden',
 
     // Badges
@@ -125,6 +127,8 @@ const translations = {
     drawerAllApps:         'All Apps',
     drawerEmbeddedApps:    'Embedded Apps',
     drawerUserApps:        'User Apps',
+    drawerMicrosoft:       'Microsoft Apps',
+    drawerGoogle:          'Google Apps',
     drawerHideUninstalled: 'Hide uninstalled',
 
     // Badges

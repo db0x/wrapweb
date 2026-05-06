@@ -22,7 +22,7 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 - **DevTools** — `F12` to toggle
 - **Single-instance enforcement** — optionally prevent a second window from opening; the existing window is focused and raised instead
 - **System-wide protocol handlers** — register any app as the system's default `mailto:` handler; clicking a mail link anywhere on the desktop opens a compose window in the configured web app (Outlook, Gmail, …) — with no external mail client required
-- **Private builds** — configs matching `build.private.*.json` are gitignored
+- **Private builds** — configs matching `webapps/build.private.*.json` are gitignored
 
 ## Manager
 
@@ -69,7 +69,7 @@ Click the **+** card at the end of the grid to open the **Create App** dialog. A
 | Cross-Origin Isolation | Enables `SharedArrayBuffer` — required for multi-threaded WASM |
 | Single instance | Prevent more than one window of this app from opening at the same time |
 
-New apps are saved as `build.private.<profile>.json` and are gitignored automatically.
+New apps are saved as `webapps/build.private.<profile>.json` and are gitignored automatically.
 
 ### Side menu
 
@@ -199,7 +199,7 @@ Output lands in `dist/` as a self-contained AppImage.
 
 Apps can also be configured by placing a JSON file in the project root. This is useful for bulk setup, version-controlled shared configs, or options not yet exposed in the Manager UI.
 
-For apps you don't want to commit, use `build.private.<name>.json` — it is gitignored automatically.
+App configs live in the `webapps/` directory. For apps you don't want to commit, use `webapps/build.private.<name>.json` — it is gitignored automatically.
 
 ### Config reference
 

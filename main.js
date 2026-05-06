@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const { spawnSync, spawn } = require('node:child_process')
 const pkg = require(app.getAppPath() + '/package.json')
+const CONFIGS_DIR = path.join(__dirname, 'webapps')
 
 Menu.setApplicationMenu(null)
 
@@ -72,10 +73,10 @@ if (profile) {
       } catch { return null }
     })()
 
-    const configs = fs.readdirSync(__dirname)
+    const configs = fs.readdirSync(CONFIGS_DIR)
       .filter(f => /^build\..+\.json$/.test(f))
       .map(f => {
-        const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'))
+        const cfg = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, f), 'utf8'))
         const configLabel = f.replace(/^build\.(.+)\.json$/, '$1')
         const built = fs.existsSync(path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`))
         const desktopFile = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${cfg.profile}.desktop`)
@@ -88,7 +89,7 @@ if (profile) {
         const appImagePath = path.join(__dirname, 'dist', `wrapweb.${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
         const isDefaultMailHandler = defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, isDefaultMailHandler }
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, isDefaultMailHandler, category: cfg.category || null }
       })
 
     configs.sort((a, b) => {
@@ -120,7 +121,10 @@ if (profile) {
   ipcMain.handle('manager:ua-presets', () => pkg.uaPresets ?? [])
 
   ipcMain.handle('manager:ui-icons', () => {
-    if (process.env.WRAPWEB_TEST) return {}
+    if (process.env.WRAPWEB_TEST) {
+      const fi = process.env.WRAPWEB_TEST_FILTER_ICONS || null
+      return fi ? { filterMicrosoft: fi, filterGoogle: fi } : {}
+    }
     const r = resolveIconsByGtk([
       'weather-clear-symbolic', 'weather-clear-night-symbolic',
       'dialog-information-symbolic', 'system-run-symbolic',
@@ -129,6 +133,7 @@ if (profile) {
       'view-app-grid-symbolic', 'applications-internet-symbolic',
       'avatar-default-symbolic', 'view-filter-symbolic',
       'document-edit-symbolic', 'github',
+      'view-group',
     ])
     return {
       sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
@@ -138,6 +143,7 @@ if (profile) {
       filterAll: r['view-app-grid-symbolic'], filterPublic: r['applications-internet-symbolic'],
       filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
       edit: r['document-edit-symbolic'], github: r['github'],
+      filterMicrosoft: r['view-group'], filterGoogle: r['view-group'],
     }
   })
 
@@ -152,7 +158,7 @@ if (profile) {
   ipcMain.handle('manager:delete', (event, { profile, configLabel, deleteConfig, deleteProfileData }) => {
     const desktopFile  = path.join(os.homedir(), '.local', 'share', 'applications', `wrapweb-${profile}.desktop`)
     const appImageFile = path.join(__dirname, 'dist', `wrapweb.${profile}`)
-    const configFile   = configLabel ? path.join(__dirname, `build.${configLabel}.json`) : null
+    const configFile   = configLabel ? path.join(CONFIGS_DIR, `build.${configLabel}.json`) : null
     const profileDir   = path.join(app.getPath('appData'), 'wrapweb', profile)
     try {
       if (fs.existsSync(desktopFile))                                    fs.rmSync(desktopFile)
@@ -189,11 +195,11 @@ if (profile) {
 
   ipcMain.handle('manager:check-profile', (event, profile) => {
     return [`build.private.${profile}.json`, `build.${profile}.json`]
-      .some(f => fs.existsSync(path.join(__dirname, f)))
+      .some(f => fs.existsSync(path.join(CONFIGS_DIR, f)))
   })
 
   ipcMain.handle('manager:create-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance }) => {
-    const filePath = path.join(__dirname, `build.private.${profile}.json`)
+    const filePath = path.join(CONFIGS_DIR, `build.private.${profile}.json`)
     if (fs.existsSync(filePath)) return { success: false, error: 'exists' }
     const cfg = { profile, url }
     if (name)  cfg.name = name
@@ -244,7 +250,7 @@ if (profile) {
   })
 
   ipcMain.handle('manager:update-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance }) => {
-    const filePath = path.join(__dirname, `build.private.${profile}.json`)
+    const filePath = path.join(CONFIGS_DIR, `build.private.${profile}.json`)
     if (!fs.existsSync(filePath)) return { success: false, error: 'not found' }
     const cfg = { profile, url }
     if (name)  cfg.name = name
@@ -327,10 +333,10 @@ for name in sorted(theme.list_icons(None)):
   })
 
   ipcMain.handle('manager:profile-sizes', () => {
-    const configs = fs.readdirSync(__dirname)
+    const configs = fs.readdirSync(CONFIGS_DIR)
       .filter(f => /^build\..+\.json$/.test(f))
       .map(f => {
-        const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'))
+        const cfg = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, f), 'utf8'))
         return { profile: cfg.profile, name: cfg.name || null }
       })
     return configs.map(({ profile, name }) => {

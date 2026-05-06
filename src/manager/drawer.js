@@ -1,7 +1,8 @@
 export function initDrawer({ i18n, icons }) {
   const { sun: sunSrc, moon: moonSrc, menu: menuSrc,
           filterAll: filterAllSrc, filterPublic: filterPublicSrc,
-          filterPrivate: filterPrivateSrc } = icons
+          filterPrivate: filterPrivateSrc,
+          filterMicrosoft: filterMicrosoftSrc, filterGoogle: filterGoogleSrc } = icons
 
   const menuBtn  = document.getElementById('menu-btn')
   const menuIcon = document.getElementById('menu-icon')
@@ -32,6 +33,14 @@ export function initDrawer({ i18n, icons }) {
     <button class="menu-item" data-filter="private">
       ${filterPrivateSrc ? `<img src="${filterPrivateSrc}" alt="">` : ''}
       <span>${i18n.drawerUserApps}</span>
+    </button>
+    <button class="menu-item" data-filter="microsoft">
+      ${filterMicrosoftSrc ? `<img src="${filterMicrosoftSrc}" alt="">` : ''}
+      <span>${i18n.drawerMicrosoft}</span>
+    </button>
+    <button class="menu-item" data-filter="google">
+      ${filterGoogleSrc ? `<img src="${filterGoogleSrc}" alt="">` : ''}
+      <span>${i18n.drawerGoogle}</span>
     </button>
     <button class="menu-item menu-toggle" id="menu-hide-uninstalled">
       <span class="toggle-switch"></span>
@@ -79,14 +88,18 @@ export function initDrawer({ i18n, icons }) {
     document.querySelectorAll('.card[data-private]').forEach(card => {
       const isPrivate   = card.dataset.private   === 'true'
       const isInstalled = card.dataset.installed === 'true'
+      const category    = card.dataset.category  || ''
       const passesFilter =
         currentFilter === 'all' ||
-        (currentFilter === 'public'  && !isPrivate) ||
-        (currentFilter === 'private' &&  isPrivate)
+        (currentFilter === 'public'    && !isPrivate) ||
+        (currentFilter === 'private'   &&  isPrivate) ||
+        (currentFilter === 'microsoft' && category === 'microsoft') ||
+        (currentFilter === 'google'    && category === 'google')
       card.style.display = (passesFilter && (!hideUninstalled || isInstalled)) ? '' : 'none'
     })
     const addCardEl = document.querySelector('.card-add')
-    if (addCardEl) addCardEl.style.display = currentFilter === 'public' ? 'none' : ''
+    const hideAdd = ['public', 'microsoft', 'google'].includes(currentFilter)
+    if (addCardEl) addCardEl.style.display = hideAdd ? 'none' : ''
   }
 
   function applyFilter(filter) {

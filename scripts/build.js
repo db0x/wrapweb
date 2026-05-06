@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 const { build } = require('electron-builder')
 const fs = require('node:fs')
+const path = require('node:path')
 const { installDesktop, installIcon } = require('./lib')
 
 const APP_ID_BASE = 'de.db0x.wrapweb'
+const CONFIGS_DIR = path.join(__dirname, '..', 'webapps')
 
 function expandConfig(app) {
   const appId = `${APP_ID_BASE}.${app.profile}`
@@ -34,12 +36,12 @@ function expandConfig(app) {
 }
 
 const configs = fs
-  .readdirSync('.')
+  .readdirSync(CONFIGS_DIR)
   .filter(f => /^build\..+\.json$/.test(f))
   .sort()
 
 async function buildOne(configFile) {
-  const app = JSON.parse(fs.readFileSync(configFile, 'utf8'))
+  const app = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, configFile), 'utf8'))
   const label = configFile.replace(/^build\.(.+)\.json$/, '$1')
   console.log(`\n=== Building ${label} ===`)
   await build({ config: expandConfig(app), projectDir: process.cwd() })
@@ -52,7 +54,7 @@ async function main() {
 
   if (profile) {
     const configFile = `build.${profile}.json`
-    if (!fs.existsSync(configFile)) {
+    if (!fs.existsSync(path.join(CONFIGS_DIR, configFile))) {
       const available = configs.map(f => f.replace(/^build\.(.+)\.json$/, '$1')).join(', ')
       console.error(`Config not found: ${configFile}\nAvailable: ${available}`)
       process.exit(1)
@@ -60,7 +62,7 @@ async function main() {
     await buildOne(configFile)
   } else {
     if (configs.length === 0) {
-      console.error('No build.*.json configs found.')
+      console.error('No build.*.json configs found in webapps/.')
       process.exit(1)
     }
     for (const configFile of configs) {

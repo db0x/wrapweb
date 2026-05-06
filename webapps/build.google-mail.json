@@ -4,6 +4,7 @@
     "name": "Google Mail",
     "icon": "web-google-gmail",
     "crossOriginIsolation": true,
+    "category": "google",
     "mimeTypes": ["x-scheme-handler/mailto"],
     "mailtoTemplate": "https://mail.google.com/mail/?view=cm&fs=1",
     "mailtoParamMap": { "subject": "su" }

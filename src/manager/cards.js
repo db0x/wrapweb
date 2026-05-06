@@ -17,6 +17,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
     card.className = 'card'
     card.dataset.private   = app.isPrivate ? 'true' : 'false'
     card.dataset.installed = app.installed ? 'true' : 'false'
+    card.dataset.category  = app.category || ''
     card.dataset.sortname  = name.toLowerCase()
     const iconSrc = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
 
