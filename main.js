@@ -25,32 +25,101 @@ if (profile) {
   app.commandLine.appendSwitch('wm-class', `wrapweb-${profile}`)
   app.setPath('userData', path.join(app.getPath('appData'), 'wrapweb', profile))
 
+  function parseMailtoFields(raw) {
+    try {
+      const m = new URL(raw)
+      return {
+        to:      decodeURIComponent(m.pathname || ''),
+        subject: m.searchParams.get('subject') || '',
+        body:    m.searchParams.get('body')    || '',
+        cc:      m.searchParams.get('cc')      || '',
+        bcc:     m.searchParams.get('bcc')     || '',
+      }
+    } catch { return null }
+  }
+
   function resolveUrl(raw) {
     if (!raw) return null
-    if (raw.startsWith('mailto:') && pkg.mailtoTemplate) {
-      try {
-        const m = new URL(raw)
-        const map = pkg.mailtoParamMap || {}
-        const params = new URLSearchParams()
-        if (m.pathname) params.set('to', decodeURIComponent(m.pathname))
-        for (const [k, v] of m.searchParams) params.set(map[k] ?? k, v)
-        const sep = pkg.mailtoTemplate.includes('?') ? '&' : '?'
-        return `${pkg.mailtoTemplate}${sep}${params.toString()}`
-      } catch { return null }
+    if (raw.startsWith('mailto:')) {
+      if (pkg.mailtoJs) return null  // handled via JS injection; load default URL
+      if (pkg.mailtoTemplate) {
+        try {
+          const fields = parseMailtoFields(raw)
+          const map = pkg.mailtoParamMap || {}
+          const params = new URLSearchParams()
+          if (fields.to) params.set('to', fields.to)
+          const m = new URL(raw)
+          for (const [k, v] of m.searchParams) params.set(map[k] ?? k, v)
+          const sep = (pkg.mailtoTemplate.includes('?') || pkg.mailtoTemplate.includes('#')) ? '&' : '?'
+          return `${pkg.mailtoTemplate}${sep}${params.toString()}`
+        } catch { return null }
+      }
+      return null  // no handler configured — load default URL rather than a mailto: URL Electron can't render
     }
     return raw
   }
 
-  const urlArg = resolveUrl(process.argv.find(a => /^(https?:|mailto:)/.test(a)))
+  function resolveMailtoJs(raw) {
+    if (!raw || !raw.startsWith('mailto:') || !pkg.mailtoJs) return null
+    const fields = parseMailtoFields(raw)
+    if (!fields) return null
+    return pkg.mailtoJs.replace(/\{(\w+)\}/g, (_, k) => fields[k] ?? '')
+  }
+
+  function typeMailtoFields(win, fields) {
+    if (!fields || (!fields.to && !fields.subject)) return
+    let attempts = 0
+    function poll() {
+      if (++attempts > 40 || win.isDestroyed()) return
+      win.webContents.executeJavaScript('document.activeElement.className')
+        .then(async cls => {
+          if (typeof cls === 'string' && cls.includes('tt-input')) {
+            if (fields.to) {
+              for (const char of fields.to)
+                win.webContents.sendInputEvent({ type: 'char', keyCode: char })
+              win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Return' })
+              win.webContents.sendInputEvent({ type: 'keyUp',   keyCode: 'Return' })
+              await new Promise(r => setTimeout(r, 300))
+            }
+            if (fields.subject) {
+              const ok = await win.webContents.executeJavaScript(
+                `var s=document.querySelector('input[name="subject"]');s?(s.focus(),true):false`
+              )
+              if (ok) {
+                await new Promise(r => setTimeout(r, 100))
+                for (const char of fields.subject)
+                  win.webContents.sendInputEvent({ type: 'char', keyCode: char })
+              }
+            }
+          } else {
+            setTimeout(poll, 300)
+          }
+        })
+        .catch(() => setTimeout(poll, 300))
+    }
+    setTimeout(poll, 300)
+  }
+
+  const rawArg   = process.argv.find(a => /^(https?:|mailto:)/.test(a))
+  const urlArg   = resolveUrl(rawArg)
+  const jsArg    = resolveMailtoJs(rawArg)
+  const jsFields = (rawArg?.startsWith('mailto:') && pkg.mailtoJs) ? parseMailtoFields(rawArg) : null
 
   if (pkg.singleInstance) {
     const gotLock = app.requestSingleInstanceLock()
     if (!gotLock) { app.quit(); return }
     app.on('second-instance', (event, argv) => {
-      const url = resolveUrl(argv.find(a => /^(https?:|mailto:)/.test(a)))
-      const win = BrowserWindow.getAllWindows()[0]
+      const raw2     = argv.find(a => /^(https?:|mailto:)/.test(a))
+      const url      = resolveUrl(raw2)
+      const js       = resolveMailtoJs(raw2)
+      const js2Fields = (raw2?.startsWith('mailto:') && pkg.mailtoJs) ? parseMailtoFields(raw2) : null
+      const win      = BrowserWindow.getAllWindows()[0]
       if (win) {
         if (url) win.webContents.loadURL(url)
+        if (js) {
+          win.webContents.executeJavaScript(js).catch(() => {})
+          if (js2Fields) typeMailtoFields(win, js2Fields)
+        }
         if (win.isMinimized()) win.restore()
         win.focus()
       }
@@ -59,7 +128,13 @@ if (profile) {
 
   const { createWindow } = require('./src/window')
   app.whenReady().then(() => {
-    createWindow(urlArg ? { ...pkg, url: urlArg } : pkg)
+    const win = createWindow(urlArg ? { ...pkg, url: urlArg } : pkg)
+    if (jsArg) {
+      win.webContents.once('did-finish-load', () => {
+        win.webContents.executeJavaScript(jsArg).catch(() => {})
+        if (jsFields) typeMailtoFields(win, jsFields)
+      })
+    }
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow(pkg)
     })
@@ -89,7 +164,7 @@ if (profile) {
         const appImagePath = path.join(__dirname, 'dist', `wrapweb-${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
         const isDefaultMailHandler = defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, isDefaultMailHandler, category: cfg.category || null }
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null }
       })
 
     configs.sort((a, b) => {
@@ -198,9 +273,7 @@ if (profile) {
       .some(f => fs.existsSync(path.join(CONFIGS_DIR, f)))
   })
 
-  ipcMain.handle('manager:create-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance }) => {
-    const filePath = path.join(CONFIGS_DIR, `build.private.${profile}.json`)
-    if (fs.existsSync(filePath)) return { success: false, error: 'exists' }
+  function buildAppCfg({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance, mailHandler, mailtoJs }) {
     const cfg = { profile, url }
     if (name)  cfg.name = name
     if (icon)  cfg.icon = icon
@@ -218,79 +291,84 @@ if (profile) {
       if (domains.length === 1) cfg.internalDomains = domains[0]
       else if (domains.length > 1) cfg.internalDomains = domains
     }
+    if (mailHandler) cfg.mimeTypes = ['x-scheme-handler/mailto']
+    if (mailHandler && mailtoJs) cfg.mailtoJs = mailtoJs
+    return cfg
+  }
+
+  ipcMain.handle('manager:plugins', () => {
+    const pluginsDir = path.join(CONFIGS_DIR, 'plugins')
+    if (!fs.existsSync(pluginsDir)) return []
+    return fs.readdirSync(pluginsDir)
+      .filter(f => f.endsWith('.js'))
+      .map(f => ({ file: `plugins/${f}`, label: f.replace(/\.js$/, '') }))
+  })
+
+  ipcMain.handle('manager:create-app', (event, data) => {
+    const filePath = path.join(CONFIGS_DIR, `build.private.${data.profile}.json`)
+    if (fs.existsSync(filePath)) return { success: false, error: 'exists' }
+    const cfg = buildAppCfg(data)
     try {
       fs.writeFileSync(filePath, JSON.stringify(cfg, null, 4), 'utf8')
     } catch (err) {
       return { success: false, error: err.message }
     }
     let iconPath = null
-    if (icon) {
-      const resolved = resolveIconsByGtk([icon])
-      iconPath = resolved[icon] || null
+    if (data.icon) {
+      const resolved = resolveIconsByGtk([data.icon])
+      iconPath = resolved[data.icon] || null
     }
+    const w = parseInt(data.width), h = parseInt(data.height)
     return {
       success: true,
       app: {
-        profile,
-        configLabel: `private.${profile}`,
-        name: name || null,
-        url,
-        built: false,
-        installed: false,
-        isPrivate: true,
+        profile:             data.profile,
+        configLabel:         `private.${data.profile}`,
+        name:                data.name || null,
+        url:                 data.url,
+        built: false, installed: false, isPrivate: true,
         iconPath,
-        icon:                icon || null,
+        icon:                data.icon || null,
         geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
-        userAgent:           userAgent || null,
-        crossOriginIsolation: crossOriginIsolation || false,
-        singleInstance:      singleInstance || false,
-        internalDomains:     internalDomains ? cfg.internalDomains : null,
+        userAgent:           data.userAgent || null,
+        crossOriginIsolation: data.crossOriginIsolation || false,
+        singleInstance:      data.singleInstance || false,
+        internalDomains:     data.internalDomains ? cfg.internalDomains : null,
+        mimeTypes:           cfg.mimeTypes || null,
+        mailtoJs:            cfg.mailtoJs  || null,
       }
     }
   })
 
-  ipcMain.handle('manager:update-app', (event, { profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance }) => {
-    const filePath = path.join(CONFIGS_DIR, `build.private.${profile}.json`)
+  ipcMain.handle('manager:update-app', (event, data) => {
+    const filePath = path.join(CONFIGS_DIR, `build.private.${data.profile}.json`)
     if (!fs.existsSync(filePath)) return { success: false, error: 'not found' }
-    const cfg = { profile, url }
-    if (name)  cfg.name = name
-    if (icon)  cfg.icon = icon
-    const w = parseInt(width), h = parseInt(height)
-    if (w > 0 || h > 0) {
-      cfg.geometry = {}
-      if (w > 0) cfg.geometry.width  = w
-      if (h > 0) cfg.geometry.height = h
-    }
-    if (userAgent) cfg.userAgent = userAgent
-    if (crossOriginIsolation) cfg.crossOriginIsolation = true
-    if (singleInstance) cfg.singleInstance = true
-    if (internalDomains) {
-      const domains = internalDomains.split(',').map(d => d.trim()).filter(Boolean)
-      if (domains.length === 1) cfg.internalDomains = domains[0]
-      else if (domains.length > 1) cfg.internalDomains = domains
-    }
+    const cfg = buildAppCfg(data)
     try {
       fs.writeFileSync(filePath, JSON.stringify(cfg, null, 4), 'utf8')
     } catch (err) {
       return { success: false, error: err.message }
     }
     let iconPath = null
-    if (icon) {
-      const resolved = resolveIconsByGtk([icon])
-      iconPath = resolved[icon] || null
+    if (data.icon) {
+      const resolved = resolveIconsByGtk([data.icon])
+      iconPath = resolved[data.icon] || null
     }
+    const w = parseInt(data.width), h = parseInt(data.height)
     return {
       success: true,
       app: {
-        name:                name || null,
-        url,
-        icon:                icon || null,
+        name:                data.name || null,
+        url:                 data.url,
+        icon:                data.icon || null,
         iconPath,
         geometry:            (w > 0 || h > 0) ? cfg.geometry : null,
-        userAgent:           userAgent || null,
-        crossOriginIsolation: crossOriginIsolation || false,
-        singleInstance:      singleInstance || false,
-        internalDomains:     internalDomains ? cfg.internalDomains : null,
+        userAgent:           data.userAgent || null,
+        crossOriginIsolation: data.crossOriginIsolation || false,
+        singleInstance:      data.singleInstance || false,
+        internalDomains:     data.internalDomains ? cfg.internalDomains : null,
+        mimeTypes:           cfg.mimeTypes || null,
+        mailtoJs:            cfg.mailtoJs  || null,
       }
     }
   })

@@ -1,7 +1,7 @@
 import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
 import { initDomainList }    from '../domain-list.js'
 
-export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPicker, showConfirm }) {
+export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }, { iconPicker, showConfirm }) {
   const overlay = document.createElement('div')
   overlay.className = 'dialog-overlay hidden'
   overlay.innerHTML = `
@@ -73,6 +73,16 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
           <span class="toggle-switch"></span>
           <span>${i18n.createSingleInstance}</span>
         </button>
+        <button type="button" class="dialog-field-toggle" id="edit-mail-handler">
+          <span class="toggle-switch"></span>
+          <span>${i18n.createMailHandler}</span>
+        </button>
+        <div class="dialog-field" id="edit-plugin-field" style="display:none">
+          <label>${i18n.createPlugin}</label>
+          <select id="edit-plugin">
+            <option value="">${i18n.createPluginNone}</option>
+          </select>
+        </div>
         <hr class="dialog-section-divider">
         <div id="edit-info-section"></div>
       </div>
@@ -94,6 +104,23 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
   }
 
   const domainList    = initDomainList('edit-domain-list', 'edit-domain-input', 'edit-domain-add', () => updateSaveBtn())
+
+  const pluginSelect = document.getElementById('edit-plugin')
+  for (const { file, label } of (plugins || [])) {
+    const opt = document.createElement('option')
+    opt.value = file
+    opt.textContent = label
+    pluginSelect.appendChild(opt)
+  }
+
+  document.getElementById('edit-mail-handler').addEventListener('click', e => {
+    e.currentTarget.classList.toggle('active')
+    document.getElementById('edit-plugin-field').style.display =
+      e.currentTarget.classList.contains('active') ? '' : 'none'
+    if (!e.currentTarget.classList.contains('active')) pluginSelect.value = ''
+    updateSaveBtn()
+  })
+  pluginSelect.addEventListener('change', updateSaveBtn)
 
   let scrollbarInited  = false
   let urlValid         = true
@@ -123,6 +150,8 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
       internalDomains:    domainList.get().join(','),
       crossOriginIsolation: document.getElementById('edit-coi').classList.contains('active'),
       singleInstance:       document.getElementById('edit-single-instance').classList.contains('active'),
+      mailHandler:          document.getElementById('edit-mail-handler').classList.contains('active'),
+      mailtoJs:             pluginSelect.value,
     }
   }
 
@@ -292,6 +321,13 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPic
     const siBtn = document.getElementById('edit-single-instance')
     if (app.singleInstance) siBtn.classList.add('active')
     else siBtn.classList.remove('active')
+
+    const mailHandler = app.mimeTypes?.includes('x-scheme-handler/mailto')
+    const mhBtn = document.getElementById('edit-mail-handler')
+    if (mailHandler) mhBtn.classList.add('active')
+    else mhBtn.classList.remove('active')
+    document.getElementById('edit-plugin-field').style.display = mailHandler ? '' : 'none'
+    pluginSelect.value = app.mailtoJs || ''
 
     renderInfoSection(app)
     initialSnapshot = snapshot()

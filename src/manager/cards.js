@@ -9,6 +9,24 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
 
   let isBuildRunning = false
 
+  function refreshMailHandlerBadge(app, card) {
+    const badgesEl = card.querySelector('.badges')
+    let badge = card.querySelector('[data-role="mail-handler-badge"]')
+    const isHandler = app.mimeTypes?.includes('x-scheme-handler/mailto')
+    if (!isHandler) {
+      badge?.remove()
+      return
+    }
+    if (!badge) {
+      badge = document.createElement('span')
+      badge.className = 'badge mail-handler'
+      badge.dataset.role = 'mail-handler-badge'
+      badgesEl.appendChild(badge)
+    }
+    badge.classList.toggle('active', !!app.isDefaultMailHandler)
+    badge.textContent = app.isDefaultMailHandler ? `${i18n.badgeMailHandler} ✓` : i18n.badgeMailHandler
+  }
+
   function createCard(app) {
     const hostname = (() => { try { return new URL(app.url).hostname } catch { return app.url } })()
     const name = app.name || toDisplayName(app.profile)
@@ -29,7 +47,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         <span class="badge ${app.built ? 'built' : 'not-built'}" data-role="build-badge">${app.built ? i18n.badgeBuilt : i18n.badgeNotBuilt}</span>
         ${app.installed ? `<span class="badge installed" data-role="install-badge">${i18n.badgeInstalled}</span>` : ''}
         ${app.isPrivate ? `<span class="badge private">${i18n.badgeUser}</span>` : ''}
-        ${app.mimeTypes?.includes('x-scheme-handler/mailto') ? `<span class="badge mail-handler${app.isDefaultMailHandler ? ' active' : ''}">${i18n.badgeMailHandler}${app.isDefaultMailHandler ? ' ✓' : ''}</span>` : ''}
+        ${app.mimeTypes?.includes('x-scheme-handler/mailto') ? `<span class="badge mail-handler${app.isDefaultMailHandler ? ' active' : ''}" data-role="mail-handler-badge">${i18n.badgeMailHandler}${app.isDefaultMailHandler ? ' ✓' : ''}</span>` : ''}
       </div>
       <div class="card-toolbar">
         ${!app.isPrivate ? `<button class="toolbar-btn" data-action="info"    data-tooltip="${i18n.btnInfo}">${infoSrc    ? `<img src="${infoSrc}"    alt="${i18n.btnInfo}">` : ''}</button>` : ''}
@@ -57,6 +75,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         card.querySelector('.url').textContent  = newHostname
         iconEl.alt = newName
         iconEl.src = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
+        refreshMailHandlerBadge(app, card)
         if (rebuild) {
           const built = await doBuild()
           if (built && install) await doInstall()
@@ -161,20 +180,12 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
           buildBadge.insertAdjacentElement('afterend', installBadge)
         }
         if (app.mimeTypes?.includes('x-scheme-handler/mailto')) {
-          document.querySelectorAll('.badge.mail-handler').forEach(b => {
+          document.querySelectorAll('[data-role="mail-handler-badge"]').forEach(b => {
             b.classList.remove('active')
             b.textContent = i18n.badgeMailHandler
           })
-          if (setAsMailHandler) {
-            const mailBadge = card.querySelector('.badge.mail-handler')
-            if (mailBadge) {
-              mailBadge.classList.add('active')
-              mailBadge.textContent = `${i18n.badgeMailHandler} ✓`
-            }
-            app.isDefaultMailHandler = true
-          } else {
-            app.isDefaultMailHandler = false
-          }
+          app.isDefaultMailHandler = setAsMailHandler
+          refreshMailHandlerBadge(app, card)
         }
       }
       return result.success

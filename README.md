@@ -223,6 +223,7 @@ App configs live in the `webapps/` directory. For apps you don't want to commit,
 | `mimeTypes` | array | Protocol schemes this app can handle (e.g. `["x-scheme-handler/mailto"]`) |
 | `mailtoTemplate` | string | Base URL for the compose window — `mailto:` parameters are appended as a query string |
 | `mailtoParamMap` | object | Rename `mailto:` parameters before appending (e.g. `{ "subject": "su" }` for Gmail) |
+| `mailtoJs` | string | JavaScript injected after page load to open compose — use `{to}`, `{subject}`, `{body}`, `{cc}`, `{bcc}` as placeholders; for web apps that open compose via JS API rather than URL routing (e.g. Open-Xchange / Strato) |
 
 ### Examples
 

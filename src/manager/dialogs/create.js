@@ -1,6 +1,6 @@
 import { initDomainList } from '../domain-list.js'
 
-export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconPicker, applyVisibility, createCard, insertCard }) {
+export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }, { iconPicker, applyVisibility, createCard, insertCard }) {
   const overlay = document.createElement('div')
   overlay.className = 'dialog-overlay hidden'
   overlay.innerHTML = `
@@ -72,6 +72,16 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
           <span class="toggle-switch"></span>
           <span>${i18n.createSingleInstance}</span>
         </button>
+        <button type="button" class="dialog-field-toggle" id="create-mail-handler">
+          <span class="toggle-switch"></span>
+          <span>${i18n.createMailHandler}</span>
+        </button>
+        <div class="dialog-field" id="create-plugin-field" style="display:none">
+          <label>${i18n.createPlugin}</label>
+          <select id="create-plugin">
+            <option value="">${i18n.createPluginNone}</option>
+          </select>
+        </div>
       </div>
       <div class="confirm-actions">
         <button class="btn-cancel" id="create-cancel">${i18n.createCancel}</button>
@@ -90,6 +100,21 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
   }
 
   const domainList = initDomainList('create-domain-list', 'create-domain-input', 'create-domain-add', () => {})
+
+  const pluginSelect = document.getElementById('create-plugin')
+  for (const { file, label } of (plugins || [])) {
+    const opt = document.createElement('option')
+    opt.value = file
+    opt.textContent = label
+    pluginSelect.appendChild(opt)
+  }
+
+  document.getElementById('create-mail-handler').addEventListener('click', e => {
+    e.currentTarget.classList.toggle('active')
+    document.getElementById('create-plugin-field').style.display =
+      e.currentTarget.classList.contains('active') ? '' : 'none'
+    if (!e.currentTarget.classList.contains('active')) pluginSelect.value = ''
+  })
 
   let profileValid = false
   let urlValid     = false
@@ -250,6 +275,9 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     domainList.reset()
     document.getElementById('create-coi').classList.remove('active')
     document.getElementById('create-single-instance').classList.remove('active')
+    document.getElementById('create-mail-handler').classList.remove('active')
+    document.getElementById('create-plugin-field').style.display = 'none'
+    pluginSelect.value = ''
     profileValid = false
     urlValid     = false
     widthValid   = true
@@ -284,8 +312,10 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets }, { iconP
     const internalDomains     = domainList.get().join(', ')
     const crossOriginIsolation = document.getElementById('create-coi').classList.contains('active')
     const singleInstance       = document.getElementById('create-single-instance').classList.contains('active')
+    const mailHandler          = document.getElementById('create-mail-handler').classList.contains('active')
+    const mailtoJs             = pluginSelect.value
     saveBtn.disabled = true
-    const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance })
+    const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance, mailHandler, mailtoJs })
     if (result.success) {
       closeCreateDialog()
       insertCard(createCard(result.app))

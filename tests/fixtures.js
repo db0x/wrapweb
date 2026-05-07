@@ -13,6 +13,7 @@ const TEST_CONFIGS = [
   { file: 'build.private.test-user-app.json', content: { profile: 'test-user-app',      url: 'https://example.com', name: 'Test User App'   } },
   { file: 'build.test-ms-app.json',           content: { profile: 'test-ms-app',        url: 'https://example.com', name: 'Test MS App',    category: 'microsoft' } },
   { file: 'build.test-google-app.json',       content: { profile: 'test-google-app',    url: 'https://example.com', name: 'Test Google App', category: 'google'   } },
+  { file: 'build.private.test-mail-app.json', content: { profile: 'test-mail-app',      url: 'https://mail.example.com', name: 'Test Mail App', mimeTypes: ['x-scheme-handler/mailto'] } },
 ]
 
 async function launchApp(extraEnv = {}) {

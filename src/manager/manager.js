@@ -22,12 +22,13 @@ function toDisplayName(profile) {
 const dark = localStorage.getItem('dark') === '1'
 if (dark) document.body.classList.add('dark')
 
-const [apps, version, uiIcons, i18n, uaPresets] = await Promise.all([
+const [apps, version, uiIcons, i18n, uaPresets, plugins] = await Promise.all([
   window.managerAPI.getApps(),
   window.managerAPI.getVersion(),
   window.managerAPI.getUiIcons(),
   window.managerAPI.getI18n(),
   window.managerAPI.getUaPresets(),
+  window.managerAPI.getPlugins(),
 ])
 
 const tr = (key, params = {}) =>
@@ -37,7 +38,7 @@ const s = k => uiIcons[k] ? `file://${uiIcons[k]}` : null
 const appDefaultSrc = s('appDefault') ?? '../../assets/wrapweb.svg'
 
 const ctx = {
-  i18n, tr, apps, version, toDisplayName, appDefaultSrc, uaPresets,
+  i18n, tr, apps, version, toDisplayName, appDefaultSrc, uaPresets, plugins,
   icons: {
     sun:          s('sun'),
     moon:         s('moon'),
