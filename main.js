@@ -299,9 +299,19 @@ if (profile) {
   ipcMain.handle('manager:plugins', () => {
     const pluginsDir = path.join(CONFIGS_DIR, 'plugins')
     if (!fs.existsSync(pluginsDir)) return []
-    return fs.readdirSync(pluginsDir)
-      .filter(f => f.endsWith('.js'))
-      .map(f => ({ file: `plugins/${f}`, label: f.replace(/\.js$/, '') }))
+    const entries = []
+    for (const entry of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith('.js')) {
+        entries.push({ file: `plugins/${entry.name}`, label: entry.name.replace(/\.js$/, ''), category: null })
+      } else if (entry.isDirectory()) {
+        const subDir = path.join(pluginsDir, entry.name)
+        for (const sub of fs.readdirSync(subDir, { withFileTypes: true })) {
+          if (sub.isFile() && sub.name.endsWith('.js'))
+            entries.push({ file: `plugins/${entry.name}/${sub.name}`, label: sub.name.replace(/\.js$/, ''), category: entry.name })
+        }
+      }
+    }
+    return entries
   })
 
   ipcMain.handle('manager:create-app', (event, data) => {

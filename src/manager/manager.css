@@ -753,6 +753,25 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   border-color: #27ae60;
 }
 
+.field-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--card-url);
+  color: var(--card-bg);
+  font-size: 8px;
+  font-weight: 700;
+  margin-left: 4px;
+  cursor: default;
+  opacity: 0.5;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.field-help:hover { opacity: 1; }
+
 .field-hint {
   font-size: 11px;
   color: var(--card-url);
@@ -1115,7 +1134,9 @@ body.dark .dialog-field-toggle {
   padding: 5px 10px;
   border-radius: 6px;
   pointer-events: none;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 260px;
+  line-height: 1.45;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   opacity: 0;
   visibility: hidden;

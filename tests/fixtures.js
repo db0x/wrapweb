@@ -48,6 +48,12 @@ const test = base.extend({
     await closeApp(app, userDataDir)
   }, { scope: 'test' }],
 
+  electronAppDe: [async ({}, use) => {
+    const { app, userDataDir } = await launchApp({ WRAPWEB_LANG: 'de' })
+    await use(app)
+    await closeApp(app, userDataDir)
+  }, { scope: 'test' }],
+
   // Manager window, ready after IPC data is loaded
   managerPage: async ({ electronApp }, use) => {
     const page = await electronApp.firstWindow()
@@ -60,6 +66,12 @@ const test = base.extend({
     await page.waitForSelector('.card-add', { timeout: 30_000 })
     await use(page)
   },
+
+  managerPageDe: async ({ electronAppDe }, use) => {
+    const page = await electronAppDe.firstWindow()
+    await page.waitForSelector('.card-add', { timeout: 30_000 })
+    await use(page)
+  },
 })
 
-module.exports = { test, expect, FAKE_ICON_PATH }
+module.exports = { test, expect, FAKE_ICON_PATH, base }

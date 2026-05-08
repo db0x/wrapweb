@@ -49,13 +49,13 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }
           </div>
         </div>
         <div class="dialog-field">
-          <label>${i18n.createUAgent}</label>
+          <label>${i18n.createUAgent} <span class="field-help" data-tooltip="${i18n.tooltipUAgent}">?</span></label>
           <select id="create-useragent">
             <option value="">${i18n.createUaDefault}</option>
           </select>
         </div>
         <div class="dialog-field">
-          <label>${i18n.createDomains}</label>
+          <label>${i18n.createDomains} <span class="field-help" data-tooltip="${i18n.tooltipDomains}">?</span></label>
           <div class="domain-field-wrapper">
             <ul class="domain-list" id="create-domain-list"></ul>
             <div class="domain-add-row">
@@ -66,18 +66,18 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }
         </div>
         <button type="button" class="dialog-field-toggle" id="create-coi">
           <span class="toggle-switch"></span>
-          <span>${i18n.createCoi}</span>
+          <span>${i18n.createCoi} <span class="field-help" data-tooltip="${i18n.tooltipCoi}">?</span></span>
         </button>
         <button type="button" class="dialog-field-toggle" id="create-single-instance">
           <span class="toggle-switch"></span>
-          <span>${i18n.createSingleInstance}</span>
+          <span>${i18n.createSingleInstance} <span class="field-help" data-tooltip="${i18n.tooltipSingleInstance}">?</span></span>
         </button>
         <button type="button" class="dialog-field-toggle" id="create-mail-handler">
           <span class="toggle-switch"></span>
-          <span>${i18n.createMailHandler}</span>
+          <span>${i18n.createMailHandler} <span class="field-help" data-tooltip="${i18n.tooltipMailHandler}">?</span></span>
         </button>
         <div class="dialog-field" id="create-plugin-field" style="display:none">
-          <label>${i18n.createPlugin}</label>
+          <label>${i18n.createPlugin} <span class="field-help" data-tooltip="${i18n.tooltipPlugin}">?</span></label>
           <select id="create-plugin">
             <option value="">${i18n.createPluginNone}</option>
           </select>
@@ -102,7 +102,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }
   const domainList = initDomainList('create-domain-list', 'create-domain-input', 'create-domain-add', () => {})
 
   const pluginSelect = document.getElementById('create-plugin')
-  for (const { file, label } of (plugins || [])) {
+  for (const { file, label } of (plugins || []).filter(p => p.category === 'mail-handler')) {
     const opt = document.createElement('option')
     opt.value = file
     opt.textContent = label

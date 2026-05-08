@@ -10,6 +10,8 @@
 [![Electron](https://img.shields.io/badge/electron-41-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![UI & Integration Tests](https://github.com/db0x/wrapweb/actions/workflows/test.yml/badge.svg)](https://github.com/db0x/wrapweb/actions/workflows/test.yml)
 
+***Wrap any web app. Make it feel native.***
+
 Turn any *web app* into a standalone Linux *desktop application* — packaged as an AppImage, with its own window, session, and taskbar entry.
 
 Built on [Electron](https://www.electronjs.org/). Each app gets an isolated browser profile so WhatsApp, Teams, Google Earth and your own internal tools can all run side by side without interfering.
