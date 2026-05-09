@@ -1,0 +1,11 @@
+{
+    "profile": "drawio",
+    "name": "draw.io",
+    "icon": "drawio",
+    "url": "https://app.diagrams.net",
+    "singleInstance": true,
+    "fileHandler": true,
+    "mimeTypes": ["application/x-drawio"],
+    "mimeExtensions": { "application/x-drawio": ["drawio"] },
+    "mimeIcons": { "application/x-drawio": "application-vnd.x-drawio.svg" }
+}

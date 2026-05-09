@@ -3,7 +3,7 @@
   "description": "PWA Wrapper",
   "keywords": [],
   "main": "./main.js",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "author": {
     "name": "db0x",
     "url": "https://github.com/db0x"

@@ -3,19 +3,24 @@ const { session, desktopCapturer, app } = require('electron')
 const MEDIA_PERMISSIONS = [
   'media', 'display-capture', 'mediaKeySystem',
   'notifications', 'camera', 'microphone',
+  'clipboard-read', 'clipboard-sanitized-write',
 ]
 
-function createSession(profile) {
+function createSession(profile, opts = {}) {
   const customSession = session.fromPartition('persist:my-profile', { cache: true })
 
   customSession.setSpellCheckerLanguages(app.getPreferredSystemLanguages())
 
+  const allowed = opts.fileSystem
+    ? [...MEDIA_PERMISSIONS, 'fileSystem']
+    : MEDIA_PERMISSIONS
+
   customSession.setPermissionCheckHandler((_wc, permission) =>
-    MEDIA_PERMISSIONS.includes(permission)
+    allowed.includes(permission)
   )
 
   customSession.setPermissionRequestHandler((_wc, permission, callback) =>
-    callback(MEDIA_PERMISSIONS.includes(permission))
+    callback(allowed.includes(permission))
   )
 
   // Wayland: getSources() delegates to xdg-desktop-portal

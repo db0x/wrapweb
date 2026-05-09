@@ -1,11 +1,12 @@
-const { BrowserWindow, shell, ipcMain } = require('electron')
+const { BrowserWindow, shell, ipcMain, dialog, app } = require('electron')
 const path = require('node:path')
+const fs   = require('node:fs')
 const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
 const windowState = require('./window-state')
 
 function createWindow(pkg) {
-  const customSession = createSession(pkg.profile)
+  const customSession = createSession(pkg.profile, { fileSystem: !!pkg.fileHandler })
 
   const saved = !pkg.geometry ? windowState.load() : null
 
@@ -20,6 +21,7 @@ function createWindow(pkg) {
       nodeIntegration: false,
       session: customSession,
       ...(pkg.crossOriginIsolation && { enableBlinkFeatures: 'SharedArrayBuffer' }),
+      ...(pkg.fileHandler && { additionalArguments: ['--wrapweb-file-handler'] }),
     },
   })
 
@@ -62,6 +64,66 @@ function createWindow(pkg) {
       return { action: 'deny' }
     }
   })
+
+  customSession.on('will-download', (_event, item) => {
+    if (item.getSavePath()) return  // already handled by context-menu Save As
+
+    // Electron needs a save path set synchronously — use a temp file,
+    // then move it to the user-chosen location once the dialog resolves.
+    const filename = item.getFilename()
+    const tmpPath  = path.join(app.getPath('temp'), `wrapweb-${Date.now()}-${filename}`)
+    item.setSavePath(tmpPath)
+
+    const defaultPath = path.join(app.getPath('downloads'), filename)
+    dialog.showSaveDialog(mainWindow, { defaultPath }).then(({ canceled, filePath }) => {
+      if (!canceled && filePath) {
+        item.once('done', (_e, state) => {
+          if (state !== 'completed') return
+          try {
+            fs.renameSync(tmpPath, filePath)
+          } catch {
+            try { fs.copyFileSync(tmpPath, filePath); fs.rmSync(tmpPath) } catch {}
+          }
+        })
+      } else {
+        item.cancel()
+        try { fs.rmSync(tmpPath, { force: true }) } catch {}
+      }
+    })
+  })
+
+  if (pkg.fileHandler) {
+    // draw.io detects window.electron and uses rendererReq/mainResp IPC instead of
+    // the File System Access API — mirror the draw.io-desktop protocol here.
+    const onRendererReq = async (event, args) => {
+      if (event.sender !== mainWindow.webContents) return
+      try {
+        let ret = null
+        switch (args.action) {
+          case 'showSaveDialog': {
+            const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+              defaultPath: args.defaultPath,
+              filters:     args.filters || [],
+            })
+            ret = canceled ? null : { path: filePath }
+            break
+          }
+          case 'saveFile':
+            fs.writeFileSync(args.fileObject.path, args.data, 'utf8')
+            ret = fs.statSync(args.fileObject.path)
+            break
+          case 'loadFile':
+            ret = fs.readFileSync(args.fileObject.path, 'utf8')
+            break
+        }
+        event.reply('mainResp', { success: true, data: ret, reqId: args.reqId })
+      } catch (e) {
+        event.reply('mainResp', { error: true, msg: e.message, reqId: args.reqId })
+      }
+    }
+    ipcMain.on('rendererReq', onRendererReq)
+    mainWindow.on('closed', () => ipcMain.removeListener('rendererReq', onRendererReq))
+  }
 
   mainWindow.webContents.on('context-menu', (_event, params) => {
     showContextMenu(mainWindow, customSession, params)

@@ -64,7 +64,7 @@ function showContextMenu(mainWindow, customSession, params) {
           defaultPath: defaultName,
         })
         if (!canceled && filePath) {
-          customSession.once('will-download', (_e, item) => item.setSavePath(filePath))
+          customSession.prependOnceListener('will-download', (_e, item) => item.setSavePath(filePath))
           mainWindow.webContents.downloadURL(params.srcURL)
         }
       },

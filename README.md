@@ -107,25 +107,25 @@ The Manager displays a **Mail handler** badge on every app capable of handling `
 
 \* Private config — copy from `build.google-mail.json` and adjust to your account if needed.
 
-### Adding mailto support to a custom app
-
-```json
-{
-    "profile": "mymail",
-    "url": "https://mail.example.com",
-    "mimeTypes": ["x-scheme-handler/mailto"],
-    "mailtoTemplate": "https://mail.example.com/compose",
-    "mailtoParamMap": { "subject": "su" }
-}
-```
 
 `mailtoParamMap` is optional — use it when the provider expects different query parameter names than the standard `mailto:` fields (`to`, `subject`, `body`, `cc`, `bcc`).
+
+## File handler apps
+
+Some web apps can act as the system-wide handler for a file type — so double-clicking a file in Nautilus opens it directly in the wrapped app.
+
+### draw.io
+
+`build.drawio.json` wraps [app.diagrams.net](https://app.diagrams.net) and registers itself as the handler for `.drawio` files (`application/x-drawio`).
+
+After installing, double-clicking any `.drawio` file in the file manager opens it directly in the app with the correct filename shown in the title bar. **Save** (`Ctrl+S`) and **Save As** work natively through the system file dialog — the file is written to disk just like in a native app.
 
 ## Included app configs
 
 | Config | App |
 |---|---|
 | `build.claude.json` | Claude (Anthropic) |
+| `build.drawio.json` | draw.io |
 | `build.whatsapp.json` | WhatsApp Web |
 | `build.google-docs.json` | Google Docs |
 | `build.google-spreadsheets.json` | Google Spreadsheets |
@@ -222,7 +222,10 @@ App configs live in the `webapps/` directory. For apps you don't want to commit,
 | `internalDomains` | string \| array | Extra domains allowed to open inside the app window (e.g. OAuth providers) |
 | `crossOriginIsolation` | boolean | Enable `SharedArrayBuffer` — required for multi-threaded WASM (Google Earth) |
 | `singleInstance` | boolean | Allow only one running instance; a second launch focuses the existing window instead |
-| `mimeTypes` | array | Protocol schemes this app can handle (e.g. `["x-scheme-handler/mailto"]`) |
+| `mimeTypes` | array | Protocol schemes or MIME types this app can handle (e.g. `["x-scheme-handler/mailto"]` or `["application/x-drawio"]`) |
+| `mimeExtensions` | object | Maps MIME types to file extensions for system registration (e.g. `{ "application/x-drawio": ["drawio"] }`) — triggers `update-mime-database` on install |
+| `mimeIcons` | object | Maps MIME types to SVG asset filenames (from `assets/`) installed as system file-type icons (e.g. `{ "application/x-drawio": "application-vnd.x-drawio.svg" }`) |
+| `fileHandler` | boolean | Enable local file handling — files passed via the system (e.g. double-click in Nautilus) are read and passed to the app; also grants the `fileSystem` permission required for the File System Access API |
 | `mailtoTemplate` | string | Base URL for the compose window — `mailto:` parameters are appended as a query string |
 | `mailtoParamMap` | object | Rename `mailto:` parameters before appending (e.g. `{ "subject": "su" }` for Gmail) |
 | `mailtoJs` | string | JavaScript injected after page load to open compose — use `{to}`, `{subject}`, `{body}`, `{cc}`, `{bcc}` as placeholders; for web apps that open compose via JS API rather than URL routing (e.g. Open-Xchange / Strato) |

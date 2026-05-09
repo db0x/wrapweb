@@ -9,6 +9,45 @@ function toDisplayName(profile) {
   return profile.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
+function ensureHicolorIndexTheme() {
+  const hicolorDir = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor')
+
+  // Build index.theme from directories that actually exist locally — a copied
+  // system index.theme lists hundreds of missing dirs and makes gtk-update-icon-cache
+  // generate an invalid cache.
+  const sizeMap = { scalable: null }
+  const subdirs = []
+  try {
+    for (const sizeEntry of fs.readdirSync(hicolorDir, { withFileTypes: true })) {
+      if (!sizeEntry.isDirectory()) continue
+      const size = sizeEntry.name
+      const sizeDir = path.join(hicolorDir, size)
+      for (const ctxEntry of fs.readdirSync(sizeDir, { withFileTypes: true })) {
+        if (ctxEntry.isDirectory()) subdirs.push(`${size}/${ctxEntry.name}`)
+      }
+    }
+  } catch { /* ignore */ }
+
+  if (subdirs.length === 0) subdirs.push('scalable/apps', 'scalable/mimetypes')
+
+  const sections = subdirs.map(d => {
+    const size = d.startsWith('scalable') ? 128 : parseInt(d.split('/')[0]) || 48
+    return `[${d}]\nSize=${size}\nType=${d.startsWith('scalable') ? 'Scalable' : 'Fixed'}\nMinSize=1\nMaxSize=256`
+  })
+
+  const content = ['[Icon Theme]', 'Name=Hicolor', 'Comment=Hicolor',
+    `Directories=${subdirs.join(',')}`, '', ...sections, ''].join('\n')
+  fs.writeFileSync(path.join(hicolorDir, 'index.theme'), content, 'utf8')
+  return hicolorDir
+}
+
+function updateHicolorCache() {
+  try {
+    const hicolorDir = ensureHicolorIndexTheme()
+    execSync(`gtk-update-icon-cache -f -t "${hicolorDir}"`, { stdio: 'ignore' })
+  } catch { /* non-fatal */ }
+}
+
 function installIcon() {
   const src = path.join(PROJECT_ROOT, 'assets', 'wrapweb.svg')
   if (!fs.existsSync(src)) return
@@ -19,13 +58,7 @@ function installIcon() {
   fs.mkdirSync(iconDir, { recursive: true })
   fs.copyFileSync(src, dest)
   console.log(`  Icon installed: ${dest}`)
-
-  try {
-    const hicolorDir = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor')
-    execSync(`gtk-update-icon-cache -f -t "${hicolorDir}"`, { stdio: 'ignore' })
-  } catch {
-    // non-fatal
-  }
+  updateHicolorCache()
 }
 
 function escapeDesktop(s) {
@@ -69,10 +102,7 @@ function resolveIconToHicolor(iconName, desktopName) {
       const dest = ext === 'svg' ? destSvg : destPng
       fs.copyFileSync(found, dest)
       console.log(`  Icon copied to hicolor: ${dest}`)
-      try {
-        const hicolor = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor')
-        execSync(`gtk-update-icon-cache -f -t "${hicolor}"`, { stdio: 'ignore' })
-      } catch { /* non-fatal */ }
+      updateHicolorCache()
       return destName
     } catch { /* non-fatal */ }
   }
@@ -111,6 +141,75 @@ function installDesktop(app) {
     execSync(`update-desktop-database "${desktopsDir}"`, { stdio: 'ignore' })
   } catch {
     // non-fatal
+  }
+
+  if (app.mimeIcons) {
+    // Detect active GTK icon theme — PNG-only themes (e.g. Papirus) need PNGs
+    // installed directly into the user theme override dir, because their system
+    // icon-theme.cache takes precedence over the user's hicolor fallback.
+    let activeTheme = 'hicolor'
+    try {
+      activeTheme = execSync('gsettings get org.gnome.desktop.interface icon-theme',
+        { encoding: 'utf8', timeout: 2000 }).trim().replace(/'/g, '')
+    } catch { /* fallback to hicolor */ }
+
+    const converter = ['inkscape', 'rsvg-convert', 'convert'].find(cmd => {
+      try { execSync(`which ${cmd}`, { stdio: 'ignore' }); return true } catch { return false }
+    })
+
+    for (const [mimeType, assetFile] of Object.entries(app.mimeIcons)) {
+      const src      = path.join(PROJECT_ROOT, 'assets', assetFile)
+      if (!fs.existsSync(src)) continue
+      const iconName = mimeType.replace('/', '-')
+
+      // Always install SVG to hicolor scalable (covers scalable themes + fallback)
+      const svgDir = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor', 'scalable', 'mimetypes')
+      fs.mkdirSync(svgDir, { recursive: true })
+      fs.copyFileSync(src, path.join(svgDir, `${iconName}.svg`))
+      console.log(`  MIME icon (SVG) installed: ${path.join(svgDir, iconName + '.svg')}`)
+
+      // For PNG-only themes, render PNGs into the user theme override dir
+      if (converter && activeTheme !== 'hicolor') {
+        const themeSizes = [16, 22, 24, 32, 48, 64, 96, 128]
+        for (const size of themeSizes) {
+          const pngDir  = path.join(os.homedir(), '.local', 'share', 'icons', activeTheme, `${size}x${size}`, 'mimetypes')
+          const destPng = path.join(pngDir, `${iconName}.png`)
+          try {
+            fs.mkdirSync(pngDir, { recursive: true })
+            if (converter === 'inkscape') {
+              execSync(`inkscape -o "${destPng}" --export-width=${size} "${src}"`, { stdio: 'ignore', timeout: 10000 })
+            } else if (converter === 'rsvg-convert') {
+              execSync(`rsvg-convert -w ${size} -h ${size} -o "${destPng}" "${src}"`, { stdio: 'ignore', timeout: 5000 })
+            } else {
+              execSync(`convert -background none -resize ${size}x${size} "${src}" "${destPng}"`, { stdio: 'ignore', timeout: 5000 })
+            }
+            if (fs.existsSync(destPng))
+              console.log(`  MIME icon (${size}px) installed: ${destPng}`)
+          } catch { /* non-fatal */ }
+        }
+      }
+    }
+    updateHicolorCache()
+  }
+
+  if (app.mimeExtensions) {
+    const mimePackagesDir = path.join(os.homedir(), '.local', 'share', 'mime', 'packages')
+    const mimeXmlFile     = path.join(mimePackagesDir, `wrapweb-${app.profile}.xml`)
+    const types = Object.entries(app.mimeExtensions).map(([type, exts]) =>
+      `  <mime-type type="${type}">\n` +
+      `    <comment>${escapeDesktop(app.name || type)}</comment>\n` +
+      exts.map(e => `    <glob pattern="*.${e}"/>`).join('\n') + '\n' +
+      `  </mime-type>`
+    ).join('\n')
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">\n${types}\n</mime-info>\n`
+    fs.mkdirSync(mimePackagesDir, { recursive: true })
+    fs.writeFileSync(mimeXmlFile, xml, 'utf8')
+    console.log(`  MIME type registered: ${mimeXmlFile}`)
+    try {
+      execSync(`update-mime-database "${path.join(os.homedir(), '.local', 'share', 'mime')}"`, { stdio: 'ignore' })
+    } catch {
+      // non-fatal
+    }
   }
 }
 

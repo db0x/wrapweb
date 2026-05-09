@@ -40,6 +40,7 @@ function expandConfig(app) {
       ...(app.internalDomains     && { internalDomains: app.internalDomains }),
       ...(app.crossOriginIsolation && { crossOriginIsolation: true }),
       ...(app.singleInstance      && { singleInstance:       true }),
+      ...(app.fileHandler        && { fileHandler:          true }),
       ...(app.mimeTypes?.length  && { mimeTypes:            app.mimeTypes }),
       ...(app.mailtoTemplate    && { mailtoTemplate:       app.mailtoTemplate }),
       ...(app.mailtoParamMap    && { mailtoParamMap:       app.mailtoParamMap }),

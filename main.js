@@ -38,8 +38,20 @@ if (profile) {
     } catch { return null }
   }
 
+  function resolveFileUrl(raw) {
+    if (!raw || !pkg.fileHandler) return null
+    try {
+      const filePath = raw.startsWith('file://') ? new URL(raw).pathname : raw
+      if (!path.isAbsolute(filePath)) return null
+      const content  = fs.readFileSync(filePath, 'utf8')
+      const title    = encodeURIComponent(path.basename(filePath))
+      return `${pkg.url}/?title=${title}#R${encodeURIComponent(content)}`
+    } catch { return null }
+  }
+
   function resolveUrl(raw) {
     if (!raw) return null
+    if (raw.startsWith('file:') || path.isAbsolute(raw)) return null  // handled by resolveFileUrl
     if (raw.startsWith('mailto:')) {
       if (pkg.mailtoJs) return null  // handled via JS injection; load default URL
       if (pkg.mailtoTemplate) {
@@ -100,8 +112,9 @@ if (profile) {
     setTimeout(poll, 300)
   }
 
-  const rawArg   = process.argv.find(a => /^(https?:|mailto:)/.test(a))
-  const urlArg   = resolveUrl(rawArg)
+  const rawArg   = process.argv.slice(1).find(a => /^(https?:|mailto:|file:)/.test(a) ||
+    (pkg.fileHandler && path.isAbsolute(a) && fs.existsSync(a)))
+  const urlArg   = resolveUrl(rawArg) ?? resolveFileUrl(rawArg)
   const jsArg    = resolveMailtoJs(rawArg)
   const jsFields = (rawArg?.startsWith('mailto:') && pkg.mailtoJs) ? parseMailtoFields(rawArg) : null
 
@@ -109,8 +122,9 @@ if (profile) {
     const gotLock = app.requestSingleInstanceLock()
     if (!gotLock) { app.quit(); return }
     app.on('second-instance', (event, argv) => {
-      const raw2     = argv.find(a => /^(https?:|mailto:)/.test(a))
-      const url      = resolveUrl(raw2)
+      const raw2     = argv.slice(1).find(a => /^(https?:|mailto:|file:)/.test(a) ||
+        (pkg.fileHandler && path.isAbsolute(a) && fs.existsSync(a)))
+      const url      = resolveUrl(raw2) ?? resolveFileUrl(raw2)
       const js       = resolveMailtoJs(raw2)
       const js2Fields = (raw2?.startsWith('mailto:') && pkg.mailtoJs) ? parseMailtoFields(raw2) : null
       const win      = BrowserWindow.getAllWindows()[0]
