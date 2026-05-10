@@ -216,7 +216,12 @@ if (profile) {
         const appImagePath = path.join(__dirname, 'dist', `wrapweb-${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
         const isDefaultMailHandler = defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null }
+        let builtVersion = null
+        if (built) {
+          try { builtVersion = fs.readFileSync(path.join(__dirname, 'dist', `wrapweb-${cfg.profile}.version`), 'utf8').trim() } catch {}
+        }
+        const needsRebuild = built && builtVersion !== pkg.version
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null, builtVersion, needsRebuild }
       })
 
     configs.sort((a, b) => {

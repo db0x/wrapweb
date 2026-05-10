@@ -47,6 +47,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         <span class="badge ${app.built ? 'built' : 'not-built'}" data-role="build-badge">${app.built ? i18n.badgeBuilt : i18n.badgeNotBuilt}</span>
         ${app.installed ? `<span class="badge installed" data-role="install-badge">${i18n.badgeInstalled}</span>` : ''}
         ${app.isPrivate ? `<span class="badge private">${i18n.badgeUser}</span>` : ''}
+        ${app.needsRebuild ? `<span class="badge outdated" data-role="outdated-badge">${i18n.badgeOutdated}</span>` : ''}
         ${app.mimeTypes?.includes('x-scheme-handler/mailto') ? `<span class="badge mail-handler${app.isDefaultMailHandler ? ' active' : ''}" data-role="mail-handler-badge">${i18n.badgeMailHandler}${app.isDefaultMailHandler ? ' ✓' : ''}</span>` : ''}
       </div>
       <div class="card-toolbar">
@@ -134,11 +135,13 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
       hideBuildOverlay()
       if (result.success) {
         app.built = true
+        app.needsRebuild = false
         badge.textContent = i18n.badgeBuilt
         badge.classList.replace('not-built', 'built')
         btn.dataset.tooltip = i18n.btnRebuild
         card.querySelector('[data-action="install"]')?.removeAttribute('disabled')
         card.querySelector('[data-action="delete"]')?.removeAttribute('disabled')
+        card.querySelector('[data-role="outdated-badge"]')?.remove()
       }
       return result.success
     }

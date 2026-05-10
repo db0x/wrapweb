@@ -19,16 +19,17 @@ const translations = {
     drawerHideUninstalled: 'Nicht installierte ausblenden',
 
     // Badges
-    badgeBuilt:       'Gebaut',
-    badgeNotBuilt:    'Nicht gebaut',
+    badgeBuilt:       'Erstellt',
+    badgeNotBuilt:    'Nicht erstellt',
     badgeInstalled:   'Installiert',
     badgeUser:        'Benutzer',
     badgeMailHandler: 'Mail-Handler',
+    badgeOutdated:    'Neu erstellen erforderlich',
 
     // Toolbar buttons
     btnInfo:           'Informationen',
     btnEdit:           'Bearbeiten',
-    btnBuild:          'AppImage erzeugen',
+    btnBuild:          'AppImage erstellen',
     btnRebuild:        'AppImage neu erstellen',
     btnInstall:           'Installieren',
     btnInstallTooltip:    '{name} als Applikation im System installieren',
@@ -43,7 +44,7 @@ const translations = {
     confirmDeleteProfileData: 'Profil-Daten löschen (Cookies, Sessions, lokale Daten)',
 
     // Build overlay
-    buildingApp: 'Baut {name} …',
+    buildingApp: 'Erstellt {name} …',
 
     // Info dialog
     infoUrl:        'URL',
@@ -56,15 +57,15 @@ const translations = {
     infoCoiYes:     'Ja',
     infoAppImage:   'App-Image',
     infoProfileDir: 'Profil-Ordner',
-    infoNotBuilt:   'App ist nicht gebaut.',
+    infoNotBuilt:   'App ist nicht erstellt.',
     infoReveal:     'Im Dateimanager öffnen',
 
     // Edit dialog
     editTitle:             'App bearbeiten',
     editSave:              'Speichern',
     editRebuildPrompt:     '<p>Konfiguration von <strong>{name}</strong> gespeichert.</p><p>AppImage jetzt neu erstellen?</p>',
-    editRebuild:           'Neu bauen',
-    editInstallAfterBuild: 'Nach dem Bauen installieren',
+    editRebuild:           'Neu erstellen',
+    editInstallAfterBuild: 'Nach dem Erstellen installieren',
 
     // Install confirm
     installConfirmMsg:       '<p><strong>{name}</strong> als Applikation im System installieren?</p>',
@@ -121,6 +122,11 @@ const translations = {
     profilesTotal:     'Gesamt',
     profilesEmpty:     'Kein Datenverzeichnis vorhanden',
     profilesDeleteConfirm: '<p>Profildaten von <strong>{name}</strong> wirklich löschen?</p><p>Cookies, Login-Sessions und lokale Daten gehen verloren. Die App bleibt installiert.</p>',
+
+    // Rebuild notice
+    rebuildNoticeTitle:  'wrapweb wurde aktualisiert',
+    rebuildNoticeIntro:  'wrapweb wurde auf Version <strong>{version}</strong> aktualisiert. Folgende AppImages wurden mit einer älteren Version erstellt und müssen neu erstellt werden, damit alle neuen Funktionen verfügbar sind:',
+    rebuildNoticeOk:     'Verstanden',
   },
 
   en: {
@@ -146,6 +152,7 @@ const translations = {
     badgeInstalled:   'Installed',
     badgeUser:        'User',
     badgeMailHandler: 'Mail handler',
+    badgeOutdated:    'Rebuild required',
 
     // Toolbar buttons
     btnInfo:           'Information',
@@ -243,6 +250,11 @@ const translations = {
     profilesTotal:     'Total',
     profilesEmpty:     'No data directory',
     profilesDeleteConfirm: '<p>Really delete profile data for <strong>{name}</strong>?</p><p>Cookies, login sessions and local data will be lost. The app remains installed.</p>',
+
+    // Rebuild notice
+    rebuildNoticeTitle:  'wrapweb updated',
+    rebuildNoticeIntro:  'wrapweb was updated to version <strong>{version}</strong>. The following AppImages were built with an older version and need to be rebuilt for all new features to work:',
+    rebuildNoticeOk:     'Got it',
   },
 }
 
