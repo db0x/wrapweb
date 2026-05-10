@@ -103,10 +103,7 @@ The Manager displays a **Mail handler** badge on every app capable of handling `
 | Config | App | Compose URL base |
 |---|---|---|
 | `build.outlook.json` | Microsoft Outlook | `https://outlook.cloud.microsoft/mail/deeplink/compose` |
-| `build.google-mail.json`* | Google Mail | `https://mail.google.com/mail/?view=cm&fs=1` |
-
-\* Private config — copy from `build.google-mail.json` and adjust to your account if needed.
-
+| `build.google-mail.json` | Google Mail | `https://mail.google.com/mail/?view=cm&fs=1` |
 
 `mailtoParamMap` is optional — use it when the provider expects different query parameter names than the standard `mailto:` fields (`to`, `subject`, `body`, `cc`, `bcc`).
 
@@ -129,6 +126,8 @@ After installing, double-clicking any `.drawio` file in the file manager opens i
 | `build.whatsapp.json` | WhatsApp Web |
 | `build.google-docs.json` | Google Docs |
 | `build.google-spreadsheets.json` | Google Spreadsheets |
+| `build.google-presentation.json` | Google Presentation |
+| `build.google-notes.json` | Google Keep |
 | `build.google-gemini.json` | Google Gemini |
 | `build.google-earth.json` | Google Earth |
 | `build.openai.json` | ChatGPT / OpenAI |
