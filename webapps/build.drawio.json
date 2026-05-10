@@ -5,7 +5,15 @@
     "url": "https://app.diagrams.net",
     "singleInstance": true,
     "fileHandler": true,
-    "mimeTypes": ["application/x-drawio"],
-    "mimeExtensions": { "application/x-drawio": ["drawio"] },
-    "mimeIcons": { "application/x-drawio": "application-vnd.x-drawio.svg" }
+    "mimeTypes": ["application/x-drawio", "application/x-drawio-svg", "application/x-drawio-png"],
+    "mimeExtensions": {
+        "application/x-drawio":     ["drawio"],
+        "application/x-drawio-svg": ["drawio.svg"],
+        "application/x-drawio-png": ["drawio.png"]
+    },
+    "mimeIcons": {
+        "application/x-drawio":     "application-vnd.x-drawio.svg",
+        "application/x-drawio-svg": "application-vnd.x-drawio.svg",
+        "application/x-drawio-png": "application-vnd.x-drawio.svg"
+    }
 }

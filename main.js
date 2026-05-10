@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
+const zlib = require('node:zlib')
 const { spawnSync, spawn } = require('node:child_process')
 const pkg = require(app.getAppPath() + '/package.json')
 const CONFIGS_DIR = path.join(__dirname, 'webapps')
@@ -38,14 +39,51 @@ if (profile) {
     } catch { return null }
   }
 
+  function extractXmlFromDrawioSvg(content) {
+    const match = content.match(/\bcontent="([^"]*)"/)
+    if (!match) return null
+    return match[1]
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+  }
+
+  function extractXmlFromDrawioPng(buf) {
+    let off = 8
+    while (off + 12 <= buf.length) {
+      const len  = buf.readUInt32BE(off)
+      const type = buf.slice(off + 4, off + 8).toString('ascii')
+      const data = buf.slice(off + 8, off + 8 + len)
+      if (type === 'tEXt') {
+        const ni = data.indexOf(0)
+        if (ni > 0 && data.slice(0, ni).toString('ascii') === 'mxfile')
+          try { return decodeURIComponent(data.slice(ni + 1).toString('utf8')) } catch { return null }
+      } else if (type === 'zTXt') {
+        const ni = data.indexOf(0)
+        if (ni > 0 && data.slice(0, ni).toString('ascii') === 'mxfile') {
+          try { return decodeURIComponent(zlib.inflateSync(data.slice(ni + 2)).toString('utf8')) } catch { return null }
+        }
+      } else if (type === 'IEND') break
+      off += 12 + len
+    }
+    return null
+  }
+
   function resolveFileUrl(raw) {
     if (!raw || !pkg.fileHandler) return null
     try {
       const filePath = raw.startsWith('file://') ? new URL(raw).pathname : raw
       if (!path.isAbsolute(filePath)) return null
-      const content  = fs.readFileSync(filePath, 'utf8')
-      const title    = encodeURIComponent(path.basename(filePath))
-      return `${pkg.url}/?title=${title}#R${encodeURIComponent(content)}`
+      const title = encodeURIComponent(path.basename(filePath))
+      let xml
+      if (filePath.endsWith('.drawio.svg')) {
+        xml = extractXmlFromDrawioSvg(fs.readFileSync(filePath, 'utf8'))
+      } else if (filePath.endsWith('.drawio.png')) {
+        xml = extractXmlFromDrawioPng(fs.readFileSync(filePath))
+      } else {
+        xml = fs.readFileSync(filePath, 'utf8')
+      }
+      if (!xml) return null
+      return `${pkg.url}/?title=${title}#R${encodeURIComponent(xml)}`
     } catch { return null }
   }
 

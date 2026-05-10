@@ -113,9 +113,15 @@ Some web apps can act as the system-wide handler for a file type — so double-c
 
 ### draw.io
 
-`build.drawio.json` wraps [app.diagrams.net](https://app.diagrams.net) and registers itself as the handler for `.drawio` files (`application/x-drawio`).
+`build.drawio.json` wraps [app.diagrams.net](https://app.diagrams.net) and registers itself as the handler for `.drawio`, `.drawio.svg`, and `.drawio.png` files.
 
-After installing, double-clicking any `.drawio` file in the file manager opens it directly in the app with the correct filename shown in the title bar. **Save** (`Ctrl+S`) and **Save As** work natively through the system file dialog — the file is written to disk just like in a native app.
+After installing, double-clicking any of these files in the file manager opens it directly in the app with the correct filename shown in the title bar. **Save** (`Ctrl+S`) and **Save As** work natively through the system file dialog — the file is written to disk just like in a native app.
+
+| Format | MIME type | Notes |
+|---|---|---|
+| `.drawio` | `application/x-drawio` | Native XML diagram format |
+| `.drawio.svg` | `application/x-drawio-svg` | SVG export with embedded diagram XML |
+| `.drawio.png` | `application/x-drawio-png` | PNG export with embedded diagram XML |
 
 ## Included app configs
 
