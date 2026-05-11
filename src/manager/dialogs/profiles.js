@@ -46,6 +46,7 @@ export function initProfilesDialog({ i18n, tr, apps, appDefaultSrc, icons }, { s
   async function loadProfiles() {
     const listEl = document.getElementById('profiles-list')
     listEl.innerHTML = '<div class="build-spinner" style="margin: 24px auto;"></div>'
+    await new Promise(resolve => requestAnimationFrame(resolve))
 
     const sizes = (await window.managerAPI.getProfileSizes()).filter(p => p.bytes > 0)
     sizes.sort((a, b) => b.bytes - a.bytes)
