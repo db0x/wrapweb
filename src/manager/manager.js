@@ -8,6 +8,7 @@ import { initIconPicker }      from './dialogs/icon-picker.js'
 import { initCreateDialog }    from './dialogs/create.js'
 import { initEditDialog }      from './dialogs/edit.js'
 import { initAboutDialog }     from './dialogs/about.js'
+import { initRebuildNotice }   from './dialogs/rebuild-notice.js'
 import { initCards }           from './cards.js'
 import { initTooltip }         from './tooltip.js'
 
@@ -81,6 +82,9 @@ const createDialog = initCreateDialog(ctx, {
   createCard:      cards.createCard,
   insertCard:      cards.insertCard,
 })
+
+const rebuildNotice = initRebuildNotice(ctx)
+rebuildNotice.showIfNeeded(apps)
 
 cards.addCard.addEventListener('click', createDialog.openCreateDialog)
 document.getElementById('menu-profiles').addEventListener('click', () => {

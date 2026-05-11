@@ -1,9 +1,31 @@
 const { BrowserWindow, shell, ipcMain, dialog, app } = require('electron')
 const path = require('node:path')
 const fs   = require('node:fs')
+const { spawn } = require('node:child_process')
 const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
 const windowState = require('./window-state')
+
+const ROUTING_FILE = path.join(app.getPath('appData'), 'wrapweb', 'plugins', 'routing', 'routing.json')
+
+function loadRouting() {
+  try { return JSON.parse(fs.readFileSync(ROUTING_FILE, 'utf8')) } catch { return {} }
+}
+
+function routeExternalUrl(url, currentProfile) {
+  let targetHost
+  try { targetHost = new URL(url).hostname } catch { return false }
+  const routing = loadRouting()
+  const entry = Object.entries(routing).find(([domain]) =>
+    targetHost === domain || targetHost.endsWith('.' + domain)
+  )
+  if (!entry) return false
+  const [, appImagePath] = entry
+  const matchedProfile = path.basename(appImagePath).replace(/^wrapweb-/, '')
+  if (matchedProfile === currentProfile || !fs.existsSync(appImagePath)) return false
+  spawn(appImagePath, ['--no-sandbox', url], { detached: true, stdio: 'ignore' }).unref()
+  return true
+}
 
 function createWindow(pkg) {
   const customSession = createSession(pkg.profile, { fileSystem: !!pkg.fileHandler })
@@ -57,8 +79,8 @@ function createWindow(pkg) {
       )) {
         return { action: 'allow' }
       }
-      // External URLs: open in system browser
-      shell.openExternal(url)
+      // External URLs: route to another wrapweb app or open in system browser
+      if (!routeExternalUrl(url, pkg.profile)) shell.openExternal(url)
       return { action: 'deny' }
     } catch (err) {
       return { action: 'deny' }

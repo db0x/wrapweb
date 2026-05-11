@@ -22,6 +22,8 @@
   --badge-installed-fg: #004085;
   --badge-mail-bg:      #fde8f0;
   --badge-mail-fg:      #8b1a4a;
+  --badge-outdated-bg:  #fff0d0;
+  --badge-outdated-fg:  #7a4800;
 }
 
 body.dark {
@@ -46,6 +48,8 @@ body.dark {
   --badge-installed-fg: #7ab8f5;
   --badge-mail-bg:      #3a1828;
   --badge-mail-fg:      #f07ab0;
+  --badge-outdated-bg:  #3a2800;
+  --badge-outdated-fg:  #f0c060;
 }
 
 body {
@@ -346,6 +350,7 @@ body.dark .os-theme-dark {
 .badge.installed     { background: var(--badge-installed-bg); color: var(--badge-installed-fg); }
 .badge.mail-handler        { background: var(--badge-mail-bg);  color: var(--badge-mail-fg); opacity: 0.55; }
 .badge.mail-handler.active { opacity: 1; font-weight: 600; }
+.badge.outdated            { background: var(--badge-outdated-bg); color: var(--badge-outdated-fg); font-weight: 600; }
 
 /* ── Card toolbar ── */
 
@@ -1120,6 +1125,26 @@ body.dark .dialog-field-toggle {
   flex: 1;
   min-height: 0;
   max-height: 60vh;
+}
+
+.rebuild-notice-dialog {
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.rebuild-notice-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  max-height: 40vh;
+  margin-top: 12px;
+}
+
+.rebuild-notice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
 }
 
 /* ── Custom tooltip ── */

@@ -59,6 +59,8 @@ async function buildOne(configFile) {
   const label = configFile.replace(/^build\.(.+)\.json$/, '$1')
   console.log(`\n=== Building ${label} ===`)
   await build({ config: expandConfig(app), projectDir: process.cwd() })
+  const { version } = require('../package.json')
+  fs.writeFileSync(path.join('dist', `wrapweb-${app.profile}.version`), version, 'utf8')
   installIcon()
   installDesktop(app)
 }

@@ -9,6 +9,16 @@ const CONFIGS_DIR = path.join(__dirname, 'webapps')
 
 Menu.setApplicationMenu(null)
 
+function semverLt(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return true
+    if ((pa[i] || 0) > (pb[i] || 0)) return false
+  }
+  return false
+}
+
 if (!process.env.WRAPWEB_TEST) {
   app.commandLine.appendSwitch('ozone-platform-hint', 'wayland')
   app.commandLine.appendSwitch('use-gl',              'angle')
@@ -216,7 +226,17 @@ if (profile) {
         const appImagePath = path.join(__dirname, 'dist', `wrapweb-${cfg.profile}`)
         const profilePath  = path.join(app.getPath('appData'), 'wrapweb', cfg.profile)
         const isDefaultMailHandler = defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null }
+        let builtVersion = null
+        if (built) {
+          try { builtVersion = fs.readFileSync(path.join(__dirname, 'dist', `wrapweb-${cfg.profile}.version`), 'utf8').trim() } catch {}
+        }
+        const minVer = pkg.minAppImageVersion ?? pkg.version
+        const needsRebuild = built && (
+          process.env.WRAPWEB_TEST
+            ? builtVersion !== null && semverLt(builtVersion, minVer)
+            : semverLt(builtVersion ?? '0.0.0', minVer)
+        )
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null, builtVersion, needsRebuild }
       })
 
     configs.sort((a, b) => {

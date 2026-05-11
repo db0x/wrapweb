@@ -192,6 +192,8 @@ function installDesktop(app) {
     updateHicolorCache()
   }
 
+  updateRoutingTable()
+
   if (app.mimeExtensions) {
     const mimePackagesDir = path.join(os.homedir(), '.local', 'share', 'mime', 'packages')
     const mimeXmlFile     = path.join(mimePackagesDir, `wrapweb-${app.profile}.xml`)
@@ -211,6 +213,27 @@ function installDesktop(app) {
       // non-fatal
     }
   }
+}
+
+function updateRoutingTable() {
+  const routingDir  = path.join(os.homedir(), '.config', 'wrapweb', 'plugins', 'routing')
+  const routingFile = path.join(routingDir, 'routing.json')
+
+  const routing = {}
+  try {
+    const webappsDir = path.join(PROJECT_ROOT, 'webapps')
+    for (const f of fs.readdirSync(webappsDir).filter(f => /^build\..+\.json$/.test(f))) {
+      let cfg
+      try { cfg = JSON.parse(fs.readFileSync(path.join(webappsDir, f), 'utf8')) } catch { continue }
+      const appImagePath = path.join(PROJECT_ROOT, 'dist', `wrapweb-${cfg.profile}`)
+      if (!fs.existsSync(appImagePath)) continue
+      try { routing[new URL(cfg.url).hostname] = appImagePath } catch {}
+    }
+  } catch {}
+
+  fs.mkdirSync(routingDir, { recursive: true })
+  fs.writeFileSync(routingFile, JSON.stringify(routing, null, 2), 'utf8')
+  console.log(`  Routing table updated: ${routingFile}`)
 }
 
 module.exports = { toDisplayName, installDesktop, installIcon }
