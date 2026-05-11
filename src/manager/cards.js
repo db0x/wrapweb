@@ -33,6 +33,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
 
     const card = document.createElement('div')
     card.className = 'card'
+    card.dataset.profile   = app.profile
     card.dataset.private   = app.isPrivate ? 'true' : 'false'
     card.dataset.installed = app.installed ? 'true' : 'false'
     card.dataset.category  = app.category || ''
