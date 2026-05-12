@@ -23,7 +23,8 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 
 - **Isolated sessions** — each app has its own persistent profile; cookies, storage and login state never bleed across apps
 - **Native feel** — no browser chrome, correct WM class for taskbar grouping and window management
-- **Context menu** — Cut / Copy / Paste + Save Image As; spelling suggestions via `aspell` (falls back to English)
+- **Context menu** — Cut / Copy / Paste + Save Image As; spelling suggestions via `aspell` (falls back to English); links show **Open with [App]** and **Open in browser** (with the system default browser icon) when a routing target is known
+- **Cross-app link routing** — links to URLs handled by another installed wrapweb app open directly in that app instead of the system browser; a `routing.json` plugin file (written by `install-app`, read at runtime) maps hostnames to AppImages — no rebuild required when routing changes
 - **Zoom** — `Ctrl+Scroll` per window
 - **Screen sharing** — WebRTC / PipeWire capture works out of the box
 - **DevTools** — `F12` to toggle

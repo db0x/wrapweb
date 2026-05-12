@@ -143,6 +143,30 @@ function installDesktop(app) {
     // non-fatal
   }
 
+  // Render a 48×48 PNG from the app icon SVG so nativeImage.createFromPath() works in
+  // context menus (Electron on Linux cannot load SVG via nativeImage).
+  const appIconSvg = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor', 'scalable', 'apps', `${desktopName}.svg`)
+  if (fs.existsSync(appIconSvg)) {
+    const pngConverter = ['rsvg-convert', 'inkscape', 'convert'].find(cmd => {
+      try { execSync(`which ${cmd}`, { stdio: 'ignore' }); return true } catch { return false }
+    })
+    if (pngConverter) {
+      const pngDir  = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor', '48x48', 'apps')
+      const pngPath = path.join(pngDir, `${desktopName}.png`)
+      try {
+        fs.mkdirSync(pngDir, { recursive: true })
+        if (pngConverter === 'rsvg-convert') {
+          execSync(`rsvg-convert -w 48 -h 48 -o "${pngPath}" "${appIconSvg}"`, { stdio: 'ignore', timeout: 5000 })
+        } else if (pngConverter === 'inkscape') {
+          execSync(`inkscape -o "${pngPath}" --export-width=48 "${appIconSvg}"`, { stdio: 'ignore', timeout: 10000 })
+        } else {
+          execSync(`convert -background none -resize 48x48 "${appIconSvg}" "${pngPath}"`, { stdio: 'ignore', timeout: 5000 })
+        }
+        if (fs.existsSync(pngPath)) console.log(`  App icon PNG rendered: ${pngPath}`)
+      } catch { /* non-fatal */ }
+    }
+  }
+
   if (app.mimeIcons) {
     // Detect active GTK icon theme — PNG-only themes (e.g. Papirus) need PNGs
     // installed directly into the user theme override dir, because their system
@@ -227,7 +251,19 @@ function updateRoutingTable() {
       try { cfg = JSON.parse(fs.readFileSync(path.join(webappsDir, f), 'utf8')) } catch { continue }
       const appImagePath = path.join(PROJECT_ROOT, 'dist', `wrapweb-${cfg.profile}`)
       if (!fs.existsSync(appImagePath)) continue
-      try { routing[new URL(cfg.url).hostname] = appImagePath } catch {}
+      try {
+        const name      = cfg.name || toDisplayName(cfg.profile)
+        const hicolor   = path.join(os.homedir(), '.local', 'share', 'icons', 'hicolor')
+        const iconName  = `wrapweb-${cfg.profile}`
+        const iconPng48 = path.join(hicolor, '48x48', 'apps', `${iconName}.png`)
+        const iconPng   = path.join(hicolor, 'scalable', 'apps', `${iconName}.png`)
+        const iconSvg   = path.join(hicolor, 'scalable', 'apps', `${iconName}.svg`)
+        const icon      = fs.existsSync(iconPng48) ? iconPng48
+                        : fs.existsSync(iconPng)   ? iconPng
+                        : fs.existsSync(iconSvg)   ? iconSvg
+                        : null
+        routing[new URL(cfg.url).hostname] = { path: appImagePath, name, ...(icon && { icon }) }
+      } catch {}
     }
   } catch {}
 

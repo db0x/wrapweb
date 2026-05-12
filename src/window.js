@@ -1,7 +1,7 @@
 const { BrowserWindow, shell, ipcMain, dialog, app } = require('electron')
 const path = require('node:path')
 const fs   = require('node:fs')
-const { spawn } = require('node:child_process')
+const { spawn, spawnSync } = require('node:child_process')
 const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
 const windowState = require('./window-state')
@@ -12,18 +12,74 @@ function loadRouting() {
   try { return JSON.parse(fs.readFileSync(ROUTING_FILE, 'utf8')) } catch { return {} }
 }
 
-function routeExternalUrl(url, currentProfile) {
+let _browserIconPath
+function getDefaultBrowserIconPath() {
+  if (_browserIconPath !== undefined) return _browserIconPath
+  try {
+    const r = spawnSync('xdg-mime', ['query', 'default', 'x-scheme-handler/https'],
+      { encoding: 'utf8', timeout: 500 })
+    if (!r.stdout) return (_browserIconPath = null)
+    const desktop = r.stdout.trim()
+
+    const appDirs = [
+      path.join(app.getPath('home'), '.local', 'share', 'applications'),
+      '/usr/share/applications',
+      '/usr/local/share/applications',
+    ]
+    let iconName = desktop.replace(/\.desktop$/, '')
+    for (const dir of appDirs) {
+      try {
+        const match = fs.readFileSync(path.join(dir, desktop), 'utf8').match(/^Icon=(.+)$/m)
+        if (match) { iconName = match[1].trim(); break }
+      } catch {}
+    }
+
+    const iconBases = [
+      path.join(app.getPath('home'), '.local', 'share', 'icons', 'hicolor'),
+      '/usr/share/icons/hicolor',
+    ]
+    for (const base of iconBases) {
+      for (const size of ['48x48', '32x32', '64x64', '256x256', '128x128']) {
+        const p = path.join(base, size, 'apps', `${iconName}.png`)
+        if (fs.existsSync(p)) return (_browserIconPath = p)
+      }
+    }
+    const pixmap = `/usr/share/pixmaps/${iconName}.png`
+    if (fs.existsSync(pixmap)) return (_browserIconPath = pixmap)
+  } catch {}
+  return (_browserIconPath = null)
+}
+
+function unwrapUrl(url) {
+  try {
+    const wrapped = new URL(url).searchParams.get('url')
+    if (wrapped) { try { new URL(wrapped); return wrapped } catch {} }
+  } catch {}
+  return url
+}
+
+function resolveRoute(url, currentProfile) {
+  const resolved = unwrapUrl(url)
   let targetHost
-  try { targetHost = new URL(url).hostname } catch { return false }
+  try { targetHost = new URL(resolved).hostname } catch { return null }
   const routing = loadRouting()
   const entry = Object.entries(routing).find(([domain]) =>
     targetHost === domain || targetHost.endsWith('.' + domain)
   )
-  if (!entry) return false
-  const [, appImagePath] = entry
+  if (!entry) return null
+  const [, target] = entry
+  const appImagePath = typeof target === 'string' ? target : target.path
+  const name         = typeof target === 'string' ? null  : target.name
+  const icon         = typeof target === 'string' ? null  : (target.icon ?? null)
   const matchedProfile = path.basename(appImagePath).replace(/^wrapweb-/, '')
-  if (matchedProfile === currentProfile || !fs.existsSync(appImagePath)) return false
-  spawn(appImagePath, ['--no-sandbox', url], { detached: true, stdio: 'ignore' }).unref()
+  if (matchedProfile === currentProfile || !fs.existsSync(appImagePath)) return null
+  return { appImagePath, name, icon }
+}
+
+function routeExternalUrl(url, currentProfile) {
+  const route = resolveRoute(url, currentProfile)
+  if (!route) return false
+  spawn(route.appImagePath, ['--no-sandbox', url], { detached: true, stdio: 'ignore' }).unref()
   return true
 }
 
@@ -148,7 +204,11 @@ function createWindow(pkg) {
   }
 
   mainWindow.webContents.on('context-menu', (_event, params) => {
-    showContextMenu(mainWindow, customSession, params)
+    showContextMenu(mainWindow, customSession, params, {
+      resolveRoute: (url) => { const r = resolveRoute(url, pkg.profile); return r ? { ...r, url: unwrapUrl(url) } : null },
+      openInBrowser: (url) => shell.openExternal(url),
+      browserIconPath: getDefaultBrowserIconPath(),
+    })
   })
 
   mainWindow.webContents.on('before-input-event', (_event, input) => {

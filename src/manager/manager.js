@@ -9,6 +9,7 @@ import { initCreateDialog }    from './dialogs/create.js'
 import { initEditDialog }      from './dialogs/edit.js'
 import { initAboutDialog }     from './dialogs/about.js'
 import { initRebuildNotice }   from './dialogs/rebuild-notice.js'
+import { initUpdateNotice }    from './dialogs/update-notice.js'
 import { initCards }           from './cards.js'
 import { initTooltip }         from './tooltip.js'
 
@@ -55,7 +56,8 @@ const ctx = {
     filterMicrosoft: s('filterMicrosoft'),
     filterGoogle:    s('filterGoogle'),
     hideFilter:   s('hideFilter'),
-    github:       s('github'),
+    github:         s('github'),
+    updateNotifier: s('updateNotifier'),
   },
 }
 
@@ -85,6 +87,11 @@ const createDialog = initCreateDialog(ctx, {
 
 const rebuildNotice = initRebuildNotice(ctx)
 rebuildNotice.showIfNeeded(apps)
+
+const updateNotice = initUpdateNotice(ctx)
+window.managerAPI.checkUpdate().then(latestVersion => {
+  if (latestVersion) updateNotice.show(latestVersion)
+})
 
 cards.addCard.addEventListener('click', createDialog.openCreateDialog)
 document.getElementById('menu-profiles').addEventListener('click', () => {

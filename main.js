@@ -5,6 +5,7 @@ const os = require('node:os')
 const zlib = require('node:zlib')
 const { spawnSync, spawn } = require('node:child_process')
 const pkg = require(app.getAppPath() + '/package.json')
+const { checkForUpdate } = require('./src/update-check')
 const CONFIGS_DIR = path.join(__dirname, 'webapps')
 
 Menu.setApplicationMenu(null)
@@ -280,7 +281,7 @@ if (profile) {
       'view-app-grid-symbolic', 'applications-internet-symbolic',
       'avatar-default-symbolic', 'view-filter-symbolic',
       'document-edit-symbolic', 'github',
-      'view-group',
+      'view-group', 'update-notifier',
     ])
     return {
       sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
@@ -291,6 +292,7 @@ if (profile) {
       filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
       edit: r['document-edit-symbolic'], github: r['github'],
       filterMicrosoft: r['view-group'], filterGoogle: r['view-group'],
+      updateNotifier: r['update-notifier'],
     }
   })
 
@@ -476,6 +478,8 @@ for name in sorted(theme.list_icons(None)):
       return { name: line.slice(0, tab), path: line.slice(tab + 1) }
     }).filter(Boolean)
   })
+
+  ipcMain.handle('manager:check-update', () => checkForUpdate(pkg.version))
 
   ipcMain.handle('manager:open-external', (event, url) => {
     const allowed = /^https:\/\/github\.com\//

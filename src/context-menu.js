@@ -1,6 +1,6 @@
-const { Menu, dialog, app } = require('electron')
+const { Menu, dialog, app, nativeImage } = require('electron')
 const path = require('node:path')
-const { spawnSync } = require('node:child_process')
+const { spawnSync, spawn } = require('node:child_process')
 const { t } = require('./i18n')
 
 function aspellSuggestions(word) {
@@ -20,8 +20,9 @@ function aspellSuggestions(word) {
   return []
 }
 
-function showContextMenu(mainWindow, customSession, params) {
+function showContextMenu(mainWindow, customSession, params, opts = {}) {
   const i18n = t()
+  const tr = (key, p = {}) => (i18n[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => p[k] ?? '')
   const template = []
 
   if (params.misspelledWord) {
@@ -47,6 +48,29 @@ function showContextMenu(mainWindow, customSession, params) {
     { role: 'copy',  label: i18n.copy  },
     { role: 'paste', label: i18n.paste },
   )
+
+  if (params.linkURL && opts.resolveRoute) {
+    const route = opts.resolveRoute(params.linkURL)
+    template.push({ type: 'separator' })
+    if (route) {
+      const icon = route.icon ? (() => {
+        try { return nativeImage.createFromPath(route.icon).resize({ width: 16, height: 16 }) } catch { return undefined }
+      })() : undefined
+      template.push({
+        label: tr('openWithApp', { name: route.name }),
+        ...(icon && { icon }),
+        click: () => spawn(route.appImagePath, ['--no-sandbox', route.url ?? params.linkURL], { detached: true, stdio: 'ignore' }).unref(),
+      })
+    }
+    const browserIcon = opts.browserIconPath ? (() => {
+      try { return nativeImage.createFromPath(opts.browserIconPath).resize({ width: 16, height: 16 }) } catch { return undefined }
+    })() : undefined
+    template.push({
+      label: i18n.openInBrowser,
+      ...(browserIcon && { icon: browserIcon }),
+      click: () => opts.openInBrowser(params.linkURL),
+    })
+  }
 
   if (params.mediaType === 'image' && params.srcURL) {
     let defaultName = 'image.jpg'

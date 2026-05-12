@@ -19,4 +19,5 @@ contextBridge.exposeInMainWorld('managerAPI', {
   getProfileSizes:      ()        => ipcRenderer.invoke('manager:profile-sizes'),
   deleteProfileData:    (profile) => ipcRenderer.invoke('manager:delete-profile-data', profile),
   openExternal:    (url)  => ipcRenderer.invoke('manager:open-external', url),
+  checkUpdate:     ()     => ipcRenderer.invoke('manager:check-update'),
 })

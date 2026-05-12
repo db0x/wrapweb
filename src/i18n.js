@@ -5,6 +5,7 @@ const translations = {
     // Context menu
     cut: 'Ausschneiden', copy: 'Kopieren', paste: 'Einfügen',
     saveAs: 'Speichern unter…', noSuggestions: 'Keine Vorschläge',
+    openWithApp: 'Öffnen mit {name}', openInBrowser: 'Im Browser öffnen',
 
     // Drawer
     drawerAppearance:      'Darstellung',
@@ -127,12 +128,19 @@ const translations = {
     rebuildNoticeTitle:  'wrapweb wurde aktualisiert',
     rebuildNoticeIntro:  'wrapweb wurde auf Version <strong>{version}</strong> aktualisiert. Folgende AppImages wurden mit einer älteren Version erstellt und müssen neu erstellt werden, damit alle neuen Funktionen verfügbar sind:',
     rebuildNoticeOk:     'Verstanden',
+
+    // Update notice
+    updateNoticeTitle:  'Update verfügbar',
+    updateNoticeBody:   '<p>wrapweb <strong>{version}</strong> ist verfügbar.</p><p style="margin-top:8px">Zum Aktualisieren im wrapweb-Verzeichnis <code>git pull</code> ausführen und anschließend alle AppImages neu erstellen.</p>',
+    updateNoticeGithub: 'Auf GitHub öffnen',
+    updateNoticeOk:     'Verstanden',
   },
 
   en: {
     // Context menu
     cut: 'Cut', copy: 'Copy', paste: 'Paste',
     saveAs: 'Save As…', noSuggestions: 'No suggestions',
+    openWithApp: 'Open with {name}', openInBrowser: 'Open in browser',
 
     // Drawer
     drawerAppearance:      'Appearance',
@@ -255,6 +263,12 @@ const translations = {
     rebuildNoticeTitle:  'wrapweb updated',
     rebuildNoticeIntro:  'wrapweb was updated to version <strong>{version}</strong>. The following AppImages were built with an older version and need to be rebuilt for all new features to work:',
     rebuildNoticeOk:     'Got it',
+
+    // Update notice
+    updateNoticeTitle:  'Update available',
+    updateNoticeBody:   '<p>wrapweb <strong>{version}</strong> is available.</p><p style="margin-top:8px">To update, run <code>git pull</code> in the wrapweb directory and then rebuild all AppImages.</p>',
+    updateNoticeGithub: 'Open on GitHub',
+    updateNoticeOk:     'Got it',
   },
 }
 

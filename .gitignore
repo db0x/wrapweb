@@ -39,3 +39,4 @@ webapps/build.private.*.json
 test-results/
 playwright-report/
 .claude
+CLAUDE.md
