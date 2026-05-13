@@ -6,7 +6,7 @@
               /_/                   
 ```
 [![Platform: Linux](https://img.shields.io/badge/platform-linux-blue?logo=linux&logoColor=white)](https://github.com/db0x/wrapweb)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Electron](https://img.shields.io/badge/electron-41-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![UI & Integration Tests](https://github.com/db0x/wrapweb/actions/workflows/test.yml/badge.svg)](https://github.com/db0x/wrapweb/actions/workflows/test.yml)
 

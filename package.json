@@ -9,7 +9,7 @@
     "name": "db0x",
     "url": "https://github.com/db0x"
   },
-  "license": "MIT",
+  "license": "GPL-3.0",
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
