@@ -60,12 +60,23 @@ function unwrapUrl(url) {
 
 function resolveRoute(url, currentProfile) {
   const resolved = unwrapUrl(url)
-  let targetHost
-  try { targetHost = new URL(resolved).hostname } catch { return null }
+  let targetHost, targetPath
+  try { ({ hostname: targetHost, pathname: targetPath } = new URL(resolved)) } catch { return null }
   const routing = loadRouting()
-  const entry = Object.entries(routing).find(([domain]) =>
-    targetHost === domain || targetHost.endsWith('.' + domain)
-  )
+  // Sort longer keys first so path-specific entries (e.g. docs.google.com/spreadsheets)
+  // take priority over hostname-only entries (e.g. docs.google.com).
+  const entry = Object.entries(routing)
+    .sort((a, b) => b[0].length - a[0].length)
+    .find(([key]) => {
+      const slash = key.indexOf('/')
+      if (slash !== -1) {
+        const keyHost = key.slice(0, slash)
+        const keyPath = '/' + key.slice(slash + 1)
+        return (targetHost === keyHost || targetHost.endsWith('.' + keyHost)) &&
+               targetPath.startsWith(keyPath)
+      }
+      return targetHost === key || targetHost.endsWith('.' + key)
+    })
   if (!entry) return null
   const [, target] = entry
   const appImagePath = typeof target === 'string' ? target : target.path

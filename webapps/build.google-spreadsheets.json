@@ -1,7 +1,8 @@
 {
     "profile": "google-spreadsheets",
-    "naeme": "Google Spreadsheets",
+    "name": "Google Spreadsheets",
     "icon": "x-office-spreadsheet",
     "url": "https://spreadsheets.google.com",
+    "routingUrls": ["https://docs.google.com/spreadsheets"],
     "category": "google"
 }

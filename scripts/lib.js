@@ -262,7 +262,20 @@ function updateRoutingTable() {
                         : fs.existsSync(iconPng)   ? iconPng
                         : fs.existsSync(iconSvg)   ? iconSvg
                         : null
-        routing[new URL(cfg.url).hostname] = { path: appImagePath, name, ...(icon && { icon }) }
+        const entry = { path: appImagePath, name, ...(icon && { icon }) }
+        const routingKey = (u => {
+          const first = u.pathname.replace(/^\//, '').split('/')[0]
+          return first ? `${u.hostname}/${first}` : u.hostname
+        })(new URL(cfg.url))
+        routing[routingKey] = entry
+        for (const extra of cfg.routingUrls ?? []) {
+          try {
+            const u = new URL(extra)
+            const first = u.pathname.replace(/^\//, '').split('/')[0]
+            const key = first ? `${u.hostname}/${first}` : u.hostname
+            routing[key] = entry
+          } catch {}
+        }
       } catch {}
     }
   } catch {}

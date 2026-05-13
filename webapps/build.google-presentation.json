@@ -3,5 +3,6 @@
     "name": "Google Presentation",
     "icon": "x-office-presentation",
     "url": "https://slides.google.com",
+    "routingUrls": ["https://docs.google.com/presentation"],
     "category": "google"
 }

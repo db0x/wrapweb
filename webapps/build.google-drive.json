@@ -1,0 +1,8 @@
+{
+    "profile": "google-drive",
+    "url": "https://drive.google.com/",
+    "name": "Google Drive",
+    "icon": "googledrive",
+    "crossOriginIsolation": true,
+    "singleInstance": true
+}
