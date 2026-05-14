@@ -60,7 +60,7 @@ export function initRebuildNotice({ i18n, tr, version, appDefaultSrc },
       }
       if (result.success) {
         a.needsRebuild = false
-        document.querySelector(`.card [data-role="outdated-badge"][data-profile="${a.profile}"]`)?.remove()
+        document.querySelector(`.card[data-profile="${a.profile}"] [data-role="outdated-badge"]`)?.remove()
       }
     }
 
