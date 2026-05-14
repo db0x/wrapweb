@@ -298,10 +298,10 @@ if (profile) {
     if (process.env.WRAPWEB_TEST) {
       const fi = process.env.WRAPWEB_TEST_FILTER_ICONS || null
       // Resolve application-default-icon via GTK even in test mode so that local test
-      // runs (which have a real icon theme) show the system generic icon, not wrapweb.svg.
-      // Falls back to wrapweb.svg only when GTK is unavailable (e.g. CI without a theme).
+      // runs (which have a real icon theme) show the system generic icon, not the bundled fallback.
+      // Falls back to the bundled SVG when GTK is unavailable (e.g. CI without a theme).
       const r = resolveIconsByGtk(['application-default-icon'])
-      const appDefault = r['application-default-icon'] || path.join(__dirname, 'assets', 'wrapweb.svg')
+      const appDefault = r['application-default-icon'] || path.join(__dirname, 'assets', 'webapps', 'application-default-icon.svg')
       return fi ? { appDefault, filterMicrosoft: fi, filterGoogle: fi } : { appDefault }
     }
     const r = resolveIconsByGtk([
@@ -318,7 +318,8 @@ if (profile) {
       sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
       info: r['dialog-information-symbolic'], build: r['system-run-symbolic'],
       install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'],
-      appDefault: r['application-default-icon'], menu: r['open-menu-symbolic'],
+      appDefault: r['application-default-icon'] || path.join(__dirname, 'assets', 'webapps', 'application-default-icon.svg'),
+      menu: r['open-menu-symbolic'],
       filterAll: r['view-app-grid-symbolic'], filterPublic: r['applications-internet-symbolic'],
       filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
       edit: r['document-edit-symbolic'], github: r['github'],
