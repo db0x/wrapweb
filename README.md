@@ -19,6 +19,40 @@ Built on [Electron](https://www.electronjs.org/). Each app gets an isolated brow
 > **Target environment: GNOME on Wayland.**
 > wrapweb is built and tested on GNOME/Wayland. Features like correct WM class, taskbar grouping, window management, and the Manager's native icon integration rely on GNOME and Wayland conventions. It may run on other desktops or X11, but expect rough edges.
 
+## Installation
+
+The quickest way to get started is the install script:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/db0x/wrapweb/main/install.sh)
+```
+
+The script:
+- checks for **Node.js ≥ 18** — if missing, offers to install it automatically via [nvm](https://github.com/nvm-sh/nvm)
+- checks for optional dependencies (FUSE, python3-gi, aspell) and prints install hints if any are absent
+- clones the repository to `~/.local/share/wrapweb` (or a custom path passed as the first argument)
+- runs `npm install`
+- creates a `wrapweb` launcher entry in the application menu
+
+Re-running the script on an existing installation does a `git pull` and reinstalls dependencies.
+
+### Uninstall
+
+```bash
+~/.local/share/wrapweb/install.sh --uninstall
+```
+
+The script removes the desktop entry and icon, then asks interactively whether to also delete the installation directory and the app profile data (`~/.config/wrapweb/`).
+
+### Manual setup
+
+```bash
+git clone https://github.com/db0x/wrapweb.git
+cd wrapweb
+npm install
+npm start
+```
+
 ## Features
 
 - **Isolated sessions** — each app has its own persistent profile; cookies, storage and login state never bleed across apps
@@ -128,52 +162,20 @@ After installing, double-clicking any of these files in the file manager opens i
 
 | Config | App |
 |---|---|
-| `build.claude.json` | Claude (Anthropic) |
-| `build.drawio.json` | draw.io |
-| `build.whatsapp.json` | WhatsApp Web |
-| `build.google-docs.json` | Google Docs |
-| `build.google-spreadsheets.json` | Google Spreadsheets |
-| `build.google-presentation.json` | Google Presentation |
-| `build.google-notes.json` | Google Keep |
-| `build.google-gemini.json` | Google Gemini |
-| `build.google-earth.json` | Google Earth |
-| `build.openai.json` | ChatGPT / OpenAI |
-| `build.teams.json` | Microsoft Teams |
-| `build.outlook.json` | Microsoft Outlook |
-
-## Installation
-
-The quickest way to get started is the install script:
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/db0x/wrapweb/main/install.sh)
-```
-
-The script:
-- checks for **Node.js ≥ 18** — if missing, offers to install it automatically via [nvm](https://github.com/nvm-sh/nvm)
-- checks for optional dependencies (FUSE, python3-gi, aspell) and prints install hints if any are absent
-- clones the repository to `~/.local/share/wrapweb` (or a custom path passed as the first argument)
-- runs `npm install`
-- creates a `wrapweb` launcher entry in the application menu
-
-Re-running the script on an existing installation does a `git pull` and reinstalls dependencies.
-
-### Uninstall
-
-```bash
-~/.local/share/wrapweb/install.sh --uninstall
-```
-
-The script removes the desktop entry and icon, then asks interactively whether to also delete the installation directory and the app profile data (`~/.config/wrapweb/`).
-
-### Manual setup
-
-```bash
-git clone https://github.com/db0x/wrapweb.git
-cd wrapweb
-npm install
-npm start
-```
+| [`build.claude.json`](webapps/build.claude.json) | Claude (Anthropic) |
+| [`build.drawio.json`](webapps/build.drawio.json) | draw.io |
+| [`build.google-docs.json`](webapps/build.google-docs.json) | Google Docs |
+| [`build.google-drive.json`](webapps/build.google-drive.json) | Google Drive |
+| [`build.google-earth.json`](webapps/build.google-earth.json) | Google Earth |
+| [`build.google-gemini.json`](webapps/build.google-gemini.json) | Google Gemini |
+| [`build.google-mail.json`](webapps/build.google-mail.json) | Google Mail |
+| [`build.google-notes.json`](webapps/build.google-notes.json) | Google Keep |
+| [`build.google-presentation.json`](webapps/build.google-presentation.json) | Google Presentation |
+| [`build.google-spreadsheets.json`](webapps/build.google-spreadsheets.json) | Google Spreadsheets |
+| [`build.openai.json`](webapps/build.openai.json) | OpenAI ChatGPT |
+| [`build.outlook.json`](webapps/build.outlook.json) | Microsoft Outlook |
+| [`build.teams.json`](webapps/build.teams.json) | Microsoft Teams |
+| [`build.whatsapp.json`](webapps/build.whatsapp.json) | WhatsApp |
 
 ## Requirements
 
@@ -192,6 +194,7 @@ npm start
 | [Electron](https://www.electronjs.org/) | App shell, renderer, IPC |
 | [electron-builder](https://www.electron.build/) | AppImage packaging |
 | [OverlayScrollbars](https://github.com/KingSora/OverlayScrollbars) | Native-style overlay scrollbars in the Manager |
+| [Papirus Icon Theme](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) | UI icons in the Manager (system install recommended; bundled Tabler fallbacks used otherwise) |
 
 ## Building AppImages via CLI
 

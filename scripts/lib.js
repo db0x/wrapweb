@@ -195,7 +195,7 @@ function installDesktop(app) {
     })
 
     for (const [mimeType, assetFile] of Object.entries(app.mimeIcons)) {
-      const src      = path.join(PROJECT_ROOT, 'assets', 'webapps', assetFile)
+      const src      = path.join(PROJECT_ROOT, 'assets', 'mimetypes', assetFile)
       if (!fs.existsSync(src)) continue
       const iconName = mimeType.replace('/', '-')
 
