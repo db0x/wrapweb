@@ -4,17 +4,7 @@ const path = require('node:path')
 const os   = require('node:os')
 const fs   = require('node:fs')
 
-const ROOT      = path.join(__dirname, '..')
-const CACHE_DIR = path.join(os.homedir(), '.config', 'wrapweb')
-
-function writeCacheFile(data) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true })
-  fs.writeFileSync(path.join(CACHE_DIR, 'update-check.json'), JSON.stringify(data), 'utf8')
-}
-
-function removeCacheFile() {
-  fs.rmSync(path.join(CACHE_DIR, 'update-check.json'), { force: true })
-}
+const ROOT = path.join(__dirname, '..')
 
 async function launchManager() {
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrapweb-test-'))
@@ -29,7 +19,6 @@ async function launchManager() {
 
 base('update notice does not appear when WRAPWEB_TEST is set (no network check)', async () => {
   // WRAPWEB_TEST=1 skips all update checks — dialog must not appear
-  removeCacheFile()
   const { app, page } = await launchManager()
   try {
     const visible = await page.locator('#update-notice-body').isVisible()
