@@ -173,8 +173,11 @@ After installing, double-clicking any of these files in the file manager opens i
 | [`build.google-presentation.json`](webapps/build.google-presentation.json) | Google Presentation |
 | [`build.google-spreadsheets.json`](webapps/build.google-spreadsheets.json) | Google Spreadsheets |
 | [`build.openai.json`](webapps/build.openai.json) | OpenAI ChatGPT |
+| [`build.excel.json`](webapps/build.excel.json) | Microsoft Excel |
 | [`build.outlook.json`](webapps/build.outlook.json) | Microsoft Outlook |
+| [`build.powerpoint.json`](webapps/build.powerpoint.json) | Microsoft PowerPoint |
 | [`build.teams.json`](webapps/build.teams.json) | Microsoft Teams |
+| [`build.word.json`](webapps/build.word.json) | Microsoft Word |
 | [`build.whatsapp.json`](webapps/build.whatsapp.json) | WhatsApp |
 
 ## Requirements

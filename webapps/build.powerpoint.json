@@ -1,0 +1,9 @@
+{
+    "profile": "powerpoint",
+    "name": "Microsoft PowerPoint",
+    "icon": "ms-powerpoint",
+    "url": "https://powerpoint.cloud.microsoft",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+    "singleInstance": true,
+    "category": "microsoft"
+}
