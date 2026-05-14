@@ -3,8 +3,8 @@
   "description": "PWA Wrapper",
   "keywords": [],
   "main": "./main.js",
-  "version": "0.12.6",
-  "minAppImageVersion": "0.12.3",
+  "version": "0.13.0",
+  "minAppImageVersion": "0.13.0",
   "author": {
     "name": "db0x",
     "url": "https://github.com/db0x"
@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "electron": "^41.2.0",
+    "electron": "^42.0.1",
     "electron-builder": "^26.4.0"
   },
   "dependencies": {

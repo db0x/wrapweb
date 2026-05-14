@@ -63,7 +63,7 @@ check_git() {
   fi
 }
 
-# ── required: node ≥ 18 ──────────────────────────────────────────────────────
+# ── required: node ≥ 20 ──────────────────────────────────────────────────────
 install_node_via_nvm() {
   info "Installing nvm + Node.js LTS …"
   curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
@@ -89,8 +89,8 @@ check_node() {
   local ver
   ver=$(node -e 'process.stdout.write(process.versions.node)')
   local major="${ver%%.*}"
-  if [ "$major" -lt 18 ]; then
-    die "Node.js $ver found, but ≥ 18 is required."
+  if [ "$major" -lt 20 ]; then
+    die "Node.js $ver found, but ≥ 20 is required."
   fi
   ok "Node.js $ver"
 }

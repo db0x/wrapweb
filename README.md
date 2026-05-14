@@ -7,7 +7,7 @@
 ```
 [![Platform: Linux](https://img.shields.io/badge/platform-linux-blue?logo=linux&logoColor=white)](https://github.com/db0x/wrapweb)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Electron](https://img.shields.io/badge/electron-41-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![Electron](https://img.shields.io/badge/electron-42-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![UI & Integration Tests](https://github.com/db0x/wrapweb/actions/workflows/test.yml/badge.svg)](https://github.com/db0x/wrapweb/actions/workflows/test.yml)
 
 ***Wrap any web app. Make it feel native.***
@@ -28,7 +28,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/db0x/wrapweb/main/install.sh
 ```
 
 The script:
-- checks for **Node.js ≥ 18** — if missing, offers to install it automatically via [nvm](https://github.com/nvm-sh/nvm)
+- checks for **Node.js ≥ 20** — if missing, offers to install it automatically via [nvm](https://github.com/nvm-sh/nvm)
 - checks for optional dependencies (FUSE, python3-gi, aspell) and prints install hints if any are absent
 - clones the repository to `~/.local/share/wrapweb` (or a custom path passed as the first argument)
 - runs `npm install`
@@ -180,7 +180,7 @@ After installing, double-clicking any of these files in the file manager opens i
 ## Requirements
 
 - **git** — required by `install.sh` to clone and update the repository
-- **Node.js ≥ 18**
+- **Node.js ≥ 20**
 - **Linux** (GNOME/Wayland recommended — see note above)
 - **FUSE** — required to run AppImages (`sudo apt install fuse` or `fuse3`)
 - **python3-gi** — GTK bindings used by the Manager to resolve and enumerate system icon theme icons (`sudo apt install python3-gi`)
