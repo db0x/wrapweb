@@ -27,8 +27,12 @@ The quickest way to get started is the install script:
 bash <(curl -fsSL https://raw.githubusercontent.com/db0x/wrapweb/main/install.sh)
 ```
 
+> **curl not installed?** On Ubuntu 24.04 and newer, curl is no longer pre-installed.
+> Install it first: `sudo apt install curl`
+
 The script:
 - checks for **Node.js ≥ 20** — if missing, offers to install it automatically via [nvm](https://github.com/nvm-sh/nvm)
+- checks for **npm** — if missing, offers to install it via the system package manager
 - checks for optional dependencies (FUSE, python3-gi, aspell) and prints install hints if any are absent
 - clones the repository to `~/.local/share/wrapweb` (or a custom path passed as the first argument)
 - runs `npm install`

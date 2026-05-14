@@ -63,6 +63,27 @@ check_git() {
   fi
 }
 
+# ── required: npm ────────────────────────────────────────────────────────────
+check_npm() {
+  if command -v npm &>/dev/null; then ok "npm"; return; fi
+
+  warn "npm not found."
+  echo ""
+  read -rp "  Install npm now? [y/N] " _answer
+  if [[ "$_answer" =~ ^[yY]$ ]]; then
+    case "$PM" in
+      apt)    sudo apt-get install -y npm ;;
+      dnf)    sudo dnf install -y npm ;;
+      pacman) sudo pacman -S --noconfirm npm ;;
+      zypper) sudo zypper install -y npm ;;
+      *)      die "Cannot install npm automatically. Please install it manually and re-run." ;;
+    esac
+    ok "npm installed"
+  else
+    die "npm is required. Install it and re-run."
+  fi
+}
+
 # ── required: node ≥ 20 ──────────────────────────────────────────────────────
 install_node_via_nvm() {
   info "Installing nvm + Node.js LTS …"
@@ -235,6 +256,7 @@ detect_pm
 header "Checking requirements …"
 check_git
 check_node
+check_npm
 check_optional
 
 header "Installing wrapweb …"
