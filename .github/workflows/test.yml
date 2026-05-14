@@ -49,6 +49,4 @@ jobs:
         env:
           DISPLAY: ':99'
           LIBGL_ALWAYS_SOFTWARE: '1'
-          ELECTRON_ENABLE_LOGGING: '1'
-          DEBUG: 'pw:browser'
         run: npm test
