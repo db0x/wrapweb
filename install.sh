@@ -146,7 +146,7 @@ install_desktop_entry() {
   mkdir -p "$ICON_DIR"
   cp "$dest/assets/wrapweb.svg"       "$ICON_DIR/wrapweb.svg"
   cp "$dest/assets/claude.svg"        "$ICON_DIR/claude.svg"
-  cp "$dest/assets/chatgpt.svg"       "$ICON_DIR/chatgpt.svg"
+  cp "$dest/assets/openai.svg"       "$ICON_DIR/openai.svg"
   cp "$dest/assets/google-gemini.svg" "$ICON_DIR/google-gemini.svg"
   gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" &>/dev/null || true
 
@@ -177,7 +177,7 @@ uninstall() {
 
   [ -f "$desktop_file" ] && { rm -f "$desktop_file"; ok "Desktop entry removed"; } \
                           || info "Desktop entry not found, skipping"
-  for icon in wrapweb claude chatgpt google-gemini; do
+  for icon in wrapweb claude openai google-gemini; do
     local f="$ICON_DIR/${icon}.svg"
     [ -f "$f" ] && { rm -f "$f"; ok "Icon removed: ${icon}.svg"; } || true
   done
