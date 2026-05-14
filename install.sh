@@ -118,11 +118,18 @@ check_node() {
 
 # ── optional dependencies ─────────────────────────────────────────────────────
 check_optional() {
-  if ! command -v fusermount &>/dev/null && ! command -v fusermount3 &>/dev/null; then
-    pkg_hint "fuse" "fuse" "fuse3" "fuse" \
-      "FUSE not found — required to run AppImages."
+  # AppImages require libfuse.so.2 (FUSE 2) — FUSE 3 alone is not sufficient.
+  # On Ubuntu 22.04+ the package is libfuse2; on Ubuntu 24.04+ it is libfuse2t64.
+  if ldconfig -p 2>/dev/null | grep -q 'libfuse\.so\.2'; then
+    ok "libfuse2"
   else
-    ok "FUSE"
+    case "$PM" in
+      apt)    warn "libfuse2 not found — AppImages cannot run.\n         sudo apt install libfuse2t64   # Ubuntu 24.04+\n         sudo apt install libfuse2      # Ubuntu 22.04 / Debian" ;;
+      dnf)    warn "libfuse2 not found — AppImages cannot run.\n         sudo dnf install fuse-libs" ;;
+      pacman) warn "libfuse2 not found — AppImages cannot run.\n         sudo pacman -S fuse2" ;;
+      zypper) warn "libfuse2 not found — AppImages cannot run.\n         sudo zypper install libfuse2" ;;
+      *)      warn "libfuse2 not found — AppImages cannot run. Install libfuse2 for your distro." ;;
+    esac
   fi
 
   if ! python3 -c 'import gi' &>/dev/null 2>&1; then

@@ -189,7 +189,11 @@ After installing, double-clicking any of these files in the file manager opens i
 - **git** — required by `install.sh` to clone and update the repository
 - **Node.js ≥ 20**
 - **Linux** (GNOME/Wayland recommended — see note above)
-- **FUSE** — required to run AppImages (`sudo apt install fuse` or `fuse3`)
+- **libfuse2** — required to run AppImages. FUSE 3 alone is not sufficient; AppImages need `libfuse.so.2`.
+  - Ubuntu 24.04+: `sudo apt install libfuse2t64`
+  - Ubuntu 22.04 / Debian: `sudo apt install libfuse2`
+  - Fedora: `sudo dnf install fuse-libs`
+  - Arch: `sudo pacman -S fuse2`
 - **python3-gi** — GTK bindings used by the Manager to resolve and enumerate system icon theme icons (`sudo apt install python3-gi`)
 - **gtk-update-icon-cache** and **update-desktop-database** — called after installing an app; usually already present via `libgtk-3-bin` and `desktop-file-utils`
 - **aspell** — spell-check suggestions in text fields (optional; `sudo apt install aspell-de` for German, etc.)
