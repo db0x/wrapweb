@@ -39,7 +39,8 @@ const tr = (key, params = {}) =>
 
 // Converts a GTK icon key to a file:// URL; returns null if the icon wasn't resolved.
 const s = k => uiIcons[k] ? `file://${uiIcons[k]}` : null
-const appDefaultSrc = s('appDefault') ?? '../../assets/wrapweb.svg'
+// appDefault is always provided by main (system theme in production, wrapweb.svg in tests).
+const appDefaultSrc = s('appDefault')
 
 const ctx = {
   i18n, tr, apps, version, toDisplayName, appDefaultSrc, uaPresets, plugins,

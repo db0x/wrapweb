@@ -24,6 +24,17 @@ test('public test-app card is rendered', async ({ managerPage }) => {
   await expect(card.locator('.badge.not-built')).toBeVisible()
 })
 
+// Setup:    Manager launched; test-app has no "icon" field in its config.
+// Action:   (none — reads the card image src attribute)
+// Expected: The fallback icon src starts with "file://" — meaning it was resolved
+//           via the IPC/GTK path (application-default-icon or a local file path),
+//           not via a hard-coded relative path like "../../assets/wrapweb.svg".
+test('icon-less app card uses a resolved file:// icon, not a hard-coded relative path', async ({ managerPage }) => {
+  const card = managerPage.locator('.card', { hasText: 'Test App' })
+  const imgSrc = await card.locator('img').first().getAttribute('src')
+  expect(imgSrc).toMatch(/^file:\/\//)
+})
+
 // Setup:    Manager launched with build.private.test-user-app.json (private app).
 // Action:   (none — reads card state)
 // Expected: A card for "Test User App" is rendered with the "private" badge.

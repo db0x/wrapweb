@@ -297,7 +297,12 @@ if (profile) {
   ipcMain.handle('manager:ui-icons', () => {
     if (process.env.WRAPWEB_TEST) {
       const fi = process.env.WRAPWEB_TEST_FILTER_ICONS || null
-      return fi ? { filterMicrosoft: fi, filterGoogle: fi } : {}
+      // Resolve application-default-icon via GTK even in test mode so that local test
+      // runs (which have a real icon theme) show the system generic icon, not wrapweb.svg.
+      // Falls back to wrapweb.svg only when GTK is unavailable (e.g. CI without a theme).
+      const r = resolveIconsByGtk(['application-default-icon'])
+      const appDefault = r['application-default-icon'] || path.join(__dirname, 'assets', 'wrapweb.svg')
+      return fi ? { appDefault, filterMicrosoft: fi, filterGoogle: fi } : { appDefault }
     }
     const r = resolveIconsByGtk([
       'weather-clear-symbolic', 'weather-clear-night-symbolic',
