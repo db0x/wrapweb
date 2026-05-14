@@ -256,9 +256,12 @@ if (profile) {
     return configs.map(({ iconValue, ...c }) => {
       let iconPath = null
       if (iconValue && iconValue !== 'wrapweb') {
-        iconPath = path.isAbsolute(iconValue) && fs.existsSync(iconValue)
-          ? iconValue
-          : resolved[iconValue] || null
+        if (path.isAbsolute(iconValue) && fs.existsSync(iconValue)) {
+          iconPath = iconValue
+        } else {
+          const bundled = path.join(__dirname, 'assets', 'webapps', `${iconValue}.svg`)
+          iconPath = resolved[iconValue] || (fs.existsSync(bundled) ? bundled : null)
+        }
       }
       return { ...c, iconPath }
     })

@@ -106,7 +106,20 @@ function resolveIconToHicolor(iconName, desktopName) {
       return destName
     } catch { /* non-fatal */ }
   }
-  return iconName  // fallback: use original name unchanged
+  // Bundled fallback: check assets/webapps/<iconName>.svg, then assets/wrapweb.svg
+  const bundledWebapp = path.join(PROJECT_ROOT, 'assets', 'webapps', `${iconName}.svg`)
+  const fallbackSvg = fs.existsSync(bundledWebapp)
+    ? bundledWebapp
+    : path.join(PROJECT_ROOT, 'assets', 'wrapweb.svg')
+  if (fs.existsSync(fallbackSvg)) {
+    try {
+      fs.mkdirSync(hicolorDir, { recursive: true })
+      fs.copyFileSync(fallbackSvg, destSvg)
+      updateHicolorCache()
+      return destName
+    } catch { /* non-fatal */ }
+  }
+  return iconName
 }
 
 function installDesktop(app) {
@@ -182,7 +195,7 @@ function installDesktop(app) {
     })
 
     for (const [mimeType, assetFile] of Object.entries(app.mimeIcons)) {
-      const src      = path.join(PROJECT_ROOT, 'assets', assetFile)
+      const src      = path.join(PROJECT_ROOT, 'assets', 'webapps', assetFile)
       if (!fs.existsSync(src)) continue
       const iconName = mimeType.replace('/', '-')
 
