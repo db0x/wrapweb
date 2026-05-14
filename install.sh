@@ -120,7 +120,23 @@ check_node() {
 check_optional() {
   # AppImages require libfuse.so.2 (FUSE 2) — FUSE 3 alone is not sufficient.
   # On Ubuntu 22.04+ the package is libfuse2; on Ubuntu 24.04+ it is libfuse2t64.
-  if ldconfig -p 2>/dev/null | grep -q 'libfuse\.so\.2'; then
+  # dpkg-query is used on apt systems because ldconfig path varies across distros.
+  _fuse2_ok=false
+  case "$PM" in
+    apt)
+      if dpkg-query -W -f='${Status}' libfuse2t64 2>/dev/null | grep -q 'install ok installed' || \
+         dpkg-query -W -f='${Status}' libfuse2    2>/dev/null | grep -q 'install ok installed'; then
+        _fuse2_ok=true
+      fi
+      ;;
+    *)
+      # On non-apt systems fall back to searching for the library file
+      if find /usr/lib /usr/lib64 /lib /lib64 -name 'libfuse.so.2*' 2>/dev/null | grep -q .; then
+        _fuse2_ok=true
+      fi
+      ;;
+  esac
+  if $_fuse2_ok; then
     ok "libfuse2"
   else
     case "$PM" in
