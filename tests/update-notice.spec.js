@@ -6,6 +6,8 @@ const fs   = require('node:fs')
 
 const ROOT = path.join(__dirname, '..')
 
+// Launches the Manager without the standard test-config fixture set.
+// The update-notice tests manage their own environment and don't need app cards.
 async function launchManager() {
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrapweb-test-'))
   const app = await electron.launch({
@@ -17,6 +19,9 @@ async function launchManager() {
   return { app, page }
 }
 
+// Setup:    Manager launched with WRAPWEB_TEST=1, which skips the remote version fetch.
+// Action:   (none — reads dialog state on load)
+// Expected: The update-notice body element is not visible because no update check ran.
 base('update notice does not appear when WRAPWEB_TEST is set (no network check)', async () => {
   // WRAPWEB_TEST=1 skips all update checks — dialog must not appear
   const { app, page } = await launchManager()
@@ -28,6 +33,12 @@ base('update notice does not appear when WRAPWEB_TEST is set (no network check)'
   }
 })
 
+// Setup:    Manager launched; the update-notice overlay is in the DOM but hidden.
+// Action:   Inject version "99.99.99" directly into the update-notice body via evaluate()
+//           and remove the "hidden" class to simulate what show() does after an IPC result.
+// Expected: The dialog body shows the injected version number ("99.99.99") correctly.
+//           This tests the dialog's rendering logic in isolation from the IPC check,
+//           which is covered by the "does not appear" test above.
 base('update notice appears when cache says newer version exists', async () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
   // Write a fresh cache with a higher version so update-check.js returns it
@@ -51,6 +62,9 @@ base('update notice appears when cache says newer version exists', async () => {
   }
 })
 
+// Setup:    Update-notice dialog manually made visible (version "99.0.0" injected).
+// Action:   Click the "Got it" button.
+// Expected: The update-notice overlay gains the "hidden" CSS class (dialog is dismissed).
 base('update notice "Got it" button dismisses the dialog', async () => {
   const { app, page } = await launchManager()
   try {
@@ -68,6 +82,11 @@ base('update notice "Got it" button dismisses the dialog', async () => {
   }
 })
 
+// Setup:    Manager launched; update-notice overlay is in the DOM.
+// Action:   (none — reads button presence)
+// Expected: The "Open on GitHub" button exists in the DOM (exactly one instance).
+//           Clicking it would call openExternal via IPC; the click behavior is
+//           not tested here as it would open an external browser.
 base('update notice "Open on GitHub" button is present', async () => {
   const { app, page } = await launchManager()
   try {

@@ -7,6 +7,9 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
   addCard.className = 'card card-add'
   addCard.innerHTML = `<span class="plus">+</span>`
 
+  // Shared across all cards — only one AppImage build can run at a time.
+  // Exposed via getBuildRunning/setBuildRunning so the rebuild-notice dialog
+  // can participate in the same mutual exclusion.
   let isBuildRunning = false
 
   function refreshMailHandlerBadge(app, card) {

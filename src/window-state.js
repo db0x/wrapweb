@@ -14,6 +14,8 @@ function load() {
   }
 }
 
+// Only persist size when the window is in a normal (restored) state — saving
+// while maximized would store the screen dimensions as the "normal" size.
 function save(win) {
   if (win.isMaximized() || win.isMinimized() || win.isDestroyed()) return
   const [width, height] = win.getSize()

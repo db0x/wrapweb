@@ -1,5 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
+// Expose a narrow, named API to the renderer via contextBridge.
+// contextIsolation is enabled, so this is the only channel the renderer has to main.
 contextBridge.exposeInMainWorld('managerAPI', {
   getApps:      () => ipcRenderer.invoke('manager:apps'),
   getVersion:   () => ipcRenderer.invoke('manager:version'),

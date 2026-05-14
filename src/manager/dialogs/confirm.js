@@ -39,6 +39,8 @@ export function initConfirmDialog({ i18n }) {
 
       overlay.classList.remove('hidden')
 
+      // Clone buttons to strip all event listeners before re-using the dialog.
+      // Without this, each showConfirm() call would stack another listener on the same element.
       const cleanup = confirmed => {
         overlay.classList.add('hidden')
         ok.replaceWith(ok.cloneNode(true))

@@ -45,6 +45,8 @@ export function initProfilesDialog({ i18n, tr, apps, appDefaultSrc, icons }, { s
 
   async function loadProfiles() {
     const listEl = document.getElementById('profiles-list')
+    // Show the spinner first, then yield to the browser to render it before
+    // the blocking IPC call that reads disk sizes.
     listEl.innerHTML = '<div class="build-spinner" style="margin: 24px auto;"></div>'
     await new Promise(resolve => requestAnimationFrame(resolve))
 
@@ -102,6 +104,8 @@ export function initProfilesDialog({ i18n, tr, apps, appDefaultSrc, icons }, { s
     listEl.appendChild(totalEl)
   }
 
+  // Recalculates bar widths and total after a profile is deleted, without
+  // reloading all sizes from disk.
   function updateTotal() {
     const rows = [...document.querySelectorAll('.profile-size-row')]
     if (rows.length === 0) {

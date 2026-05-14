@@ -3,6 +3,9 @@ const path = require('node:path')
 const { spawnSync, spawn } = require('node:child_process')
 const { t } = require('./i18n')
 
+// Falls back to aspell when Electron's built-in spellchecker returns no
+// corrections — this covers languages not supported by the built-in engine.
+// Tries system languages first, then English as a last resort.
 function aspellSuggestions(word) {
   const preferred = app.getPreferredSystemLanguages().map(l => l.split('-')[0])
   const langs = [...new Set([...preferred, 'en'])]
@@ -88,6 +91,7 @@ function showContextMenu(mainWindow, customSession, params, opts = {}) {
           defaultPath: defaultName,
         })
         if (!canceled && filePath) {
+          // Intercept the download triggered below and redirect it to the chosen path.
           customSession.prependOnceListener('will-download', (_e, item) => item.setSavePath(filePath))
           mainWindow.webContents.downloadURL(params.srcURL)
         }

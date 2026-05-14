@@ -12,8 +12,10 @@ const configs = fs
 
 const profile = process.argv[2]
 
+// Always install the wrapweb launcher icon — it is shared by all app desktop entries.
 installIcon()
 
+// When a profile argument is given, install only that app; otherwise install all configs.
 if (profile) {
   const configFile = `build.${profile}.json`
   if (!fs.existsSync(path.join(CONFIGS_DIR, configFile))) {

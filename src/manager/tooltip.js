@@ -28,6 +28,8 @@ export function initTooltip() {
     el.style.top  = `${top}px`
   }
 
+  // closest() walks up the DOM so tooltips work even when the event target is a
+  // child element (e.g. an <img> inside a button with data-tooltip).
   document.addEventListener('mouseover', e => {
     const target = e.target.closest('[data-tooltip]')
     if (target === current) return

@@ -1,3 +1,6 @@
+// Full-screen blocking overlay shown during AppImage builds.
+// z-index is set above confirm-overlays (dialogs) so it blocks interaction
+// even when triggered from within a dialog (e.g. "Rebuild all").
 export function initBuildOverlay({ tr }) {
   const overlay = document.createElement('div')
   overlay.id = 'build-overlay'

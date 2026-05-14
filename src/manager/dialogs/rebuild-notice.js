@@ -33,6 +33,8 @@ export function initRebuildNotice({ i18n, tr, version, appDefaultSrc },
   let scrollbarInited = false
   let outdatedApps = []
 
+  // Rebuilds all outdated apps sequentially, showing the blocking overlay per app.
+  // Uses the same isBuildRunning mutex as individual card builds to prevent concurrent builds.
   async function rebuildAll() {
     if (getBuildRunning?.()) return
     const rebuildAllBtn = document.getElementById('rebuild-notice-rebuild-all')
@@ -59,11 +61,13 @@ export function initRebuildNotice({ i18n, tr, version, appDefaultSrc },
           : '<span class="rebuild-status-err">✗</span>'
       }
       if (result.success) {
+        // Mutate the shared app object so card.js also sees the updated state.
         a.needsRebuild = false
         document.querySelector(`.card[data-profile="${a.profile}"] [data-role="outdated-badge"]`)?.remove()
       }
     }
 
+    // Hide (not just disable) to signal that rebuild is complete.
     rebuildAllBtn.classList.add('hidden')
     okBtn.disabled    = false
     okBtn.textContent = i18n.rebuildNoticeDone

@@ -61,10 +61,15 @@ function installIcon() {
   updateHicolorCache()
 }
 
+// Escape backslashes for .desktop file values (the only character requiring escaping in practice).
 function escapeDesktop(s) {
   return String(s).replace(/\\/g, '\\\\')
 }
 
+// Copies a system icon into the user's hicolor theme under the app's desktop
+// name (e.g. wrapweb-teams) so the .desktop entry always has a valid icon.
+// Falls back to the bundled SVG from assets/webapps/ or assets/wrapweb.svg
+// when no matching icon is found in any system theme.
 function resolveIconToHicolor(iconName, desktopName) {
   if (!iconName || iconName === 'wrapweb') return iconName
 
@@ -252,6 +257,11 @@ function installDesktop(app) {
   }
 }
 
+// Rebuilds routing.json from all installed AppImages. Called after every
+// install-app run so the routing table stays in sync without requiring a rebuild.
+// Keys use path-prefix notation (e.g. docs.google.com/spreadsheets) so that
+// apps sharing a hostname can still be routed to different AppImages.
+// The 48×48 PNG is preferred over SVG because nativeImage cannot load SVG on Linux.
 function updateRoutingTable() {
   const routingDir  = path.join(os.homedir(), '.config', 'wrapweb', 'plugins', 'routing')
   const routingFile = path.join(routingDir, 'routing.json')

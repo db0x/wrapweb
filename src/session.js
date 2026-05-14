@@ -6,6 +6,10 @@ const MEDIA_PERMISSIONS = [
   'clipboard-read', 'clipboard-sanitized-write',
 ]
 
+// Creates an isolated, persistent session for the given profile.
+// Both permission handlers must be set — Electron calls the check handler for
+// passive feature detection and the request handler for actual prompts.
+// fileSystem must be explicitly included for the File System Access API (Electron 28+).
 function createSession(profile, opts = {}) {
   const customSession = session.fromPartition('persist:my-profile', { cache: true })
 

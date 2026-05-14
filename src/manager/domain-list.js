@@ -35,6 +35,8 @@ export function initDomainList(listId, inputId, addBtnId, onChange) {
 
   return {
     get:   ()    => [...domains],
+    // Accepts both an array (from JSON config) and a comma-separated string
+    // (legacy format stored by older versions of the Manager).
     set:   (src) => {
       domains = src
         ? (Array.isArray(src) ? [...src] : src.split(',').map(s => s.trim()).filter(Boolean))

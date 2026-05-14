@@ -10,6 +10,7 @@ const CONFIGS_DIR = path.join(__dirname, 'webapps')
 
 Menu.setApplicationMenu(null)
 
+// Inline semver comparison — avoids pulling in a dedicated package just for this.
 function semverLt(a, b) {
   const pa = a.split('.').map(Number)
   const pb = b.split('.').map(Number)
@@ -20,6 +21,8 @@ function semverLt(a, b) {
   return false
 }
 
+// Skip GPU/Wayland switches in tests — Playwright runs without a display server
+// and some switches crash the headless Chromium instance used by tests.
 if (!process.env.WRAPWEB_TEST) {
   app.commandLine.appendSwitch('ozone-platform-hint', 'wayland')
   app.commandLine.appendSwitch('use-gl',              'angle')
@@ -37,6 +40,8 @@ if (profile) {
   app.commandLine.appendSwitch('wm-class', `wrapweb-${profile}`)
   app.setPath('userData', path.join(app.getPath('appData'), 'wrapweb', profile))
 
+  // Parses a mailto: URI (e.g. "mailto:a@b.com?subject=Hi") into a plain object.
+  // URL() handles the parsing; the recipient is in the URL pathname, not a query param.
   function parseMailtoFields(raw) {
     try {
       const m = new URL(raw)
@@ -50,6 +55,7 @@ if (profile) {
     } catch { return null }
   }
 
+  // draw.io SVG files embed the diagram XML as HTML-escaped content= attribute value.
   function extractXmlFromDrawioSvg(content) {
     const match = content.match(/\bcontent="([^"]*)"/)
     if (!match) return null
@@ -58,6 +64,8 @@ if (profile) {
       .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
   }
 
+  // draw.io PNG files embed the diagram XML as a PNG tEXt or zTXt chunk with key "mxfile".
+  // zTXt chunks add zlib compression (2-byte header before the deflate stream).
   function extractXmlFromDrawioPng(buf) {
     let off = 8
     while (off + 12 <= buf.length) {
@@ -98,6 +106,9 @@ if (profile) {
     } catch { return null }
   }
 
+  // Converts a command-line URL argument into a loadable URL.
+  // mailto: is only forwarded if mailtoTemplate is configured; otherwise Electron would
+  // try to render the raw mailto: URI, which produces a blank page.
   function resolveUrl(raw) {
     if (!raw) return null
     if (raw.startsWith('file:') || path.isAbsolute(raw)) return null  // handled by resolveFileUrl
@@ -120,6 +131,8 @@ if (profile) {
     return raw
   }
 
+  // Builds the JS snippet to inject after page load when mailtoJs is configured.
+  // The template string uses {to}, {subject}, {body} etc. as placeholders.
   function resolveMailtoJs(raw) {
     if (!raw || !raw.startsWith('mailto:') || !pkg.mailtoJs) return null
     const fields = parseMailtoFields(raw)
@@ -127,6 +140,10 @@ if (profile) {
     return pkg.mailtoJs.replace(/\{(\w+)\}/g, (_, k) => fields[k] ?? '')
   }
 
+  // Polls until the compose-to input field is focused (detected by CSS class "tt-input"),
+  // then simulates keyboard input to fill in the recipient and subject.
+  // Native sendInputEvent is used because executeJavaScript cannot trigger
+  // the web app's own keydown handlers reliably for token-input widgets.
   function typeMailtoFields(win, fields) {
     if (!fields || (!fields.to && !fields.subject)) return
     let attempts = 0
@@ -167,6 +184,8 @@ if (profile) {
   const jsArg    = resolveMailtoJs(rawArg)
   const jsFields = (rawArg?.startsWith('mailto:') && pkg.mailtoJs) ? parseMailtoFields(rawArg) : null
 
+  // Single-instance lock: if another process already holds it, quit immediately.
+  // The second-instance handler lets the existing window handle the new URL argument.
   if (pkg.singleInstance) {
     const gotLock = app.requestSingleInstanceLock()
     if (!gotLock) { app.quit(); return }
@@ -204,6 +223,8 @@ if (profile) {
   })
 } else {
   ipcMain.handle('manager:apps', () => {
+    // xdg-mime returns a .desktop filename (e.g. "wrapweb-thunderbird.desktop");
+    // compare against each app's desktop name to determine the current mail handler.
     const defaultMailDesktop = (() => {
       try {
         const r = spawnSync('xdg-mime', ['query', 'default', 'x-scheme-handler/mailto'], { encoding: 'utf8', timeout: 2000 })
@@ -231,6 +252,8 @@ if (profile) {
         if (built) {
           try { builtVersion = fs.readFileSync(path.join(__dirname, 'dist', `wrapweb-${cfg.profile}.version`), 'utf8').trim() } catch {}
         }
+        // In tests, only flag as outdated when a .version file is present and older
+        // than minVer — avoids false positives for AppImages built without the sidecar.
         const minVer = pkg.minAppImageVersion ?? pkg.version
         const needsRebuild = built && (
           process.env.WRAPWEB_TEST
@@ -330,6 +353,8 @@ if (profile) {
       child.stdout?.on('data', d => { stdout += d.toString() })
       child.stderr?.on('data', d => { stderr += d.toString() })
       child.on('close', code => {
+        // Register as default mail handler after install if requested.
+        // Strip the "private." prefix — the desktop file name doesn't include it.
         if (code === 0 && setAsMailHandler) {
           const desktopName = `wrapweb-${configLabel.replace(/^private\./, '')}.desktop`
           spawnSync('xdg-mime', ['default', desktopName, 'x-scheme-handler/mailto'], { timeout: 2000 })
@@ -534,6 +559,9 @@ for name in sorted(theme.list_icons(None)):
   })
 }
 
+// Resolves GTK icon names to absolute file paths using the system icon theme.
+// A single Python/GTK subprocess handles all names in one call to amortize startup cost.
+// Returns empty strings for names that are not found in any installed theme.
 function resolveIconsByGtk(names) {
   if (names.length === 0) return {}
   const script = `

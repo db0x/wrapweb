@@ -182,6 +182,8 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }
     profileInput.className = ''
     profileHint.textContent = i18n.validChecking
     profileHint.className = 'field-hint'
+    // Debounce the uniqueness check — avoids an IPC round-trip on every keystroke.
+    // Guard against stale responses: discard if the input changed while awaiting.
     profileCheckTimer = setTimeout(async () => {
       const exists = await window.managerAPI.checkProfile(val)
       if (profileInput.value.trim() !== val) return

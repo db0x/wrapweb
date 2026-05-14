@@ -18,6 +18,10 @@ function resolveMailtoJs(app) {
   return val
 }
 
+// Produces the electron-builder config for one app. All app-specific settings
+// are embedded into the AppImage via extraMetadata, which overwrites the root
+// package.json fields at build time — this is how main.js reads them at runtime
+// without needing a separate config file next to the AppImage.
 function expandConfig(app) {
   const appId = `${APP_ID_BASE}.${app.profile}`
   const productName = `wrapweb-${app.profile}`
@@ -59,6 +63,8 @@ async function buildOne(configFile) {
   const label = configFile.replace(/^build\.(.+)\.json$/, '$1')
   console.log(`\n=== Building ${label} ===`)
   await build({ config: expandConfig(app), projectDir: process.cwd() })
+  // Write the wrapweb version alongside the AppImage so the Manager can detect
+  // outdated builds without mounting or inspecting the AppImage itself.
   const { version } = require('../package.json')
   fs.writeFileSync(path.join('dist', `wrapweb-${app.profile}.version`), version, 'utf8')
   installIcon()

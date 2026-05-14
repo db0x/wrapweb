@@ -194,7 +194,7 @@ After installing, double-clicking any of these files in the file manager opens i
 | [Electron](https://www.electronjs.org/) | App shell, renderer, IPC |
 | [electron-builder](https://www.electron.build/) | AppImage packaging |
 | [OverlayScrollbars](https://github.com/KingSora/OverlayScrollbars) | Native-style overlay scrollbars in the Manager |
-| [Papirus Icon Theme](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) | UI icons in the Manager (system install recommended; bundled Tabler fallbacks used otherwise) |
+| [Papirus Icon Theme](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) | Some icons in the Manager. |
 
 ## Building AppImages via CLI
 

@@ -33,9 +33,11 @@ const [apps, version, uiIcons, i18n, uaPresets, plugins] = await Promise.all([
   window.managerAPI.getPlugins(),
 ])
 
+// String interpolation for i18n keys — falls back to the key name if missing.
 const tr = (key, params = {}) =>
   (i18n[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ''))
 
+// Converts a GTK icon key to a file:// URL; returns null if the icon wasn't resolved.
 const s = k => uiIcons[k] ? `file://${uiIcons[k]}` : null
 const appDefaultSrc = s('appDefault') ?? '../../assets/wrapweb.svg'
 
@@ -91,8 +93,10 @@ const rebuildNotice = initRebuildNotice(ctx, {
   getBuildRunning:  cards.getBuildRunning,
   setBuildRunning:  cards.setBuildRunning,
 })
+// Show synchronously at startup — apps data is already loaded, no extra fetch needed.
 rebuildNotice.showIfNeeded(apps)
 
+// Update check runs in the background so it never delays the Manager UI from opening.
 const updateNotice = initUpdateNotice(ctx)
 window.managerAPI.checkUpdate().then(latestVersion => {
   if (latestVersion) updateNotice.show(latestVersion)

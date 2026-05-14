@@ -34,6 +34,7 @@ export function initAboutDialog({ i18n, version, icons }) {
   document.getElementById('about-close').addEventListener('click', closeAboutDialog)
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAboutDialog() })
 
+  // openExternal goes through main to enforce an allowlist — renderer cannot open arbitrary URLs.
   document.getElementById('about-github-link').addEventListener('click', e => {
     e.preventDefault()
     window.managerAPI.openExternal('https://github.com/db0x/wrapweb')

@@ -1,3 +1,5 @@
+// Single source of truth for card visibility. applyVisibility() is called
+// whenever a filter changes, a card is added, or an app is installed/deleted.
 export function initDrawer({ i18n, icons }) {
   const { sun: sunSrc, moon: moonSrc, menu: menuSrc,
           filterAll: filterAllSrc, filterPublic: filterPublicSrc,
@@ -115,6 +117,7 @@ export function initDrawer({ i18n, icons }) {
     btn.addEventListener('click', () => { applyFilter(btn.dataset.filter); closeDrawer() })
   )
 
+  // Restore last active filter and hide-uninstalled preference across sessions.
   const hideBtn = document.getElementById('menu-hide-uninstalled')
   hideBtn.classList.toggle('active', hideUninstalled)
   hideBtn.addEventListener('click', () => {

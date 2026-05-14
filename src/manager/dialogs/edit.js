@@ -139,6 +139,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }, 
   const iconNameEl   = document.getElementById('edit-icon-name')
   const iconClearBtn = document.getElementById('edit-icon-clear')
 
+  // Captures a comparable snapshot of all form fields so isDirty() can detect changes.
   function snapshot() {
     return {
       name:               document.getElementById('edit-name').value.trim(),
@@ -358,6 +359,8 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins }, 
 
     closeEditDialog()
 
+    // After saving, offer a rebuild prompt when an AppImage already exists.
+    // The "install after build" toggle reuses the deleteConfig key from the confirm API.
     if (currentApp.built) {
       const appName = currentApp.name || currentApp.profile
       const { confirmed, deleteConfig: installAfter } = await showConfirm(

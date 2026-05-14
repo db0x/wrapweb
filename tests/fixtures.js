@@ -8,6 +8,12 @@ const ROOT = path.join(__dirname, '..')
 const CONFIGS_DIR = path.join(ROOT, 'webapps')
 const FAKE_ICON_PATH = path.join(ROOT, 'assets', 'wrapweb.svg')
 
+// Minimal set of test configs that covers all major card variants:
+//   - public app (no special flags)
+//   - private/user app (isPrivate = true, shows edit button instead of info button)
+//   - Microsoft-category app (for category filter tests)
+//   - Google-category app (for category filter tests)
+//   - private app with mailto MIME type (for mail handler tests)
 const TEST_CONFIGS = [
   { file: 'build.test-app.json',              content: { profile: 'test-app',           url: 'https://example.com', name: 'Test App'        } },
   { file: 'build.private.test-user-app.json', content: { profile: 'test-user-app',      url: 'https://example.com', name: 'Test User App'   } },
@@ -16,6 +22,9 @@ const TEST_CONFIGS = [
   { file: 'build.private.test-mail-app.json', content: { profile: 'test-mail-app',      url: 'https://mail.example.com', name: 'Test Mail App', mimeTypes: ['x-scheme-handler/mailto'] } },
 ]
 
+// Writes test configs, launches the Electron app, and returns the app instance.
+// WRAPWEB_TEST=1 disables update checks, GTK icon lookups, and other non-test behaviors.
+// A fresh temp directory is used as userData so tests never share persistent state.
 async function launchApp(extraEnv = {}) {
   for (const { file, content } of TEST_CONFIGS)
     fs.writeFileSync(path.join(CONFIGS_DIR, file), JSON.stringify(content, null, 4))
@@ -36,25 +45,30 @@ async function closeApp(app, userDataDir) {
 }
 
 const test = base.extend({
+  // Standard Manager fixture: all five test configs, English UI, no custom icons.
   electronApp: [async ({}, use) => {
     const { app, userDataDir } = await launchApp()
     await use(app)
     await closeApp(app, userDataDir)
   }, { scope: 'test' }],
 
+  // Like electronApp but with WRAPWEB_TEST_FILTER_ICONS set, so filter buttons
+  // receive a resolved icon path and render both an <img> and a text label.
   electronAppWithFilterIcons: [async ({}, use) => {
     const { app, userDataDir } = await launchApp({ WRAPWEB_TEST_FILTER_ICONS: FAKE_ICON_PATH })
     await use(app)
     await closeApp(app, userDataDir)
   }, { scope: 'test' }],
 
+  // Like electronApp but with WRAPWEB_LANG=de so all UI text is in German.
   electronAppDe: [async ({}, use) => {
     const { app, userDataDir } = await launchApp({ WRAPWEB_LANG: 'de' })
     await use(app)
     await closeApp(app, userDataDir)
   }, { scope: 'test' }],
 
-  // Manager window, ready after IPC data is loaded
+  // Manager window ready for interaction — waits until all IPC data is loaded
+  // and the add-card button is visible before yielding.
   managerPage: async ({ electronApp }, use) => {
     const page = await electronApp.firstWindow()
     await page.waitForSelector('.card-add', { timeout: 30_000 })

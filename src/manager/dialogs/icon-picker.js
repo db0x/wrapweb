@@ -5,6 +5,7 @@ export function initIconPicker({ i18n }) {
   let allIconsCache = null
   let onSelectCallback = null
 
+  // Lazy-create the overlay DOM on first open — avoids building a large grid on startup.
   function ensureOverlay() {
     if (overlay) return
     overlay = document.createElement('div')
@@ -57,6 +58,7 @@ export function initIconPicker({ i18n }) {
       img.width = 32
       img.height = 32
       img.alt = ''
+      // Thousands of icons — lazy loading prevents a full-page image decode on open.
       img.loading = 'lazy'
       img.decoding = 'async'
       btn.appendChild(img)
@@ -80,6 +82,7 @@ export function initIconPicker({ i18n }) {
     onSelectCallback = onSelected
     overlay.classList.remove('hidden')
 
+    // Cache the full icon list after the first IPC call — subsequent opens reuse it.
     if (!allIconsCache) {
       const loader = document.getElementById('icon-picker-loader')
       loader.classList.remove('hidden')

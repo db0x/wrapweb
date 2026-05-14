@@ -12,10 +12,13 @@ function loadRouting() {
   try { return JSON.parse(fs.readFileSync(ROUTING_FILE, 'utf8')) } catch { return {} }
 }
 
+// Lazily resolved once per process — xdg-mime is a subprocess call and the
+// result never changes while the app is running.
 let _browserIconPath
 function getDefaultBrowserIconPath() {
   if (_browserIconPath !== undefined) return _browserIconPath
   try {
+    // xdg-mime returns the .desktop filename, not a path.
     const r = spawnSync('xdg-mime', ['query', 'default', 'x-scheme-handler/https'],
       { encoding: 'utf8', timeout: 500 })
     if (!r.stdout) return (_browserIconPath = null)
@@ -34,6 +37,8 @@ function getDefaultBrowserIconPath() {
       } catch {}
     }
 
+    // nativeImage.createFromPath() on Linux silently fails on SVG files —
+    // only PNG is reliable for context menu icons.
     const iconBases = [
       path.join(app.getPath('home'), '.local', 'share', 'icons', 'hicolor'),
       '/usr/share/icons/hicolor',
@@ -50,6 +55,8 @@ function getDefaultBrowserIconPath() {
   return (_browserIconPath = null)
 }
 
+// Some apps (e.g. Google) wrap external links as redirect URLs with the real
+// target in a `?url=` parameter. Unwrap so routing matches the actual hostname.
 function unwrapUrl(url) {
   try {
     const wrapped = new URL(url).searchParams.get('url')
@@ -161,6 +168,9 @@ function createWindow(pkg) {
     // then move it to the user-chosen location once the dialog resolves.
     const filename = item.getFilename()
     const tmpPath  = path.join(app.getPath('temp'), `wrapweb-${Date.now()}-${filename}`)
+    // Electron requires a save path set synchronously before the download starts,
+    // but the save dialog is async. Write to a temp file first, then move it
+    // to the user-chosen location once the dialog resolves.
     item.setSavePath(tmpPath)
 
     const defaultPath = path.join(app.getPath('downloads'), filename)
@@ -182,8 +192,9 @@ function createWindow(pkg) {
   })
 
   if (pkg.fileHandler) {
-    // draw.io detects window.electron and uses rendererReq/mainResp IPC instead of
-    // the File System Access API — mirror the draw.io-desktop protocol here.
+    // draw.io detects window.electron and switches to a custom IPC protocol
+    // (rendererReq/mainResp) instead of the browser File System Access API.
+    // We mirror the draw.io-desktop protocol so Save/Save As work natively.
     const onRendererReq = async (event, args) => {
       if (event.sender !== mainWindow.webContents) return
       try {

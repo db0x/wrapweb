@@ -50,6 +50,7 @@ export function initInfoDialog({ i18n, icons }) {
       rows.push(field(i18n.infoGeometry, `${w} × ${h}`))
     }
     if (app.userAgent) rows.push(field(i18n.infoUserAgent, app.userAgent))
+    // internalDomains is stored as an array in new configs but as a string in legacy ones.
     if (app.internalDomains) {
       const domains = Array.isArray(app.internalDomains)
         ? app.internalDomains.join(', ')
