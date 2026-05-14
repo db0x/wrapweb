@@ -474,7 +474,7 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  z-index: 150;
+  z-index: 250;
 }
 
 #build-overlay.hidden {
@@ -1151,6 +1151,17 @@ body.dark .dialog-field-toggle {
   gap: 10px;
   padding: 5px 0;
 }
+
+.rebuild-notice-status {
+  margin-left: auto;
+  min-width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rebuild-status-ok  { color: var(--badge-installed-fg, #2d6a4f); font-weight: bold; }
+.rebuild-status-err { color: var(--badge-notbuilt-fg, #c0392b);  font-weight: bold; }
 
 /* ── Custom tooltip ── */
 

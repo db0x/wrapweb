@@ -104,6 +104,10 @@ test('current-version app is not listed in rebuild notice', async ({ pageCurrent
   }
 })
 
+test('"Rebuild all" button is visible in rebuild notice', async ({ pageOutdated }) => {
+  await expect(pageOutdated.locator('#rebuild-notice-rebuild-all')).toBeVisible()
+})
+
 test('rebuild notice reappears on next launch while app is still outdated', async ({}) => {
   writeConfig(OUTDATED_PROFILE)
   fakeBuilt(OUTDATED_PROFILE, '0.0.0')

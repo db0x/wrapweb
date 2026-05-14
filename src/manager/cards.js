@@ -212,5 +212,8 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
   }
   grid.appendChild(addCard)
 
-  return { createCard, insertCard, addCard }
+  return { createCard, insertCard, addCard,
+    getBuildRunning: () => isBuildRunning,
+    setBuildRunning: v  => { isBuildRunning = v },
+  }
 }

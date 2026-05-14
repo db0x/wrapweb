@@ -85,7 +85,12 @@ const createDialog = initCreateDialog(ctx, {
   insertCard:      cards.insertCard,
 })
 
-const rebuildNotice = initRebuildNotice(ctx)
+const rebuildNotice = initRebuildNotice(ctx, {
+  showBuildOverlay: buildOverlay.showBuildOverlay,
+  hideBuildOverlay: buildOverlay.hideBuildOverlay,
+  getBuildRunning:  cards.getBuildRunning,
+  setBuildRunning:  cards.setBuildRunning,
+})
 rebuildNotice.showIfNeeded(apps)
 
 const updateNotice = initUpdateNotice(ctx)

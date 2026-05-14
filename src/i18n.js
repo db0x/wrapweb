@@ -125,9 +125,12 @@ const translations = {
     profilesDeleteConfirm: '<p>Profildaten von <strong>{name}</strong> wirklich löschen?</p><p>Cookies, Login-Sessions und lokale Daten gehen verloren. Die App bleibt installiert.</p>',
 
     // Rebuild notice
-    rebuildNoticeTitle:  'wrapweb wurde aktualisiert',
-    rebuildNoticeIntro:  'wrapweb wurde auf Version <strong>{version}</strong> aktualisiert. Folgende AppImages wurden mit einer älteren Version erstellt und müssen neu erstellt werden, damit alle neuen Funktionen verfügbar sind:',
-    rebuildNoticeOk:     'Verstanden',
+    rebuildNoticeTitle:    'wrapweb wurde aktualisiert',
+    rebuildNoticeIntro:    'wrapweb wurde auf Version <strong>{version}</strong> aktualisiert. Folgende AppImages wurden mit einer älteren Version erstellt und müssen neu erstellt werden, damit alle neuen Funktionen verfügbar sind:',
+    rebuildNoticeOk:       'Verstanden',
+    rebuildNoticeRebuildAll: 'Alle neu erstellen',
+    rebuildNoticeBuilding:   'Wird erstellt …',
+    rebuildNoticeDone:       'Fertig',
 
     // Update notice
     updateNoticeTitle:  'Update verfügbar',
@@ -260,9 +263,12 @@ const translations = {
     profilesDeleteConfirm: '<p>Really delete profile data for <strong>{name}</strong>?</p><p>Cookies, login sessions and local data will be lost. The app remains installed.</p>',
 
     // Rebuild notice
-    rebuildNoticeTitle:  'wrapweb updated',
-    rebuildNoticeIntro:  'wrapweb was updated to version <strong>{version}</strong>. The following AppImages were built with an older version and need to be rebuilt for all new features to work:',
-    rebuildNoticeOk:     'Got it',
+    rebuildNoticeTitle:    'wrapweb updated',
+    rebuildNoticeIntro:    'wrapweb was updated to version <strong>{version}</strong>. The following AppImages were built with an older version and need to be rebuilt for all new features to work:',
+    rebuildNoticeOk:       'Got it',
+    rebuildNoticeRebuildAll: 'Rebuild all',
+    rebuildNoticeBuilding:   'Building …',
+    rebuildNoticeDone:       'Done',
 
     // Update notice
     updateNoticeTitle:  'Update available',
