@@ -164,26 +164,38 @@ function createWindow(pkg) {
   customSession.on('will-download', (_event, item) => {
     if (item.getSavePath()) return  // already handled by context-menu Save As
 
-    // Electron needs a save path set synchronously — use a temp file,
-    // then move it to the user-chosen location once the dialog resolves.
+    // Electron requires a synchronous save path — use a temp file and move it
+    // to the user-chosen location afterwards.
     const filename = item.getFilename()
     const tmpPath  = path.join(app.getPath('temp'), `wrapweb-${Date.now()}-${filename}`)
-    // Electron requires a save path set synchronously before the download starts,
-    // but the save dialog is async. Write to a temp file first, then move it
-    // to the user-chosen location once the dialog resolves.
     item.setSavePath(tmpPath)
+
+    // Register the done listener BEFORE opening the dialog to avoid a race
+    // condition where small files finish downloading while the dialog is still open.
+    // Both the dialog result and the download completion write to shared state;
+    // whichever arrives last triggers the actual file move.
+    let chosenPath  = null  // set by dialog once user confirms
+    let doneState   = null  // set by download once it finishes
+
+    const tryMove = () => {
+      if (doneState !== 'completed' || chosenPath === null) return
+      try {
+        fs.renameSync(tmpPath, chosenPath)
+      } catch {
+        try { fs.copyFileSync(tmpPath, chosenPath); fs.rmSync(tmpPath) } catch {}
+      }
+    }
+
+    item.once('done', (_e, state) => {
+      doneState = state
+      tryMove()
+    })
 
     const defaultPath = path.join(app.getPath('downloads'), filename)
     dialog.showSaveDialog(mainWindow, { defaultPath }).then(({ canceled, filePath }) => {
       if (!canceled && filePath) {
-        item.once('done', (_e, state) => {
-          if (state !== 'completed') return
-          try {
-            fs.renameSync(tmpPath, filePath)
-          } catch {
-            try { fs.copyFileSync(tmpPath, filePath); fs.rmSync(tmpPath) } catch {}
-          }
-        })
+        chosenPath = filePath
+        tryMove()
       } else {
         item.cancel()
         try { fs.rmSync(tmpPath, { force: true }) } catch {}
