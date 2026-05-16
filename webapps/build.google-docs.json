@@ -3,5 +3,7 @@
     "name": "Google Docs",
     "icon": "x-office-document",
     "url": "https://docs.google.com",
-    "category": "google"
+    "category": "google",
+    "rcloneFileHandler": true,
+    "mimeTypes": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
 }

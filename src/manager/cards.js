@@ -1,5 +1,5 @@
 export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons }, { showConfirm, openInfoDialog, showBuildOverlay, hideBuildOverlay, openEditDialog }) {
-  const { info: infoSrc, build: buildSrc, install: installSrc, delete: deleteSrc, edit: editSrc } = icons
+  const { info: infoSrc, build: buildSrc, install: installSrc, delete: deleteSrc, edit: editSrc, rclone: rcloneSrc } = icons
 
   const grid = document.getElementById('grid')
 
@@ -44,7 +44,10 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
     const iconSrc = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
 
     card.innerHTML = `
-      <img src="${iconSrc}" alt="${name}" class="${app.built && app.installed ? 'launchable' : 'unavailable'}">
+      <div class="card-icon-wrap ${app.built && app.installed ? 'launchable' : 'unavailable'}">
+        <img src="${iconSrc}" alt="${name}">
+        ${app.builtRclone && rcloneSrc ? `<span class="rclone-badge"><img src="${rcloneSrc}" alt=""></span>` : ''}
+      </div>
       <span class="name">${name}</span>
       <span class="url">${hostname}</span>
       <div class="badges">
@@ -63,8 +66,9 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
       </div>
     `
 
-    const iconEl = card.querySelector('img')
-    iconEl.addEventListener('click', () => {
+    const iconWrap = card.querySelector('.card-icon-wrap')
+    const iconEl   = iconWrap.querySelector('img')
+    iconWrap.addEventListener('click', () => {
       if (app.built && app.installed) window.managerAPI.launchApp(app.profile)
     })
 
@@ -80,6 +84,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         card.querySelector('.url').textContent  = newHostname
         iconEl.alt = newName
         iconEl.src = app.iconPath ? `file://${app.iconPath}` : appDefaultSrc
+        iconWrap.className = `card-icon-wrap ${app.built && app.installed ? 'launchable' : 'unavailable'}`
         refreshMailHandlerBadge(app, card)
         if (rebuild) {
           const built = await doBuild()
@@ -114,7 +119,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
           card.querySelector('[data-action="build"]').dataset.tooltip = i18n.btnBuild
           card.querySelector('[data-action="install"]')?.setAttribute('disabled', '')
           card.querySelector('[data-role="install-badge"]')?.remove()
-          iconEl.classList.replace('launchable', 'unavailable')
+          iconWrap.classList.replace('launchable', 'unavailable')
         }
       } else {
         btn.disabled = false
@@ -177,7 +182,7 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         app.installed = true
         card.dataset.installed = 'true'
         btn.dataset.tooltip = tr('btnReinstallTooltip', { name })
-        iconEl.classList.replace('unavailable', 'launchable')
+        iconWrap.classList.replace('unavailable', 'launchable')
         const buildBadge = card.querySelector('[data-role="build-badge"]')
         if (!card.querySelector('[data-role="install-badge"]')) {
           const installBadge = document.createElement('span')

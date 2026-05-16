@@ -117,6 +117,17 @@ const translations = {
     aboutLicense:      'MIT-Lizenz',
     aboutGithub:       'wrapweb bei GitHub',
 
+    // rclone integration
+    drawerRcloneSection:    'Integrationen',
+    drawerRclone:           'rclone Integration',
+    rcloneDialogTitle:      'rclone Integration',
+    rcloneDialogGdrive:     'Google Drive',
+    rcloneDialogRemote:     'Remote',
+    rcloneDialogNone:       '— kein Remote ausgewählt —',
+    rcloneDialogNoRemotes:  'Kein Google-Drive-Remote gefunden.',
+    rcloneDialogHint:       'Remotes werden mit rclone config im Terminal eingerichtet.',
+    rcloneDialogSave:       'Speichern',
+
     // Profile sizes dialog
     drawerProfiles:    'Profile',
     profilesTitle:     'Profil-Verzeichnisse',
@@ -254,6 +265,17 @@ const translations = {
     drawerAbout:       'About wrapweb',
     aboutLicense:      'MIT License',
     aboutGithub:       'wrapweb on GitHub',
+
+    // rclone integration
+    drawerRcloneSection:    'Integrations',
+    drawerRclone:           'rclone Integration',
+    rcloneDialogTitle:      'rclone Integration',
+    rcloneDialogGdrive:     'Google Drive',
+    rcloneDialogRemote:     'Remote',
+    rcloneDialogNone:       '— no remote selected —',
+    rcloneDialogNoRemotes:  'No Google Drive remote found.',
+    rcloneDialogHint:       'Remotes are configured with rclone config in the terminal.',
+    rcloneDialogSave:       'Save',
 
     // Profile sizes dialog
     drawerProfiles:    'Profiles',
