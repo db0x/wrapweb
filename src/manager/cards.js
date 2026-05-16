@@ -151,6 +151,18 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
         card.querySelector('[data-action="install"]')?.removeAttribute('disabled')
         card.querySelector('[data-action="delete"]')?.removeAttribute('disabled')
         card.querySelector('[data-role="outdated-badge"]')?.remove()
+        // Sync rclone overlay badge with the freshly written .version file
+        app.builtRclone = result.builtRclone
+        const wrap = card.querySelector('.card-icon-wrap')
+        const hasBadge = !!wrap.querySelector('.rclone-badge')
+        if (app.builtRclone && !hasBadge && rcloneSrc) {
+          const span = document.createElement('span')
+          span.className = 'rclone-badge'
+          span.innerHTML = `<img src="${rcloneSrc}" alt="">`
+          wrap.appendChild(span)
+        } else if (!app.builtRclone && hasBadge) {
+          wrap.querySelector('.rclone-badge').remove()
+        }
       }
       return result.success
     }

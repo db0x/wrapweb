@@ -277,7 +277,7 @@ if (profile) {
       })
 
       // User chose not to overwrite — open the existing Drive file directly.
-      if (choice !== 0) return `https://docs.google.com/document/d/${existing.ID}/edit`
+      if (choice !== 0) return `${pkg.rcloneEditUrlBase}/${existing.ID}/edit`
     }
 
     // Upload (overwrite or new file).
@@ -289,11 +289,11 @@ if (profile) {
     if (!uploadOk) return null
 
     // Drive keeps the same ID when overwriting; for new files fetch it from the listing.
-    if (existing) return `https://docs.google.com/document/d/${existing.ID}/edit`
+    if (existing) return `${pkg.rcloneEditUrlBase}/${existing.ID}/edit`
 
     const updated = await rcloneList(uploadFolder)
     const id = updated.find(f => f.Name === filename)?.ID
-    return id ? `https://docs.google.com/document/d/${id}/edit` : null
+    return id ? `${pkg.rcloneEditUrlBase}/${id}/edit` : null
   }
 
   function resolveFileUrl(raw) {
@@ -849,8 +849,18 @@ for name in sorted(theme.list_icons(None)):
       let stdout = '', stderr = ''
       child.stdout?.on('data', d => { stdout += d.toString() })
       child.stderr?.on('data', d => { stderr += d.toString() })
-      child.on('close', code => resolve({ success: code === 0, stdout, stderr }))
-      child.on('error', err => resolve({ success: false, stdout, stderr: err.message }))
+      child.on('close', code => {
+        let builtRclone = false
+        if (code === 0) {
+          try {
+            const raw  = fs.readFileSync(path.join(__dirname, 'dist', `wrapweb-${configLabel}.version`), 'utf8').trim()
+            const meta = JSON.parse(raw)
+            builtRclone = meta.rcloneFileHandler ?? false
+          } catch { /* version file missing or old plain-string format */ }
+        }
+        resolve({ success: code === 0, stdout, stderr, builtRclone })
+      })
+      child.on('error', err => resolve({ success: false, stdout, stderr: err.message, builtRclone: false }))
     })
   })
 

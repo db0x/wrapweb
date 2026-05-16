@@ -5,5 +5,12 @@
     "url": "https://docs.google.com",
     "category": "google",
     "rcloneFileHandler": true,
-    "mimeTypes": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+    "rcloneEditUrlBase": "https://docs.google.com/document/d",
+    "mimeTypes": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    "mimeExtensions": {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"]
+    },
+    "mimeIcons": {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "x-office-document-rclone.svg"
+    }
 }

@@ -4,5 +4,11 @@
     "icon": "x-office-presentation",
     "url": "https://slides.google.com",
     "routingUrls": ["https://docs.google.com/presentation"],
-    "category": "google"
+    "category": "google",
+    "rcloneFileHandler": true,
+    "rcloneEditUrlBase": "https://docs.google.com/presentation/d",
+    "mimeTypes": ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+    "mimeExtensions": {
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation": ["pptx"]
+    }
 }

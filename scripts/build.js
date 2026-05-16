@@ -46,6 +46,7 @@ function expandConfig(app) {
       ...(app.singleInstance      && { singleInstance:       true }),
       ...(app.fileHandler        && { fileHandler:          true }),
       ...(app.rcloneFileHandler  && { rcloneFileHandler:    true }),
+      ...(app.rcloneEditUrlBase && { rcloneEditUrlBase:   app.rcloneEditUrlBase }),
       ...(app.mimeTypes?.length  && { mimeTypes:            app.mimeTypes }),
       ...(app.mailtoTemplate    && { mailtoTemplate:       app.mailtoTemplate }),
       ...(app.mailtoParamMap    && { mailtoParamMap:       app.mailtoParamMap }),
