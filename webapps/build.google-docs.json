@@ -1,7 +1,7 @@
 {
     "profile": "google-docs",
     "name": "Google Docs",
-    "icon": "x-office-document",
+    "icon": "google-docs",
     "url": "https://docs.google.com",
     "category": "google",
     "rcloneFileHandler": true,
@@ -11,6 +11,6 @@
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"]
     },
     "mimeIcons": {
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "x-office-document-rclone.svg"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "application-google-docs.svg"
     }
 }

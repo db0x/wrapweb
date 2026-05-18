@@ -1,7 +1,7 @@
 {
     "profile": "google-spreadsheets",
     "name": "Google Spreadsheets",
-    "icon": "x-office-spreadsheet",
+    "icon": "google-spreadsheets",
     "url": "https://spreadsheets.google.com",
     "routingUrls": ["https://docs.google.com/spreadsheets"],
     "category": "google",
@@ -10,5 +10,8 @@
     "mimeTypes": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
     "mimeExtensions": {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"]
+    },
+    "mimeIcons": {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "application-google-spreadsheets.svg"
     }
 }

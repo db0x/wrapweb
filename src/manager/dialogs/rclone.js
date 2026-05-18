@@ -1,6 +1,9 @@
-export function initRcloneDialog({ i18n, icons }) {
+export function initRcloneDialog({ i18n, icons, appDefaultSrc }) {
   const rcloneIconHtml = icons.rclone
     ? `<img src="${icons.rclone}" width="20" height="20" alt="">`
+    : ''
+  const gdriveIconHtml = icons.googledrive
+    ? `<img src="${icons.googledrive}" width="16" height="16" alt="">`
     : ''
 
   const overlay = document.createElement('div')
@@ -13,16 +16,26 @@ export function initRcloneDialog({ i18n, icons }) {
         <button class="dialog-close" id="rclone-close">✕</button>
       </div>
       <div class="dialog-fields">
-        <div class="rclone-section-heading">${i18n.rcloneDialogGdrive}</div>
-        <div class="dialog-field">
-          <label for="rclone-remote-select">${i18n.rcloneDialogRemote}</label>
-          <select id="rclone-remote-select">
-            <option value="">${i18n.rcloneDialogNone}</option>
-          </select>
-        </div>
-        <p class="rclone-hint" id="rclone-no-remotes-hint" style="display:none">
-          ${i18n.rcloneDialogNoRemotes}
-        </p>
+        <fieldset class="rclone-fieldset">
+          <legend class="rclone-fieldset-legend">
+            ${gdriveIconHtml}
+            ${i18n.rcloneDialogGdrive}
+          </legend>
+          <div class="dialog-field">
+            <label for="rclone-remote-select">${i18n.rcloneDialogRemote}</label>
+            <select id="rclone-remote-select">
+              <option value="">${i18n.rcloneDialogNone}</option>
+            </select>
+          </div>
+          <p class="rclone-hint" id="rclone-no-remotes-hint" style="display:none">
+            ${i18n.rcloneDialogNoRemotes}
+          </p>
+          <div id="rclone-folders-section" style="display:none">
+            <div class="rclone-section-heading">${i18n.rcloneDialogUploadFolders}</div>
+            <div id="rclone-folder-rows"></div>
+            <p class="rclone-hint">${i18n.rcloneDialogFolderHint}</p>
+          </div>
+        </fieldset>
         <p class="rclone-hint">${i18n.rcloneDialogHint}</p>
       </div>
       <div class="confirm-actions">
@@ -33,9 +46,11 @@ export function initRcloneDialog({ i18n, icons }) {
   `
   document.body.appendChild(overlay)
 
-  const selectEl   = document.getElementById('rclone-remote-select')
-  const noHint     = document.getElementById('rclone-no-remotes-hint')
-  const saveBtn    = document.getElementById('rclone-save')
+  const selectEl       = document.getElementById('rclone-remote-select')
+  const noHint         = document.getElementById('rclone-no-remotes-hint')
+  const foldersSection = document.getElementById('rclone-folders-section')
+  const folderRows     = document.getElementById('rclone-folder-rows')
+  const saveBtn        = document.getElementById('rclone-save')
 
   function closeDialog() { overlay.classList.add('hidden') }
 
@@ -44,22 +59,49 @@ export function initRcloneDialog({ i18n, icons }) {
   document.getElementById('rclone-cancel').addEventListener('click', closeDialog)
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDialog() })
 
+  function updateFolderVisibility() {
+    foldersSection.style.display = selectEl.value ? '' : 'none'
+  }
+  selectEl.addEventListener('change', updateFolderVisibility)
+
   saveBtn.addEventListener('click', async () => {
     const remote = selectEl.value || null
-    await window.managerAPI.saveRcloneConfig({ googleDriveRemote: remote })
+
+    const uploadFolders = {}
+    if (remote) {
+      let valid = true
+      folderRows.querySelectorAll('input[data-profile]').forEach(input => {
+        const val = input.value.trim()
+        if (!val) {
+          input.classList.add('invalid')
+          valid = false
+        } else {
+          input.classList.remove('invalid')
+          uploadFolders[input.dataset.profile] = val
+        }
+      })
+      if (!valid) return
+    }
+
+    await window.managerAPI.saveRcloneConfig({ googleDriveRemote: remote, uploadFolders })
     closeDialog()
+  })
+
+  overlay.addEventListener('input', e => {
+    if (e.target.tagName === 'INPUT') e.target.classList.remove('invalid')
   })
 
   async function openRcloneDialog() {
     overlay.classList.remove('hidden')
 
-    // Fetch remotes and saved config in parallel.
-    const [remotes, saved] = await Promise.all([
+    // Reload apps on every open so newly installed apps appear without a manager restart.
+    const [remotes, saved, currentApps] = await Promise.all([
       window.managerAPI.getRcloneDriveRemotes(),
       window.managerAPI.loadRcloneConfig(),
+      window.managerAPI.getApps(),
     ])
 
-    // Rebuild the option list, preserving the empty "none" entry.
+    // Rebuild remote selector.
     selectEl.innerHTML = `<option value="">${i18n.rcloneDialogNone}</option>`
     for (const name of remotes) {
       const opt = document.createElement('option')
@@ -67,12 +109,28 @@ export function initRcloneDialog({ i18n, icons }) {
       opt.textContent = name
       selectEl.appendChild(opt)
     }
-
-    // Pre-select the previously saved remote if it is still present.
     if (saved.googleDriveRemote && remotes.includes(saved.googleDriveRemote)) {
       selectEl.value = saved.googleDriveRemote
     }
 
+    // Rebuild folder rows from the current app list (installed + rclone-capable only).
+    const rcloneApps = currentApps.filter(a => a.rcloneFileHandler && a.installed)
+    folderRows.innerHTML = rcloneApps.map(app => {
+      const iconSrc = app.iconPath ? `file://${app.iconPath}` : (appDefaultSrc ?? '')
+      const saved_  = saved.uploadFolders?.[app.profile] ?? app.profile
+      return `
+        <div class="rclone-folder-row">
+          <img src="${iconSrc}" alt="">
+          <span class="rclone-folder-app-name">${app.name || app.profile}</span>
+          <input type="text"
+                 data-profile="${app.profile}"
+                 value="${saved_}"
+                 placeholder="${app.profile}"
+                 title="${i18n.rcloneDialogFolderHint}">
+        </div>`
+    }).join('\n')
+
+    foldersSection.style.display = foldersSection.querySelector('.rclone-folder-row') && selectEl.value ? '' : 'none'
     noHint.style.display = remotes.length === 0 ? '' : 'none'
   }
 

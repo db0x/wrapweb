@@ -1,7 +1,7 @@
 {
     "profile": "google-presentation",
     "name": "Google Presentation",
-    "icon": "x-office-presentation",
+    "icon": "google-slides",
     "url": "https://slides.google.com",
     "routingUrls": ["https://docs.google.com/presentation"],
     "category": "google",
@@ -10,5 +10,8 @@
     "mimeTypes": ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
     "mimeExtensions": {
         "application/vnd.openxmlformats-officedocument.presentationml.presentation": ["pptx"]
+    },
+    "mimeIcons": {
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation": "application-google-slides.svg"
     }
 }

@@ -63,6 +63,7 @@ const ctx = {
     filterGoogle:    s('filterGoogle'),
     hideFilter:   s('hideFilter'),
     rclone:       s('rclone'),
+    googledrive:  s('googledrive'),
     github:         s('github'),
     updateNotifier: s('updateNotifier'),
   },

@@ -3,6 +3,7 @@ const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 const zlib = require('node:zlib')
+const crypto = require('node:crypto')
 const { spawnSync, spawn } = require('node:child_process')
 const pkg = require(app.getAppPath() + '/package.json')
 const { checkForUpdate } = require('./src/update-check')
@@ -222,6 +223,42 @@ if (profile) {
     return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
   }
 
+  // Computes the MD5 hash of a local file.
+  function localMd5(filePath) {
+    return crypto.createHash('md5').update(fs.readFileSync(filePath)).digest('hex')
+  }
+
+  // Fetches the MD5 hash of a single remote rclone path via `rclone md5sum`.
+  // Returns null if the remote doesn't support MD5 or the call fails.
+  // Uses spawn (not spawnSync) to avoid blocking the main process.
+  function remoteMd5(remotePath) {
+    return new Promise(resolve => {
+      const child = spawn('rclone', ['md5sum', remotePath])
+      let out = ''
+      child.stdout?.on('data', d => { out += d.toString() })
+      child.on('close', code => {
+        if (code !== 0) { resolve(null); return }
+        const match = out.trim().match(/^([0-9a-f]{32})/)
+        resolve(match ? match[1] : null)
+      })
+      child.on('error', () => resolve(null))
+    })
+  }
+
+  // Polls remoteMd5 until it matches expectedHash or the deadline is reached.
+  // Used after upload to wait for Drive to finish processing the new file before
+  // navigating — Drive can lag several seconds between upload and content availability.
+  async function waitForDriveSync(remotePath, expectedHash, win, de) {
+    const processingText = de ? 'Wird verarbeitet …' : 'Processing …'
+    if (!win.isDestroyed()) win.webContents.loadURL(buildRcloneLoadingPage(processingText))
+    const deadline = Date.now() + 20000
+    while (Date.now() < deadline) {
+      const remoteHash = await remoteMd5(remotePath)
+      if (remoteHash === expectedHash) return
+      await new Promise(r => setTimeout(r, 1500))
+    }
+  }
+
   function rcloneList(folder) {
     return new Promise(resolve => {
       const child = spawn('rclone', ['lsjson', folder])
@@ -235,6 +272,24 @@ if (profile) {
     })
   }
 
+  // Registers a one-shot 'close' handler that downloads the Drive file back to the
+  // original local path before allowing the window to close. Only called when an
+  // actual upload happened — not when the user chose "open existing" without uploading.
+  function registerRcloneSyncBack(win, remotePath, localPath, de) {
+    if (win.isDestroyed()) return
+    const syncText = de ? 'Wird synchronisiert …' : 'Syncing …'
+    win.once('close', async (event) => {
+      event.preventDefault()
+      if (!win.isDestroyed()) win.webContents.loadURL(buildRcloneLoadingPage(syncText))
+      await new Promise(resolve => {
+        const child = spawn('rclone', ['copyto', remotePath, localPath])
+        child.on('close', () => resolve())
+        child.on('error', () => resolve())
+      })
+      win.destroy()
+    })
+  }
+
   // Uploads a local file to the configured rclone Google Drive remote and returns
   // the Google Docs edit URL. Checks for an existing Drive file first and asks
   // the user whether to overwrite; if declined, opens the existing file directly.
@@ -244,15 +299,18 @@ if (profile) {
     if (!path.isAbsolute(filePath)) return null
 
     const cfgPath = path.join(app.getPath('appData'), 'wrapweb', 'rclone.json')
-    let remote
+    let remote, uploadFolder
     try {
-      remote = JSON.parse(fs.readFileSync(cfgPath, 'utf8')).googleDriveRemote
+      const cfgJson    = JSON.parse(fs.readFileSync(cfgPath, 'utf8'))
+      remote           = cfgJson.googleDriveRemote
+      // Per-app folder name, defaults to the app profile if not explicitly configured.
+      const folderName = cfgJson.uploadFolders?.[pkg.profile] ?? pkg.profile
+      uploadFolder     = `${remote}:${folderName}`
     } catch { return null }
     if (!remote) return null
 
-    const filename     = path.basename(filePath)
-    const uploadFolder = `${remote}:wrapweb-uploads`
-    const dest         = `${uploadFolder}/${filename}`
+    const filename = path.basename(filePath)
+    const dest     = `${uploadFolder}/${filename}`
     const de           = app.getLocale().split('-')[0].toLowerCase() === 'de'
 
     // Check whether the file already exists on Drive before uploading.
@@ -261,6 +319,17 @@ if (profile) {
     const existing  = files.find(f => f.Name === filename)
 
     if (existing) {
+      // Fast-path: skip upload entirely when local and Drive file are identical.
+      // Size is checked first (free); hashes only compared when sizes match.
+      if (existing.Size === localStat.size) {
+        const lHash = localMd5(filePath)
+        const rHash = await remoteMd5(dest)
+        if (lHash && rHash && lHash === rHash) {
+          registerRcloneSyncBack(win, dest, filePath, de)
+          return `${pkg.rcloneEditUrlBase}/${existing.ID}/edit`
+        }
+      }
+
       // Show the HTML confirm page and wait for the user's button click via IPC.
       // Clean up both listeners (IPC + window close) whichever fires first.
       const choice = await new Promise(resolve => {
@@ -278,15 +347,27 @@ if (profile) {
 
       // User chose not to overwrite — open the existing Drive file directly.
       if (choice !== 0) return `${pkg.rcloneEditUrlBase}/${existing.ID}/edit`
+
+      // Show loading page while the overwrite upload runs.
+      if (!win.isDestroyed()) win.webContents.loadURL(buildRcloneLoadingPage())
     }
 
-    // Upload (overwrite or new file).
+    // Upload (overwrite or new file). --no-check-dest bypasses rclone's skip logic so
+    // the local file is always transferred, even if rclone considers the remote up to date.
     const uploadOk = await new Promise(resolve => {
-      const child = spawn('rclone', ['copyto', filePath, dest])
+      const child = spawn('rclone', ['copyto', '--no-check-dest', filePath, dest])
       child.on('close', code => resolve(code === 0))
       child.on('error', () => resolve(false))
     })
     if (!uploadOk) return null
+
+    // Wait for Drive to finish processing the uploaded file before navigating.
+    // Without this, Google Docs may open the previous cached version.
+    const uploadedHash = localMd5(filePath)
+    await waitForDriveSync(dest, uploadedHash, win, de)
+
+    // Register sync-back: on window close, copy the Drive file back to the local path.
+    registerRcloneSyncBack(win, dest, filePath, de)
 
     // Drive keeps the same ID when overwriting; for new files fetch it from the listing.
     if (existing) return `${pkg.rcloneEditUrlBase}/${existing.ID}/edit`
@@ -419,9 +500,9 @@ if (profile) {
 
   // Builds a self-contained data: URL loading page shown while the rclone upload runs.
   // Ubuntu is a system font on Ubuntu Linux and picked up by Chromium without a network request.
-  function buildRcloneLoadingPage() {
+  function buildRcloneLoadingPage(text) {
     const lang = app.getLocale().split('-')[0].toLowerCase()
-    const text = lang === 'de' ? 'Wird hochgeladen …' : 'Uploading …'
+    if (!text) text = lang === 'de' ? 'Wird hochgeladen …' : 'Uploading …'
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
       * { margin: 0; padding: 0; box-sizing: border-box }
       body {
@@ -521,7 +602,7 @@ if (profile) {
             ? builtVersion !== null && semverLt(builtVersion, minVer)
             : semverLt(builtVersion ?? '0.0.0', minVer)
         )
-        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null, builtVersion, builtRclone, needsRebuild }
+        return { profile: cfg.profile, configLabel, name: cfg.name, url: cfg.url, built, installed, isPrivate: f.startsWith('build.private.'), iconValue, appImagePath, profilePath, icon: cfg.icon || null, geometry: cfg.geometry || null, userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false, singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null, mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null, isDefaultMailHandler, category: cfg.category || null, builtVersion, builtRclone, rcloneFileHandler: cfg.rcloneFileHandler || false, needsRebuild }
       })
 
     configs.sort((a, b) => {
@@ -564,7 +645,8 @@ if (profile) {
       const r = resolveIconsByGtk(['application-default-icon'])
       const appDefault = r['application-default-icon'] || path.join(__dirname, 'assets', 'webapps', 'application-default-icon.svg')
       const rclone = path.join(__dirname, 'assets', 'rclone.svg')
-      return fi ? { appDefault, rclone, filterMicrosoft: fi, filterGoogle: fi } : { appDefault, rclone }
+      const googledrive = path.join(__dirname, 'assets', 'webapps', 'googledrive.svg')
+      return fi ? { appDefault, rclone, googledrive, filterMicrosoft: fi, filterGoogle: fi } : { appDefault, rclone, googledrive }
     }
     const r = resolveIconsByGtk([
       'weather-clear-symbolic', 'weather-clear-night-symbolic',
@@ -581,7 +663,8 @@ if (profile) {
       info: r['dialog-information-symbolic'], build: r['system-run-symbolic'],
       install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'],
       appDefault: r['application-default-icon'] || path.join(__dirname, 'assets', 'webapps', 'application-default-icon.svg'),
-      rclone: path.join(__dirname, 'assets', 'rclone.svg'),
+      rclone:      path.join(__dirname, 'assets', 'rclone.svg'),
+      googledrive: path.join(__dirname, 'assets', 'webapps', 'googledrive.svg'),
       menu: r['open-menu-symbolic'],
       filterAll: r['view-app-grid-symbolic'], filterPublic: r['applications-internet-symbolic'],
       filterPrivate: r['avatar-default-symbolic'], hideFilter: r['view-filter-symbolic'],
@@ -796,13 +879,21 @@ for name in sorted(theme.list_icons(None)):
     } catch { return [] }
   })
 
+  // WRAPWEB_TEST_DATA_DIR redirects the rclone config into a temp dir in tests
+  // so tests never read or write the user's real ~/.config/wrapweb/rclone.json.
+  function rcloneConfigPath() {
+    const testDir = process.env.WRAPWEB_TEST_DATA_DIR
+    return testDir
+      ? path.join(testDir, 'rclone.json')
+      : path.join(app.getPath('appData'), 'wrapweb', 'rclone.json')
+  }
+
   ipcMain.handle('manager:rclone-load-config', () => {
-    const cfgPath = path.join(app.getPath('appData'), 'wrapweb', 'rclone.json')
-    try { return JSON.parse(fs.readFileSync(cfgPath, 'utf8')) } catch { return {} }
+    try { return JSON.parse(fs.readFileSync(rcloneConfigPath(), 'utf8')) } catch { return {} }
   })
 
   ipcMain.handle('manager:rclone-save-config', (event, config) => {
-    const cfgPath = path.join(app.getPath('appData'), 'wrapweb', 'rclone.json')
+    const cfgPath = rcloneConfigPath()
     try {
       fs.mkdirSync(path.dirname(cfgPath), { recursive: true })
       fs.writeFileSync(cfgPath, JSON.stringify(config, null, 2))
