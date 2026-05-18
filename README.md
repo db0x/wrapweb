@@ -162,6 +162,36 @@ After installing, double-clicking any of these files in the file manager opens i
 | `.drawio.svg` | `application/x-drawio-svg` | SVG export with embedded diagram XML |
 | `.drawio.png` | `application/x-drawio-png` | PNG export with embedded diagram XML |
 
+## rclone Integration (Google Drive)
+
+wrapweb can act as a system file handler for Office formats and route them through **Google Drive** via [rclone](https://rclone.org/). Double-clicking a `.docx`, `.xlsx`, or `.pptx` file in Nautilus uploads it to your Drive and opens it directly in Google Docs, Sheets, or Slides. When you close the app window, the edited file is automatically synced back to its original local path.
+
+### Prerequisites
+
+- **rclone** installed — see [rclone.org/install](https://rclone.org/install/)
+- A **Google Drive remote** configured in rclone — see [rclone Google Drive docs](https://rclone.org/drive/) for the one-time setup
+
+### Setup in wrapweb
+
+1. Build and install the relevant app(s) — **Google Docs**, **Google Spreadsheets**, and/or **Google Presentation** — via the Manager
+2. Open the Manager side menu → **rclone Integration**
+3. Select your Google Drive remote from the dropdown
+4. Set the target folder in Drive for each app (default: the app profile name, e.g. `google-docs`)
+5. Click **Save**
+
+### Workflow
+
+| Step | What happens |
+|---|---|
+| Double-click `.docx` / `.xlsx` / `.pptx` in Nautilus | wrapweb checks whether a file with that name already exists on Drive |
+| File already on Drive, identical to local | Opens directly — no upload needed |
+| File already on Drive, different content | Shows a comparison dialog (size, last modified) — choose to overwrite or open the Drive version |
+| New file | Uploads to the configured Drive folder |
+| Editing in the browser | File is open in Google Docs / Sheets / Slides |
+| Close the app window | wrapweb syncs the Drive version back to the original local path |
+
+> Uploaded files land in the configured Drive folder (e.g. `google-docs/` in your Drive root). The folder is created automatically on first use.
+
 ## Included app configs
 
 | Config | App |
