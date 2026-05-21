@@ -1,25 +1,9 @@
 import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
+import { applyTemplate }     from '../template.js'
 
-export function initRebuildNotice({ i18n, tr, version, appDefaultSrc },
+export function initRebuildNotice({ i18n, tr, version, appDefaultSrc, templates },
                                   { showBuildOverlay, hideBuildOverlay, getBuildRunning, setBuildRunning } = {}) {
-  const overlay = document.createElement('div')
-  overlay.className = 'confirm-overlay hidden'
-  overlay.innerHTML = `
-    <div class="confirm-dialog rebuild-notice-dialog">
-      <h2 style="margin:0 0 12px;display:flex;align-items:center;gap:10px">
-        <img src="../../assets/wrapweb.svg" width="28" height="28" alt="">
-        ${i18n.rebuildNoticeTitle}
-      </h2>
-      <div id="rebuild-notice-intro"></div>
-      <div class="rebuild-notice-scroll-wrapper" id="rebuild-notice-scroll">
-        <div id="rebuild-notice-list"></div>
-      </div>
-      <div class="confirm-actions">
-        <button class="btn-secondary" id="rebuild-notice-rebuild-all">${i18n.rebuildNoticeRebuildAll}</button>
-        <button class="btn-confirm-delete" id="rebuild-notice-ok">${i18n.rebuildNoticeOk}</button>
-      </div>
-    </div>
-  `
+  const overlay = applyTemplate(templates.rebuildNotice, { i18n })
   document.body.appendChild(overlay)
 
   document.getElementById('rebuild-notice-ok').addEventListener('click', () => {

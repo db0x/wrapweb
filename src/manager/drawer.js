@@ -1,12 +1,9 @@
 // Single source of truth for card visibility. applyVisibility() is called
 // whenever a filter changes, a card is added, or an app is installed/deleted.
-export function initDrawer({ i18n, icons, rcloneAvailable }) {
-  const { sun: sunSrc, moon: moonSrc, menu: menuSrc,
-          filterAll: filterAllSrc, filterPublic: filterPublicSrc,
-          filterPrivate: filterPrivateSrc,
-          filterMicrosoft: filterMicrosoftSrc, filterGoogle: filterGoogleSrc,
-          rclone: rcloneIconSrc,
-          googleSafeBrowsing: safeBrowsingIconSrc } = icons
+import { applyTemplate } from './template.js'
+
+export function initDrawer({ i18n, icons, rcloneAvailable, templates }) {
+  const { sun: sunSrc, moon: moonSrc, menu: menuSrc } = icons
 
   const menuBtn  = document.getElementById('menu-btn')
   const menuIcon = document.getElementById('menu-icon')
@@ -18,57 +15,10 @@ export function initDrawer({ i18n, icons, rcloneAvailable }) {
 
   const drawer = document.createElement('div')
   drawer.className = 'drawer'
-  drawer.innerHTML = `
-    <div class="drawer-section-label">${i18n.drawerAppearance}</div>
-    <button class="menu-item" id="menu-darkmode">
-      <img id="menu-darkmode-icon" src="" alt="">
-      <span id="menu-darkmode-label"></span>
-    </button>
-    <hr class="drawer-divider">
-    <div class="drawer-section-label">${i18n.drawerVisibility}</div>
-    <button class="menu-item" data-filter="all">
-      ${filterAllSrc    ? `<img src="${filterAllSrc}"    alt="">` : ''}
-      <span>${i18n.drawerAllApps}</span>
-    </button>
-    <button class="menu-item" data-filter="public">
-      ${filterPublicSrc ? `<img src="${filterPublicSrc}" alt="">` : ''}
-      <span>${i18n.drawerEmbeddedApps}</span>
-    </button>
-    <button class="menu-item" data-filter="private">
-      ${filterPrivateSrc ? `<img src="${filterPrivateSrc}" alt="">` : ''}
-      <span>${i18n.drawerUserApps}</span>
-    </button>
-    <button class="menu-item" data-filter="google">
-      ${filterGoogleSrc ? `<img src="${filterGoogleSrc}" alt="">` : ''}
-      <span>${i18n.drawerGoogle}</span>
-    </button>
-    <button class="menu-item" data-filter="microsoft">
-      ${filterMicrosoftSrc ? `<img src="${filterMicrosoftSrc}" alt="">` : ''}
-      <span>${i18n.drawerMicrosoft}</span>
-    </button>
-    <button class="menu-item menu-toggle" id="menu-hide-uninstalled">
-      <span class="toggle-switch"></span>
-      <span>${i18n.drawerHideUninstalled}</span>
-    </button>
-    <hr class="drawer-divider">
-    <button class="menu-item" id="menu-profiles">
-      <span>${i18n.drawerProfiles}</span>
-    </button>
-    <hr class="drawer-divider">
-    <div class="drawer-section-label">${i18n.drawerRcloneSection}</div>
-    <button class="menu-item" id="menu-safe-browsing">
-      ${safeBrowsingIconSrc ? `<img src="${safeBrowsingIconSrc}" alt="">` : ''}
-      <span>${i18n.drawerSafeBrowsing}</span>
-    </button>
-    ${rcloneAvailable ? `
-    <button class="menu-item" id="menu-rclone">
-      ${rcloneIconSrc ? `<img src="${rcloneIconSrc}" alt="">` : ''}
-      <span>${i18n.drawerRclone}</span>
-    </button>` : ''}
-    <button class="menu-item drawer-about-btn" id="menu-about">
-      <span>${i18n.drawerAbout}</span>
-    </button>
-  `
+  const wrapper = applyTemplate(templates.drawer, { i18n, icons })
+  // rclone button is always in the template; remove it when rclone is not installed.
+  if (!rcloneAvailable) wrapper.querySelector('#menu-rclone')?.remove()
+  drawer.innerHTML = wrapper.innerHTML
   document.body.appendChild(drawer)
 
   function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open') }

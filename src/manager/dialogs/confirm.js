@@ -1,16 +1,7 @@
-export function initConfirmDialog({ i18n }) {
-  const overlay = document.createElement('div')
-  overlay.className = 'confirm-overlay hidden'
-  overlay.innerHTML = `
-    <div class="confirm-dialog">
-      <div id="confirm-message"></div>
-      <div id="confirm-toggles"></div>
-      <div class="confirm-actions">
-        <button class="btn-cancel" id="confirm-cancel">${i18n.confirmCancel}</button>
-        <button class="btn-confirm-delete" id="confirm-ok">${i18n.confirmDelete}</button>
-      </div>
-    </div>
-  `
+import { applyTemplate } from '../template.js'
+
+export function initConfirmDialog({ i18n, templates }) {
+  const overlay = applyTemplate(templates.confirm, { i18n })
   document.body.appendChild(overlay)
 
   function showConfirm(message, options = {}) {

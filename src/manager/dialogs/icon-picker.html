@@ -1,0 +1,18 @@
+<div class="dialog-overlay icon-picker-overlay hidden">
+  <div class="dialog icon-picker-dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">{{createIconChoose}}</span>
+      <button class="dialog-close" id="icon-picker-close">✕</button>
+    </div>
+    <div class="icon-search-bar">
+      <input type="text" id="icon-search" placeholder="{{iconPickerSearch}}"
+             autocomplete="off" spellcheck="false">
+    </div>
+    <div class="icon-picker-scroll-wrapper" id="icon-picker-scroll-wrapper">
+      <div class="icon-picker-grid" id="icon-picker-grid"></div>
+    </div>
+    <div class="icon-picker-loader hidden" id="icon-picker-loader">
+      <div class="build-spinner"></div>
+    </div>
+  </div>
+</div>

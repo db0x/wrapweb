@@ -102,19 +102,9 @@ function readSvgDataUrl(assetName) {
 const safeIconDataUrl   = readSvgDataUrl('safe-browsing.svg')
 const unsafeIconDataUrl = readSvgDataUrl('security-low.svg')
 
-const TOOLTIP_CSS = `
-  #wrapweb-link-tooltip {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    z-index: 2147483647; max-width: 60%; padding: 3px 10px 4px;
-    font: 12px/1.5 -apple-system, system-ui, sans-serif; color: #fff;
-    background: rgba(30,30,30,0.85); border-top-left-radius: 5px;
-    border-top-right-radius: 5px; pointer-events: none; display: none;
-    backdrop-filter: blur(4px); align-items: center; gap: 6px; min-width: 0;
-  }
-  #wrapweb-link-tooltip img { width:14px; height:14px; flex-shrink:0; object-fit:contain; }
-  #wrapweb-link-shield { width:16px; height:16px; margin-right:2px; }
-  #wrapweb-link-tooltip span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-`
+// Read once — both files are stable for the module's lifetime.
+const tooltipScript = fs.readFileSync(path.join(__dirname, 'tooltip-script.js'), 'utf8')
+const tooltipCss    = fs.readFileSync(path.join(__dirname, 'tooltip.css'),        'utf8')
 
 // Looks up a PNG icon file by name in standard hicolor theme locations.
 // nativeImage.createFromPath() on Linux silently fails on SVG, so only PNG is used.
@@ -400,155 +390,21 @@ function createWindow(pkg) {
   // The tooltip DOM always lives in the main frame so position:fixed anchors to the main window bottom —
   // even when the hovered link is inside a same-origin iframe.
   function buildTooltipScript() {
-    return `
-      (() => {
-        // Bridge so iframe event handlers (which close over this window) can reach IPC.
-        window._wrapwebCheck = url => window.electronAPI?.checkSafeBrowsing(url) ?? Promise.resolve('unknown');
-
-        const browserIconUrl  = ${JSON.stringify(browserIconDataUrl)};
-        const mailIconUrl     = ${JSON.stringify(mailIconDataUrl)};
-        const safeSrc         = ${JSON.stringify(safeIconDataUrl)};
-        const unsafeSrc       = ${JSON.stringify(unsafeIconDataUrl)};
-        const appOrigin       = ${JSON.stringify(appOrigin)};
-        const internalDomains = ${JSON.stringify(internalDomains)};
-        const routeEntries    = ${JSON.stringify(routeEntries)};
-        const mailtoLabel     = ${JSON.stringify(
-          // Mirrors i18n.js keys mailtoCompose (de/en) — window.js cannot import the ES module.
-          app.getPreferredSystemLanguages()[0]?.startsWith('de')
-            ? 'Mail an {addr} verfassen'
-            : 'Compose mail to {addr}'
-        )};
-
-        // Unwraps redirect URLs (e.g. Outlook Safe Links, Google redirect) to the real target.
-        function unwrapUrl(url) {
-          try {
-            const wrapped = new URL(url).searchParams.get('url');
-            if (wrapped) { try { new URL(wrapped); return wrapped; } catch {} }
-          } catch {}
-          return url;
-        }
-
-        // Returns route info { iconDataUrl, name } if this URL would open in another wrapweb app.
-        // Unwraps redirect URLs first so Safe Links / Google redirects are matched correctly.
-        function getRouteInfo(url) {
-          try {
-            const resolved = unwrapUrl(url);
-            const { hostname, pathname } = new URL(resolved);
-            return routeEntries.find(e =>
-              (hostname === e.host || hostname.endsWith('.' + e.host)) &&
-              pathname.startsWith(e.prefix)
-            ) ?? null;
-          } catch { return null; }
-        }
-
-        // Mirrors setWindowOpenHandler — only show tooltip for links that leave the app.
-        function isExternalLink(url) {
-          try {
-            const { origin, hostname } = new URL(url);
-            if (origin === appOrigin) return false;
-            if (internalDomains.some(d => hostname === d || hostname.endsWith('.' + d))) return false;
-            return true;
-          } catch { return false; }
-        }
-
-        // Tooltip element lives in the main frame — position:fixed is relative to the main viewport.
-        const tip = document.createElement('div');
-        tip.id = 'wrapweb-link-tooltip';
-        // Icon element is always present; src is swapped per link type (browser vs. mail app).
-        const iconEl = document.createElement('img');
-        iconEl.alt = ''; iconEl.style.display = 'none';
-        tip.appendChild(iconEl);
-        const shield = document.createElement('img');
-        shield.id = 'wrapweb-link-shield'; shield.alt = ''; shield.style.display = 'none';
-        tip.appendChild(shield);
-        const label = document.createElement('span');
-        tip.appendChild(label);
-        document.body.appendChild(tip);
-
-        // Re-attach if an SPA replaces document.body.
-        function ensureTip() {
-          if (document.body && !document.body.contains(tip)) {
-            document.body.appendChild(tip);
-            bodyObs.observe(document.body, { childList: true });
-          }
-        }
-        const bodyObs = new MutationObserver(ensureTip);
-        new MutationObserver(ensureTip).observe(document.documentElement, { childList: true });
-        bodyObs.observe(document.body, { childList: true });
-
-        // Sequence counter discards stale async results when the mouse moves on.
-        let checkSeq = 0;
-
-        function showTooltip(url) {
-          const isMail = url.startsWith('mailto:');
-          const route  = isMail ? null : getRouteInfo(url);
-          const iconSrc = isMail ? mailIconUrl : (route?.iconDataUrl || browserIconUrl);
-          if (iconSrc) { iconEl.src = iconSrc; iconEl.style.display = ''; }
-          else iconEl.style.display = 'none';
-          label.textContent = isMail
-            ? mailtoLabel.replace('{addr}', url.slice(7).split('?')[0])
-            : unwrapUrl(url);
-          shield.style.display = 'none';
-          tip.style.display = 'flex';
-          // No safe-browsing for mail addresses or links routed to trusted wrapweb apps.
-          if (!isMail && !route) {
-            const cs = ++checkSeq;
-            window._wrapwebCheck(url).then(r => {
-              if (cs !== checkSeq) return;
-              if (r === 'safe'   && safeSrc)   { shield.src = safeSrc;   shield.style.display = ''; }
-              if (r === 'unsafe' && unsafeSrc) { shield.src = unsafeSrc; shield.style.display = ''; }
-            }).catch(() => {});
-          }
-        }
-
-        function hideTooltip() { tip.style.display = 'none'; ++checkSeq; }
-
-        // Tracks which documents already have listeners to prevent double-attaching.
-        const hookedDocs = new WeakSet();
-
-        // Attaches hover listeners to a document. All callbacks close over the main-frame scope,
-        // so showTooltip/hideTooltip always update the tooltip element in the main frame's DOM.
-        // This means iframes get correct tooltip positioning for free — no CSS injection needed.
-        function hookDoc(doc) {
-          if (hookedDocs.has(doc)) return;
-          hookedDocs.add(doc);
-          // capture: true fires before any stopPropagation() in the app's own handlers.
-          doc.addEventListener('mouseover', e => {
-            const url = e.target.closest('a[href]')?.href ?? '';
-            if (url && !url.startsWith('javascript:') && (url.startsWith('mailto:') || isExternalLink(url))) showTooltip(url);
-            else hideTooltip();
-          }, { passive: true, capture: true });
-          doc.addEventListener('mouseout', e => {
-            if (!e.relatedTarget?.closest('a[href]')) hideTooltip();
-          }, { passive: true, capture: true });
-        }
-
-        hookDoc(document);
-
-        // Monitor same-origin iframes — hook them so link hovers control the main frame's tooltip.
-        function watchIframe(iframe) {
-          function tryHook() {
-            try {
-              const doc = iframe.contentDocument;
-              if (doc && doc.body) hookDoc(doc);
-            } catch(e) {}
-          }
-          iframe.addEventListener('load', tryHook);
-          // Immediate check — Strato writes email content via document.write() synchronously
-          // after appending the iframe, before the MutationObserver microtask fires.
-          tryHook();
-        }
-
-        document.querySelectorAll('iframe').forEach(watchIframe);
-        // Watch for dynamically added iframes (e.g. single-page apps rendering email lists).
-        new MutationObserver(rs => {
-          for (const r of rs) for (const n of r.addedNodes) {
-            if (n.nodeName === 'IFRAME') watchIframe(n);
-            else if (n.querySelectorAll) n.querySelectorAll('iframe').forEach(watchIframe);
-          }
-        }).observe(document.documentElement, { childList: true, subtree: true });
-      })();
-    `
+    // Mirrors i18n.js keys mailtoCompose (de/en) — window.js cannot import the ES module.
+    const mailtoLabel = app.getPreferredSystemLanguages()[0]?.startsWith('de')
+      ? 'Mail an {addr} verfassen'
+      : 'Compose mail to {addr}'
+    const vars = [
+      `const browserIconUrl  = ${JSON.stringify(browserIconDataUrl)};`,
+      `const mailIconUrl     = ${JSON.stringify(mailIconDataUrl)};`,
+      `const safeSrc         = ${JSON.stringify(safeIconDataUrl)};`,
+      `const unsafeSrc       = ${JSON.stringify(unsafeIconDataUrl)};`,
+      `const appOrigin       = ${JSON.stringify(appOrigin)};`,
+      `const internalDomains = ${JSON.stringify(internalDomains)};`,
+      `const routeEntries    = ${JSON.stringify(routeEntries)};`,
+      `const mailtoLabel     = ${JSON.stringify(mailtoLabel)};`,
+    ].join('\n')
+    return `(() => {\n${vars}\n${tooltipScript}\n})()`
   }
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -558,7 +414,7 @@ function createWindow(pkg) {
       ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); border-radius: 4px; }
       ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.7); }
       ::-webkit-scrollbar-corner { background: transparent; }
-      ${TOOLTIP_CSS}
+      ${tooltipCss}
     `)
     mainWindow.webContents.executeJavaScript(`
       window.addEventListener('wheel', (e) => {

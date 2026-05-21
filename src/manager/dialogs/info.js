@@ -1,21 +1,7 @@
-export function initInfoDialog({ i18n, icons }) {
-  const infoSrc = icons.info
+import { applyTemplate } from '../template.js'
 
-  const overlay = document.createElement('div')
-  overlay.className = 'dialog-overlay hidden'
-  overlay.innerHTML = `
-    <div class="dialog">
-      <div class="dialog-header">
-        ${infoSrc ? `<img src="${infoSrc}" alt="">` : ''}
-        <span class="dialog-title" id="info-title"></span>
-        <button class="dialog-close" id="info-close">✕</button>
-      </div>
-      <div class="dialog-fields" id="info-fields"></div>
-      <div class="confirm-actions" id="info-footer" style="display:none">
-        <button class="btn-save" id="info-copy-btn">${i18n.infoCopyToPrivate}</button>
-      </div>
-    </div>
-  `
+export function initInfoDialog({ i18n, icons, templates }) {
+  const overlay = applyTemplate(templates.info, { i18n, icons })
   document.body.appendChild(overlay)
 
   let copyCallback = null

@@ -1,49 +1,7 @@
-export function initRcloneDialog({ i18n, icons, appDefaultSrc }) {
-  const rcloneIconHtml = icons.rclone
-    ? `<img src="${icons.rclone}" width="20" height="20" alt="">`
-    : ''
-  const gdriveIconHtml = icons.googledrive
-    ? `<img src="${icons.googledrive}" width="16" height="16" alt="">`
-    : ''
+import { applyTemplate } from '../template.js'
 
-  const overlay = document.createElement('div')
-  overlay.className = 'dialog-overlay hidden'
-  overlay.innerHTML = `
-    <div class="dialog rclone-dialog">
-      <div class="dialog-header">
-        ${rcloneIconHtml}
-        <span class="dialog-title">${i18n.rcloneDialogTitle}</span>
-        <button class="dialog-close" id="rclone-close">✕</button>
-      </div>
-      <div class="dialog-fields">
-        <fieldset class="rclone-fieldset">
-          <legend class="rclone-fieldset-legend">
-            ${gdriveIconHtml}
-            ${i18n.rcloneDialogGdrive}
-          </legend>
-          <div class="dialog-field">
-            <label for="rclone-remote-select">${i18n.rcloneDialogRemote}</label>
-            <select id="rclone-remote-select">
-              <option value="">${i18n.rcloneDialogNone}</option>
-            </select>
-          </div>
-          <p class="rclone-hint" id="rclone-no-remotes-hint" style="display:none">
-            ${i18n.rcloneDialogNoRemotes}
-          </p>
-          <div id="rclone-folders-section" style="display:none">
-            <div class="rclone-section-heading">${i18n.rcloneDialogUploadFolders}</div>
-            <div id="rclone-folder-rows"></div>
-            <p class="rclone-hint">${i18n.rcloneDialogFolderHint}</p>
-          </div>
-        </fieldset>
-        <p class="rclone-hint">${i18n.rcloneDialogHint}</p>
-      </div>
-      <div class="confirm-actions">
-        <button class="btn-cancel" id="rclone-cancel">${i18n.confirmCancel}</button>
-        <button class="btn-secondary" id="rclone-save">${i18n.rcloneDialogSave}</button>
-      </div>
-    </div>
-  `
+export function initRcloneDialog({ i18n, icons, appDefaultSrc, templates }) {
+  const overlay = applyTemplate(templates.rclone, { i18n, icons })
   document.body.appendChild(overlay)
 
   const selectEl       = document.getElementById('rclone-remote-select')

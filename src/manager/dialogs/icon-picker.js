@@ -1,6 +1,7 @@
 import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
+import { applyTemplate }     from '../template.js'
 
-export function initIconPicker({ i18n }) {
+export function initIconPicker({ i18n, templates }) {
   let overlay = null
   let allIconsCache = null
   let onSelectCallback = null
@@ -8,25 +9,7 @@ export function initIconPicker({ i18n }) {
   // Lazy-create the overlay DOM on first open — avoids building a large grid on startup.
   function ensureOverlay() {
     if (overlay) return
-    overlay = document.createElement('div')
-    overlay.className = 'dialog-overlay icon-picker-overlay hidden'
-    overlay.innerHTML = `
-      <div class="dialog icon-picker-dialog">
-        <div class="dialog-header">
-          <span class="dialog-title">${i18n.createIconChoose}</span>
-          <button class="dialog-close" id="icon-picker-close">✕</button>
-        </div>
-        <div class="icon-search-bar">
-          <input type="text" id="icon-search" placeholder="${i18n.iconPickerSearch}" autocomplete="off" spellcheck="false">
-        </div>
-        <div class="icon-picker-scroll-wrapper" id="icon-picker-scroll-wrapper">
-          <div class="icon-picker-grid" id="icon-picker-grid"></div>
-        </div>
-        <div class="icon-picker-loader hidden" id="icon-picker-loader">
-          <div class="build-spinner"></div>
-        </div>
-      </div>
-    `
+    overlay = applyTemplate(templates.iconPicker, { i18n })
     document.body.appendChild(overlay)
     OverlayScrollbars(document.getElementById('icon-picker-scroll-wrapper'), { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })
     overlay.addEventListener('click', e => { if (e.target === overlay) closeIconPicker() })

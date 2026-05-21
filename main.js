@@ -9,6 +9,15 @@ const pkg = require(app.getAppPath() + '/package.json')
 const { checkForUpdate } = require('./src/update-check')
 const CONFIGS_DIR = path.join(__dirname, 'webapps')
 
+// Node.js template substitution — same {{key}} syntax as applyTemplate but for data: URL pages.
+function fillHtml(html, vars) {
+  return html.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '')
+}
+
+// Read once at startup — rclone HTML pages are only used when rclone file handling is active.
+const rcloneConflictTemplate = fs.readFileSync(path.join(__dirname, 'src', 'rclone-conflict.html'), 'utf8')
+const rcloneLoadingTemplate  = fs.readFileSync(path.join(__dirname, 'src', 'rclone-loading.html'),  'utf8')
+
 Menu.setApplicationMenu(null)
 
 // Inline semver comparison — avoids pulling in a dedicated package just for this.
@@ -115,18 +124,6 @@ if (profile) {
   // Builds a self-contained confirm page with a local-vs-Drive comparison table.
   // localStat is an fs.Stats object; existing is an rclone lsjson entry.
   function buildConfirmPage(filename, existing, localStat, de) {
-    const title      = de ? 'Datei überschreiben?' : 'Overwrite file?'
-    const btnOpen    = de ? 'Bestehende öffnen'    : 'Open existing'
-    const btnOver    = de ? 'Überschreiben'        : 'Overwrite'
-    const labelLocal = de ? 'Lokal'                : 'Local'
-    const labelDrive = 'Google Drive'
-    const labelMod   = de ? 'Geändert'             : 'Modified'
-    const labelSize  = de ? 'Größe'                : 'Size'
-
-    const localMod    = localStat.mtime.toLocaleString()
-    const localSize   = fmtBytes(localStat.size)
-    const remMod      = new Date(existing.ModTime).toLocaleString()
-    const remSize     = fmtBytes(existing.Size)
     const appIconUrl  = appIconDataUrl()
     const wrapwebSvg  = path.join(__dirname, 'assets', 'wrapweb.svg')
     const wrapwebIcon = fs.existsSync(wrapwebSvg)
@@ -137,89 +134,23 @@ if (profile) {
       ? `data:image/svg+xml;base64,${fs.readFileSync(rcloneSvg).toString('base64')}`
       : null
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-      :root{
-        --bg:#f0f0f0;--card-bg:white;--card-fg:#1e1e1e;
-        --card-url:#888;--muted-bg:#e9e9e9;--muted-fg:#666;
-        --shadow:rgba(0,0,0,0.25);--div:#d8d8d8;
-      }
-      body{display:flex;align-items:center;justify-content:center;
-           height:100vh;background:var(--bg);
-           font-family:'Ubuntu',sans-serif;color:var(--card-fg);color-scheme:light}
-      .dialog{background:var(--card-bg);border-radius:12px;width:460px;max-width:90vw;
-              box-shadow:0 8px 32px var(--shadow);
-              display:flex;flex-direction:column;overflow:hidden}
-      .dialog-header{
-        background:linear-gradient(135deg,#5ab4f0 0%,#1a7bc4 100%);
-        padding:8px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-      .header-icon-wrap{position:relative;width:32px;height:32px;flex-shrink:0}
-      .header-icon-wrap>img{width:32px;height:32px;
-                            filter:drop-shadow(0 1px 3px rgba(0,0,0,0.25))}
-      .header-rclone-badge{position:absolute;bottom:-3px;right:-3px;
-        width:16px;height:16px;border-radius:50%;
-        background:rgba(255,255,255,0.9);
-        box-shadow:0 1px 3px rgba(0,0,0,0.30);
-        display:flex;align-items:center;justify-content:center}
-      .header-rclone-badge img{width:10px;height:10px}
-      .dialog-body{padding:20px 24px 18px;display:flex;flex-direction:column;gap:16px}
-      .title{font-size:15px;font-weight:600}
-      .file-row{display:flex;align-items:center;gap:7px;margin-bottom:8px}
-      .file-icon{width:16px;height:16px;flex-shrink:0;object-fit:contain}
-      .filename{font-size:13px;font-weight:600;word-break:break-all;color:var(--card-fg)}
-      .compare{background:var(--muted-bg);border-radius:6px;padding:10px 12px;
-               display:grid;grid-template-columns:auto 1fr 1fr;
-               gap:5px 16px;align-items:center}
-      .col-head{font-size:11px;font-weight:600;text-transform:uppercase;
-                letter-spacing:.05em;color:var(--card-url);text-align:center;
-                padding-bottom:3px;border-bottom:1px solid var(--div)}
-      .col-head:first-child{border-bottom:none}
-      .row-label{font-size:12px;color:var(--card-url)}
-      .row-val{font-size:13px;color:var(--card-fg);text-align:center}
-      .actions{display:flex;justify-content:flex-end;gap:8px}
-      button{padding:7px 18px;border-radius:8px;border:none;cursor:pointer;
-             font-size:13px;font-weight:500;font-family:'Ubuntu',sans-serif;
-             transition:opacity .15s}
-      button:hover{opacity:.85}
-      .btn-sec{background:var(--muted-bg);color:var(--muted-fg)}
-      .btn-pri{background:#1a73e8;color:#fff}
-    </style></head><body>
-    <div class="dialog">
-      <div class="dialog-header">
-        <div class="header-icon-wrap">
-          ${wrapwebIcon ? `<img src="${wrapwebIcon}" alt="wrapweb">` : ''}
-          ${rcloneIcon  ? `<span class="header-rclone-badge"><img src="${rcloneIcon}" alt=""></span>` : ''}
-        </div>
-      </div>
-      <div class="dialog-body">
-        <span class="title">${title}</span>
-        <div>
-          <div class="file-row">
-            ${appIconUrl ? `<img class="file-icon" src="${appIconUrl}" alt="">` : ''}
-            <span class="filename">${filename}</span>
-          </div>
-          <div class="compare">
-            <span></span>
-            <span class="col-head">${labelLocal}</span>
-            <span class="col-head">${labelDrive}</span>
-
-            <span class="row-label">${labelMod}</span>
-            <span class="row-val">${localMod}</span>
-            <span class="row-val">${remMod}</span>
-
-            <span class="row-label">${labelSize}</span>
-            <span class="row-val">${localSize}</span>
-            <span class="row-val">${remSize}</span>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="btn-sec" onclick="c(1)">${btnOpen}</button>
-          <button class="btn-pri" onclick="c(0)">${btnOver}</button>
-        </div>
-      </div>
-    </div>
-    <script>function c(v){window.electronAPI.rcloneConfirm(v)}<\/script>
-    </body></html>`
+    const html = fillHtml(rcloneConflictTemplate, {
+      title:      de ? 'Datei überschreiben?' : 'Overwrite file?',
+      btnOpen:    de ? 'Bestehende öffnen'    : 'Open existing',
+      btnOver:    de ? 'Überschreiben'        : 'Overwrite',
+      labelLocal: de ? 'Lokal'                : 'Local',
+      labelDrive: 'Google Drive',
+      labelMod:   de ? 'Geändert'             : 'Modified',
+      labelSize:  de ? 'Größe'                : 'Size',
+      localMod:   localStat.mtime.toLocaleString(),
+      localSize:  fmtBytes(localStat.size),
+      remMod:     new Date(existing.ModTime).toLocaleString(),
+      remSize:    fmtBytes(existing.Size),
+      filename,
+      wrapwebIconHtml: wrapwebIcon ? `<img src="${wrapwebIcon}" alt="wrapweb">` : '',
+      rcloneIconHtml:  rcloneIcon  ? `<span class="header-rclone-badge"><img src="${rcloneIcon}" alt=""></span>` : '',
+      appIconHtml:     appIconUrl  ? `<img class="file-icon" src="${appIconUrl}" alt="">` : '',
+    })
     return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
   }
 
@@ -498,32 +429,12 @@ if (profile) {
     })
   }
 
-  // Builds a self-contained data: URL loading page shown while the rclone upload runs.
+  // Builds a data: URL loading page shown while the rclone upload runs.
   // Ubuntu is a system font on Ubuntu Linux and picked up by Chromium without a network request.
   function buildRcloneLoadingPage(text) {
     const lang = app.getLocale().split('-')[0].toLowerCase()
     if (!text) text = lang === 'de' ? 'Wird hochgeladen …' : 'Uploading …'
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-      * { margin: 0; padding: 0; box-sizing: border-box }
-      body {
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; height: 100vh;
-        background: #fff; font-family: 'Ubuntu', sans-serif; color: #3c4043;
-        color-scheme: light;
-      }
-      .spinner {
-        width: 48px; height: 48px;
-        border: 4px solid #e8eaed; border-top-color: #4285f4;
-        border-radius: 50%; animation: spin .9s linear infinite;
-        margin-bottom: 20px;
-      }
-      @keyframes spin { to { transform: rotate(360deg) } }
-      p { font-size: 15px; font-weight: 400 }
-    </style></head><body>
-      <div class="spinner"></div>
-      <p>${text}</p>
-    </body></html>`
-    return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+    return `data:text/html;charset=utf-8,${encodeURIComponent(fillHtml(rcloneLoadingTemplate, { text }))}`
   }
 
   const { createWindow } = require('./src/window')
@@ -719,6 +630,27 @@ if (profile) {
   ipcMain.handle('manager:version',    () => pkg.version)
   ipcMain.handle('manager:i18n',       () => t())
   ipcMain.handle('manager:ua-presets', () => pkg.uaPresets ?? [])
+
+  // Reads all HTML template files from src/manager at startup so the renderer
+  // does not need fetch() or file:// access — IPC is the reliable transport.
+  ipcMain.handle('manager:templates', () => {
+    const tplDir = path.join(__dirname, 'src', 'manager')
+    const read   = rel => fs.readFileSync(path.join(tplDir, rel), 'utf8')
+    return {
+      about:         read('dialogs/about.html'),
+      confirm:       read('dialogs/confirm.html'),
+      info:          read('dialogs/info.html'),
+      profiles:      read('dialogs/profiles.html'),
+      rebuildNotice: read('dialogs/rebuild-notice.html'),
+      updateNotice:  read('dialogs/update-notice.html'),
+      rclone:        read('dialogs/rclone.html'),
+      safeBrowsing:  read('dialogs/safe-browsing.html'),
+      iconPicker:    read('dialogs/icon-picker.html'),
+      create:        read('dialogs/create.html'),
+      edit:          read('dialogs/edit.html'),
+      drawer:        read('drawer.html'),
+    }
+  })
 
   ipcMain.handle('manager:ui-icons', () => {
     if (process.env.WRAPWEB_TEST) {

@@ -1,23 +1,10 @@
 import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
+import { applyTemplate }     from '../template.js'
 
-export function initProfilesDialog({ i18n, tr, apps, appDefaultSrc, icons }, { showConfirm }) {
+export function initProfilesDialog({ i18n, tr, apps, appDefaultSrc, icons, templates }, { showConfirm }) {
   const deleteSrc = icons.delete
 
-  const overlay = document.createElement('div')
-  overlay.className = 'dialog-overlay hidden'
-  overlay.innerHTML = `
-    <div class="dialog profiles-dialog">
-      <div class="dialog-header">
-        <span class="dialog-title">${i18n.profilesTitle}</span>
-        <button class="dialog-close" id="profiles-close">✕</button>
-      </div>
-      <div class="profiles-scroll-wrapper" id="profiles-scroll-wrapper">
-        <div id="profiles-list" class="profiles-list">
-          <div class="build-spinner" style="margin: 24px auto;"></div>
-        </div>
-      </div>
-    </div>
-  `
+  const overlay = applyTemplate(templates.profiles, { i18n })
   document.body.appendChild(overlay)
 
   function closeProfilesDialog() { overlay.classList.add('hidden') }
