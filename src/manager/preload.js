@@ -29,4 +29,5 @@ contextBridge.exposeInMainWorld('managerAPI', {
   loadSafeBrowsingConfig:    ()       => ipcRenderer.invoke('manager:safe-browsing-load-config'),
   saveSafeBrowsingConfig:    (config) => ipcRenderer.invoke('manager:safe-browsing-save-config', config),
   copyToPrivate: (configLabel) => ipcRenderer.invoke('manager:copy-to-private', configLabel),
+  getTemplates:  ()            => ipcRenderer.invoke('manager:templates'),
 })

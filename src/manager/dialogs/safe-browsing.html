@@ -1,0 +1,42 @@
+<div class="dialog-overlay hidden">
+  <div class="dialog safe-browsing-dialog">
+    <div class="dialog-header">
+      <img data-icon="googleSafeBrowsing" width="20" height="20" alt="">
+      <span class="dialog-title">{{safeBrowsingDialogTitle}}</span>
+      <button class="dialog-close" id="safe-browsing-close">✕</button>
+    </div>
+    <div class="dialog-fields">
+      <button type="button" class="dialog-field-toggle" id="safe-browsing-enabled">
+        <span class="toggle-switch"></span>
+        <span>{{safeBrowsingDialogEnabled}}</span>
+      </button>
+      <div class="dialog-field">
+        <label for="safe-browsing-api-key">{{safeBrowsingDialogApiKey}}</label>
+        <div class="input-password-wrap">
+          <input type="password" id="safe-browsing-api-key" autocomplete="off" spellcheck="false">
+          <button type="button" class="btn-password-toggle" id="safe-browsing-toggle"
+                  aria-label="{{safeBrowsingDialogShow}}">
+            <img data-icon="eyeHidden" width="16" height="16" alt="">
+          </button>
+        </div>
+      </div>
+      <p class="rclone-hint">{{safeBrowsingDialogHint}}</p>
+      <hr class="dialog-section-divider">
+      <div class="dialog-field">
+        <label>{{safeBrowsingDialogExclude}}</label>
+        <div class="domain-field-wrapper">
+          <ul class="domain-list" id="sb-excluded-list"></ul>
+          <div class="domain-add-row">
+            <button type="button" class="app-select-trigger" id="sb-app-trigger">
+              <span class="app-select-hint">{{safeBrowsingDialogExcludeHint}}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" id="safe-browsing-cancel">{{confirmCancel}}</button>
+      <button class="btn-secondary" id="safe-browsing-save">{{safeBrowsingDialogSave}}</button>
+    </div>
+  </div>
+</div>

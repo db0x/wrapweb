@@ -1,0 +1,36 @@
+<div class="dialog-overlay hidden">
+  <div class="dialog rclone-dialog">
+    <div class="dialog-header">
+      <img data-icon="rclone" width="20" height="20" alt="">
+      <span class="dialog-title">{{rcloneDialogTitle}}</span>
+      <button class="dialog-close" id="rclone-close">✕</button>
+    </div>
+    <div class="dialog-fields">
+      <fieldset class="rclone-fieldset">
+        <legend class="rclone-fieldset-legend">
+          <img data-icon="googledrive" width="16" height="16" alt="">
+          {{rcloneDialogGdrive}}
+        </legend>
+        <div class="dialog-field">
+          <label for="rclone-remote-select">{{rcloneDialogRemote}}</label>
+          <select id="rclone-remote-select">
+            <option value="">{{rcloneDialogNone}}</option>
+          </select>
+        </div>
+        <p class="rclone-hint" id="rclone-no-remotes-hint" style="display:none">
+          {{rcloneDialogNoRemotes}}
+        </p>
+        <div id="rclone-folders-section" style="display:none">
+          <div class="rclone-section-heading">{{rcloneDialogUploadFolders}}</div>
+          <div id="rclone-folder-rows"></div>
+          <p class="rclone-hint">{{rcloneDialogFolderHint}}</p>
+        </div>
+      </fieldset>
+      <p class="rclone-hint">{{rcloneDialogHint}}</p>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" id="rclone-cancel">{{confirmCancel}}</button>
+      <button class="btn-secondary" id="rclone-save">{{rcloneDialogSave}}</button>
+    </div>
+  </div>
+</div>

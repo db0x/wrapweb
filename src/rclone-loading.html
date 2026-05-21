@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box }
+    body {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100vh;
+      background: #fff; font-family: 'Ubuntu', sans-serif; color: #3c4043;
+      color-scheme: light;
+    }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid #e8eaed; border-top-color: #4285f4;
+      border-radius: 50%; animation: spin .9s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg) } }
+    p { font-size: 15px; font-weight: 400 }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <p>{{text}}</p>
+</body>
+</html>

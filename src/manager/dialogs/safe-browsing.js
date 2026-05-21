@@ -1,52 +1,10 @@
-export function initSafeBrowsingDialog({ i18n, icons, apps, appDefaultSrc }) {
-  const safeBrowsingIconHtml = icons.googleSafeBrowsing
-    ? `<img src="${icons.googleSafeBrowsing}" width="20" height="20" alt="">` : ''
+import { applyTemplate } from '../template.js'
+
+export function initSafeBrowsingDialog({ i18n, icons, apps, appDefaultSrc, templates }) {
   const eyeHiddenSrc  = icons.eyeHidden  ?? ''
   const eyeVisibleSrc = icons.eyeVisible ?? ''
 
-  const overlay = document.createElement('div')
-  overlay.className = 'dialog-overlay hidden'
-  overlay.innerHTML = `
-    <div class="dialog safe-browsing-dialog">
-      <div class="dialog-header">
-        ${safeBrowsingIconHtml}
-        <span class="dialog-title">${i18n.safeBrowsingDialogTitle}</span>
-        <button class="dialog-close" id="safe-browsing-close">✕</button>
-      </div>
-      <div class="dialog-fields">
-        <button type="button" class="dialog-field-toggle" id="safe-browsing-enabled">
-          <span class="toggle-switch"></span>
-          <span>${i18n.safeBrowsingDialogEnabled}</span>
-        </button>
-        <div class="dialog-field">
-          <label for="safe-browsing-api-key">${i18n.safeBrowsingDialogApiKey}</label>
-          <div class="input-password-wrap">
-            <input type="password" id="safe-browsing-api-key" autocomplete="off" spellcheck="false">
-            <button type="button" class="btn-password-toggle" id="safe-browsing-toggle" aria-label="${i18n.safeBrowsingDialogShow}">
-              ${eyeHiddenSrc ? `<img src="${eyeHiddenSrc}" width="16" height="16" alt="">` : i18n.safeBrowsingDialogShow}
-            </button>
-          </div>
-        </div>
-        <p class="rclone-hint">${i18n.safeBrowsingDialogHint}</p>
-        <hr class="dialog-section-divider">
-        <div class="dialog-field">
-          <label>${i18n.safeBrowsingDialogExclude}</label>
-          <div class="domain-field-wrapper">
-            <ul class="domain-list" id="sb-excluded-list"></ul>
-            <div class="domain-add-row">
-              <button type="button" class="app-select-trigger" id="sb-app-trigger">
-                <span class="app-select-hint">${i18n.safeBrowsingDialogExcludeHint}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="confirm-actions">
-        <button class="btn-cancel" id="safe-browsing-cancel">${i18n.confirmCancel}</button>
-        <button class="btn-secondary" id="safe-browsing-save">${i18n.safeBrowsingDialogSave}</button>
-      </div>
-    </div>
-  `
+  const overlay = applyTemplate(templates.safeBrowsing, { i18n, icons })
   document.body.appendChild(overlay)
 
   const apiKeyInput   = document.getElementById('safe-browsing-api-key')

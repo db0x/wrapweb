@@ -26,7 +26,7 @@ function toDisplayName(profile) {
 const dark = localStorage.getItem('dark') === '1'
 if (dark) document.body.classList.add('dark')
 
-const [apps, version, uiIcons, i18n, uaPresets, plugins, rcloneStatus] = await Promise.all([
+const [apps, version, uiIcons, i18n, uaPresets, plugins, rcloneStatus, templates] = await Promise.all([
   window.managerAPI.getApps(),
   window.managerAPI.getVersion(),
   window.managerAPI.getUiIcons(),
@@ -34,6 +34,7 @@ const [apps, version, uiIcons, i18n, uaPresets, plugins, rcloneStatus] = await P
   window.managerAPI.getUaPresets(),
   window.managerAPI.getPlugins(),
   window.managerAPI.getRcloneStatus(),
+  window.managerAPI.getTemplates(),
 ])
 
 // String interpolation for i18n keys — falls back to the key name if missing.
@@ -46,7 +47,7 @@ const s = k => uiIcons[k] ? `file://${uiIcons[k]}` : null
 const appDefaultSrc = s('appDefault')
 
 const ctx = {
-  i18n, tr, apps, version, toDisplayName, appDefaultSrc, uaPresets, plugins,
+  i18n, tr, apps, version, toDisplayName, appDefaultSrc, uaPresets, plugins, templates,
   rcloneAvailable: rcloneStatus?.available ?? false,
   icons: {
     sun:          s('sun'),
