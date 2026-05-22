@@ -276,53 +276,48 @@ module.exports = function registerManagerIpc() {
   })
 
   ipcMain.handle('manager:ui-icons', () => {
+    const a = name => path.join(APP_ROOT, 'assets', name)
+
+    // All UI chrome icons are bundled under assets/ to avoid missing icons on
+    // desktops that don't ship the full GNOME icon set (e.g. KDE Plasma).
+    // Only the generic app placeholder tries the system theme first so it blends
+    // in with the desktop; the bundled SVG is the fallback.
+    const r          = resolveIconsByGtk(['application-default-icon'])
+    const appDefault = r['application-default-icon'] || a('webapps/application-default-icon.svg')
+
+    const icons = {
+      sun:            a('weather-clear.svg'),
+      moon:           a('weather-clear-night.svg'),
+      info:           a('state-information.svg'),
+      build:          a('system-run.svg'),
+      install:        a('system-software-install-symbolic.svg'),
+      delete:         a('entry-delete.svg'),
+      appDefault,
+      menu:           a('open-menu.svg'),
+      filterAll:      a('view-app-grid-symbolic.svg'),
+      filterPublic:   a('applications-internet-symbolic.svg'),
+      filterPrivate:  a('avatar-default.svg'),
+      filterMicrosoft: a('view-grid.svg'),
+      filterGoogle:   a('google.svg'),
+      hideFilter:     a('view-filter.svg'),
+      edit:           a('edit.svg'),
+      github:         a('github.svg'),
+      updateNotifier: a('system-software-update.svg'),
+      rclone:             a('rclone.svg'),
+      'google-drive':     a('webapps/google-drive.svg'),
+      googleSafeBrowsing: a('safe-browsing.svg'),
+      eyeVisible:         a('visible.svg'),
+      eyeHidden:          a('hidden.svg'),
+    }
+
+    // In tests, WRAPWEB_TEST_FILTER_ICONS replaces the category filter icons with a
+    // single known path so tests can assert on icon presence without coupling to
+    // specific filenames.
     if (process.env.WRAPWEB_TEST) {
       const fi = process.env.WRAPWEB_TEST_FILTER_ICONS || null
-      // Resolve application-default-icon via GTK even in test mode so that local test
-      // runs (which have a real icon theme) show the system generic icon, not the bundled fallback.
-      // Falls back to the bundled SVG when GTK is unavailable (e.g. CI without a theme).
-      const r          = resolveIconsByGtk(['application-default-icon'])
-      const appDefault = r['application-default-icon'] || path.join(APP_ROOT, 'assets', 'webapps', 'application-default-icon.svg')
-      const icons = {
-        appDefault,
-        rclone:             path.join(APP_ROOT, 'assets', 'rclone.svg'),
-        googledrive:        path.join(APP_ROOT, 'assets', 'webapps', 'googledrive.svg'),
-        googleSafeBrowsing: path.join(APP_ROOT, 'assets', 'safe-browsing.svg'),
-        eyeVisible:         path.join(APP_ROOT, 'assets', 'visible.svg'),
-        eyeHidden:          path.join(APP_ROOT, 'assets', 'hidden.svg'),
-      }
-      return fi ? { ...icons, filterMicrosoft: fi, filterGoogle: fi } : icons
+      if (fi) return { ...icons, filterMicrosoft: fi, filterGoogle: fi }
     }
-    const r = resolveIconsByGtk([
-      'weather-clear-symbolic', 'weather-clear-night-symbolic',
-      'dialog-information-symbolic', 'system-run-symbolic',
-      'system-software-install-symbolic', 'edit-delete-symbolic',
-      'application-default-icon', 'open-menu-symbolic',
-      'view-app-grid-symbolic', 'applications-internet-symbolic',
-      'avatar-default-symbolic', 'view-filter-symbolic',
-      'document-edit-symbolic', 'github',
-      'view-group', 'update-notifier',
-    ])
-    return {
-      sun: r['weather-clear-symbolic'], moon: r['weather-clear-night-symbolic'],
-      info: r['dialog-information-symbolic'], build: r['system-run-symbolic'],
-      install: r['system-software-install-symbolic'], delete: r['edit-delete-symbolic'],
-      appDefault: r['application-default-icon'] || path.join(APP_ROOT, 'assets', 'webapps', 'application-default-icon.svg'),
-      rclone:             path.join(APP_ROOT, 'assets', 'rclone.svg'),
-      googledrive:        path.join(APP_ROOT, 'assets', 'webapps', 'googledrive.svg'),
-      googleSafeBrowsing: path.join(APP_ROOT, 'assets', 'safe-browsing.svg'),
-      eyeVisible:         path.join(APP_ROOT, 'assets', 'visible.svg'),
-      eyeHidden:          path.join(APP_ROOT, 'assets', 'hidden.svg'),
-      menu:           r['open-menu-symbolic'],
-      filterAll:      r['view-app-grid-symbolic'],
-      filterPublic:   r['applications-internet-symbolic'],
-      filterPrivate:  r['avatar-default-symbolic'],
-      hideFilter:     r['view-filter-symbolic'],
-      edit:           r['document-edit-symbolic'],
-      github:         r['github'],
-      filterMicrosoft: r['view-group'], filterGoogle: r['view-group'],
-      updateNotifier: r['update-notifier'],
-    }
+    return icons
   })
 
   ipcMain.handle('manager:launch', (event, profile) => {
@@ -565,12 +560,15 @@ for name in sorted(theme.list_icons(None)):
   })
 
   ipcMain.handle('manager:profile-sizes', () => {
-    const configs = fs.readdirSync(CONFIGS_DIR)
+    const all = fs.readdirSync(CONFIGS_DIR)
       .filter(f => /^build\..+\.json$/.test(f))
       .map(f => {
         const cfg = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, f), 'utf8'))
         return { profile: cfg.profile, name: cfg.name || null }
       })
+    // Deduplicate by profile — private and embedded configs share the same profile dir.
+    // Files are read in alphabetical order, so build.private.* overwrites build.* in the Map.
+    const configs = [...new Map(all.map(c => [c.profile, c])).values()]
     return configs.map(({ profile, name }) => {
       const dir = path.join(app.getPath('appData'), 'wrapweb', profile)
       if (!fs.existsSync(dir)) return { profile, name, bytes: 0, exists: false }

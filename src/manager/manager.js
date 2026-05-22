@@ -65,7 +65,7 @@ const ctx = {
     filterGoogle:    s('filterGoogle'),
     hideFilter:   s('hideFilter'),
     rclone:             s('rclone'),
-    googledrive:        s('googledrive'),
+    'google-drive':     s('google-drive'),
     googleSafeBrowsing: s('googleSafeBrowsing'),
     eyeVisible: s('eyeVisible'),
     eyeHidden:  s('eyeHidden'),

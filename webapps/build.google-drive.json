@@ -2,7 +2,7 @@
     "profile": "google-drive",
     "url": "https://drive.google.com/",
     "name": "Google Drive",
-    "icon": "googledrive",
+    "icon": "google-drive",
     "category": "google",
     "crossOriginIsolation": true,
     "singleInstance": true
