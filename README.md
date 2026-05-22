@@ -16,8 +16,8 @@ Turn any *web app* into a standalone Linux *desktop application* — packaged as
 
 Built on [Electron](https://www.electronjs.org/). Each app gets an isolated browser profile so WhatsApp, Teams, Google Earth and your own internal tools can all run side by side without interfering.
 
-> **Target environment: GNOME on Wayland.**
-> wrapweb is built and tested on GNOME/Wayland. Features like correct WM class, taskbar grouping, window management, and the Manager's native icon integration rely on GNOME and Wayland conventions. It may run on other desktops or X11, but expect rough edges.
+> **Target environment: Linux🐧**
+> wrapweb is built and tested on GNOME and KDE Plasma (Wayland). Features like correct WM class, taskbar grouping, window management, and the Manager's native icon integration work well on both desktops. X11 may work but is not actively tested.
 
 ## Installation
 
@@ -108,7 +108,7 @@ Click the **+** card at the end of the grid to open the **Create App** dialog. A
 | Profile | Unique identifier — lowercase letters, digits and hyphens; checked for uniqueness live |
 | Name | Optional display name (derived from profile if left empty) |
 | URL | The URL loaded on startup |
-| Icon | Opens a searchable icon picker showing all icons available in the system's GNOME icon theme |
+| Icon | Opens a searchable icon picker showing all icons available in the system icon theme |
 | Width / Height | Initial window size (optional) |
 | User-Agent | Choose from presets or leave empty for the default Electron UA |
 | Internal domains | Extra domains that open inside the app window (e.g. OAuth redirects) — added one by one via the list widget |
@@ -148,7 +148,7 @@ The Manager displays a **Mail handler** badge on every app capable of handling `
 
 ## File handler apps
 
-Some web apps can act as the system-wide handler for a file type — so double-clicking a file in Nautilus opens it directly in the wrapped app.
+Some web apps can act as the system-wide handler for a file type — so double-clicking a file in the file manager opens it directly in the wrapped app.
 
 ### draw.io
 
@@ -164,7 +164,7 @@ After installing, double-clicking any of these files in the file manager opens i
 
 ## rclone Integration (Google Drive)
 
-wrapweb can act as a system file handler for Office formats and route them through **Google Drive** via [rclone](https://rclone.org/). Double-clicking a `.docx`, `.xlsx`, or `.pptx` file in Nautilus uploads it to your Drive and opens it directly in Google Docs, Sheets, or Slides. When you close the app window, the edited file is automatically synced back to its original local path.
+wrapweb can act as a system file handler for Office formats and route them through **Google Drive** via [rclone](https://rclone.org/). Double-clicking a `.docx`, `.xlsx`, or `.pptx` file in the file manager uploads it to your Drive and opens it directly in Google Docs, Sheets, or Slides. When you close the app window, the edited file is automatically synced back to its original local path.
 
 ### Prerequisites
 
@@ -183,7 +183,7 @@ wrapweb can act as a system file handler for Office formats and route them throu
 
 | Step | What happens |
 |---|---|
-| Double-click `.docx` / `.xlsx` / `.pptx` in Nautilus | wrapweb checks whether a file with that name already exists on Drive |
+| Double-click `.docx` / `.xlsx` / `.pptx` in the file manager | wrapweb checks whether a file with that name already exists on Drive |
 | File already on Drive, identical to local | Opens directly — no upload needed |
 | File already on Drive, different content | Shows a comparison dialog (size, last modified) — choose to overwrite or open the Drive version |
 | New file | Uploads to the configured Drive folder |
@@ -241,7 +241,7 @@ No AppImage rebuild is required — the key and enabled state are read at runtim
 
 - **git** — required by `install.sh` to clone and update the repository
 - **Node.js ≥ 20**
-- **Linux** (GNOME/Wayland recommended — see note above)
+- **Linux** (Wayland recommended — see note above)
 - **libfuse2** — required to run AppImages. FUSE 3 alone is not sufficient; AppImages need `libfuse.so.2`.
   - Ubuntu 24.04+: `sudo apt install libfuse2t64`
   - Ubuntu 22.04 / Debian: `sudo apt install libfuse2`
@@ -291,14 +291,14 @@ App configs live in the `webapps/` directory. For apps you don't want to commit,
 | `icon` | string | Icon name resolved from the system icon theme |
 | `userAgent` | string | Override the user-agent string |
 | `geometry.width/height` | number | Initial window size (default: 1280 × 1024) |
-| `geometry.x/y` | number | Initial window position — _deprecated will be removed with remove of x11 in Gnome_ |
+| `geometry.x/y` | number | Initial window position — _deprecated, X11 only_ |
 | `internalDomains` | string \| array | Extra domains allowed to open inside the app window (e.g. OAuth providers) |
 | `crossOriginIsolation` | boolean | Enable `SharedArrayBuffer` — required for multi-threaded WASM (Google Earth) |
 | `singleInstance` | boolean | Allow only one running instance; a second launch focuses the existing window instead |
 | `mimeTypes` | array | Protocol schemes or MIME types this app can handle (e.g. `["x-scheme-handler/mailto"]` or `["application/x-drawio"]`) |
 | `mimeExtensions` | object | Maps MIME types to file extensions for system registration (e.g. `{ "application/x-drawio": ["drawio"] }`) — triggers `update-mime-database` on install |
 | `mimeIcons` | object | Maps MIME types to SVG asset filenames (from `assets/`) installed as system file-type icons (e.g. `{ "application/x-drawio": "application-vnd.x-drawio.svg" }`) |
-| `fileHandler` | boolean | Enable local file handling — files passed via the system (e.g. double-click in Nautilus) are read and passed to the app; also grants the `fileSystem` permission required for the File System Access API |
+| `fileHandler` | boolean | Enable local file handling — files passed via the system (e.g. double-click in the file manager) are read and passed to the app; also grants the `fileSystem` permission required for the File System Access API |
 | `rcloneFileHandler` | boolean | Enable rclone-based file handling — files are uploaded to the configured Google Drive remote (set via the Manager's rclone Integration dialog) and opened via their Google Docs/Sheets/Slides edit URL |
 | `mailtoTemplate` | string | Base URL for the compose window — `mailto:` parameters are appended as a query string |
 | `mailtoParamMap` | object | Rename `mailto:` parameters before appending (e.g. `{ "subject": "su" }` for Gmail) |

@@ -71,6 +71,7 @@ const ctx = {
     eyeHidden:  s('eyeHidden'),
     github:         s('github'),
     updateNotifier: s('updateNotifier'),
+    profiles:       s('profiles'),
   },
 }
 
