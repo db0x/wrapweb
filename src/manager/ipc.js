@@ -158,6 +158,13 @@ function rcloneConfigPath() {
     : path.join(app.getPath('appData'), 'wrapweb', 'rclone.json')
 }
 
+function globalSettingsConfigPath() {
+  const testDir = process.env.WRAPWEB_TEST_DATA_DIR
+  return testDir
+    ? path.join(testDir, 'global-settings.json')
+    : path.join(app.getPath('appData'), 'wrapweb', 'global-settings.json')
+}
+
 function safeBrowsingConfigPath() {
   const testDir = process.env.WRAPWEB_TEST_DATA_DIR
   return testDir
@@ -254,7 +261,9 @@ module.exports = function registerManagerIpc() {
 
   ipcMain.handle('manager:version',    () => pkg.version)
   ipcMain.handle('manager:i18n',       () => t())
-  ipcMain.handle('manager:ua-presets', () => pkg.uaPresets ?? [])
+  ipcMain.handle('manager:ua-presets', () => {
+    try { return JSON.parse(fs.readFileSync(path.join(APP_ROOT, 'src', 'ua-presets.json'), 'utf8')) } catch { return [] }
+  })
 
   // Reads all HTML template files from src/manager at startup so the renderer
   // does not need fetch() or file:// access — IPC is the reliable transport.
@@ -268,6 +277,7 @@ module.exports = function registerManagerIpc() {
       profiles:      read('dialogs/profiles.html'),
       rebuildNotice: read('dialogs/rebuild-notice.html'),
       updateNotice:  read('dialogs/update-notice.html'),
+      globalSettings: read('dialogs/global-settings.html'),
       mailHandler:   read('dialogs/mail-handler.html'),
       rclone:        read('dialogs/rclone.html'),
       safeBrowsing:  read('dialogs/safe-browsing.html'),
@@ -307,6 +317,8 @@ module.exports = function registerManagerIpc() {
       github:         a('github.svg'),
       updateNotifier: a('system-software-update.svg'),
       profiles:       a('profiles.svg'),
+      configure:          a('configure.svg'),
+      settings:           a('settings.svg'),
       mail:               a('mail.svg'),
       mailApp:            a('webapps/mail.svg'),
       rclone:             a('rclone.svg'),
@@ -314,6 +326,9 @@ module.exports = function registerManagerIpc() {
       googleSafeBrowsing: a('safe-browsing.svg'),
       eyeVisible:         a('visible.svg'),
       eyeHidden:          a('hidden.svg'),
+      plus:               a('plus.svg'),
+      minus:              a('minus.svg'),
+      globe:              a('globe.svg'),
     }
 
     // In tests, WRAPWEB_TEST_FILTER_ICONS replaces the category filter icons with a
@@ -537,6 +552,21 @@ for name in sorted(theme.list_icons(None)):
 
   ipcMain.handle('manager:rclone-save-config', (event, config) => {
     const cfgPath = rcloneConfigPath()
+    try {
+      fs.mkdirSync(path.dirname(cfgPath), { recursive: true })
+      fs.writeFileSync(cfgPath, JSON.stringify(config, null, 2))
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('manager:global-settings-load', () => {
+    try { return JSON.parse(fs.readFileSync(globalSettingsConfigPath(), 'utf8')) } catch { return {} }
+  })
+
+  ipcMain.handle('manager:global-settings-save', (event, config) => {
+    const cfgPath = globalSettingsConfigPath()
     try {
       fs.mkdirSync(path.dirname(cfgPath), { recursive: true })
       fs.writeFileSync(cfgPath, JSON.stringify(config, null, 2))

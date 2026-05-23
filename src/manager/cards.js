@@ -1,6 +1,6 @@
 import { renderCard } from './cards.tpl.js'
 
-export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons }, { showConfirm, openInfoDialog, showBuildOverlay, hideBuildOverlay, openEditDialog }) {
+export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons, hiddenProfiles }, { showConfirm, openInfoDialog, showBuildOverlay, hideBuildOverlay, openEditDialog }) {
   const { info: infoSrc, build: buildSrc, install: installSrc, delete: deleteSrc, edit: editSrc, rclone: rcloneSrc } = icons
 
   const grid = document.getElementById('grid')
@@ -216,9 +216,27 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
   }
 
   for (const app of apps) {
-    grid.appendChild(createCard(app))
+    if (!hiddenProfiles?.has(app.profile)) grid.appendChild(createCard(app))
   }
   grid.appendChild(addCard)
+
+  // Syncs card visibility with a new set of globally hidden profiles.
+  // Newly hidden apps lose their card; newly shown apps get one inserted.
+  function applyHiddenProfiles(newProfiles) {
+    const newSet = new Set(newProfiles)
+    for (const app of apps) {
+      if (app.isPrivate) continue  // only embedded apps are hideable
+      const card = grid.querySelector(`.card[data-profile="${CSS.escape(app.profile)}"]`)
+      const shouldHide = newSet.has(app.profile)
+      if (shouldHide && card) {
+        card.remove()
+      } else if (!shouldHide && !card) {
+        insertCard(createCard(app))
+      }
+    }
+    hiddenProfiles?.clear()
+    newSet.forEach(p => hiddenProfiles?.add(p))
+  }
 
   // Updates all mail-handler badges to reflect a new system default.
   // Called after the mail-handler dialog saves so cards stay in sync without a reload.
@@ -235,5 +253,6 @@ export function initCards({ i18n, tr, apps, toDisplayName, appDefaultSrc, icons 
     getBuildRunning: () => isBuildRunning,
     setBuildRunning: v  => { isBuildRunning = v },
     setDefaultMailHandler,
+    applyHiddenProfiles,
   }
 }

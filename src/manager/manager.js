@@ -10,6 +10,7 @@ import { initEditDialog }      from './dialogs/edit.js'
 import { initAboutDialog }     from './dialogs/about.js'
 import { initRebuildNotice }   from './dialogs/rebuild-notice.js'
 import { initUpdateNotice }    from './dialogs/update-notice.js'
+import { initGlobalSettingsDialog } from './dialogs/global-settings.js'
 import { initMailHandlerDialog }  from './dialogs/mail-handler.js'
 import { initRcloneDialog }      from './dialogs/rclone.js'
 import { initSafeBrowsingDialog } from './dialogs/safe-browsing.js'
@@ -27,7 +28,7 @@ function toDisplayName(profile) {
 const dark = localStorage.getItem('dark') === '1'
 if (dark) document.body.classList.add('dark')
 
-const [apps, version, uiIcons, i18n, uaPresets, plugins, rcloneStatus, templates] = await Promise.all([
+const [apps, version, uiIcons, i18n, uaPresets, plugins, rcloneStatus, templates, globalSettings] = await Promise.all([
   window.managerAPI.getApps(),
   window.managerAPI.getVersion(),
   window.managerAPI.getUiIcons(),
@@ -36,6 +37,7 @@ const [apps, version, uiIcons, i18n, uaPresets, plugins, rcloneStatus, templates
   window.managerAPI.getPlugins(),
   window.managerAPI.getRcloneStatus(),
   window.managerAPI.getTemplates(),
+  window.managerAPI.loadGlobalSettings(),
 ])
 
 document.title = `wrapweb Manager ${version}`
@@ -54,8 +56,14 @@ const mailHandlerAvailable = apps.some(
   a => a.mimeTypes?.includes('x-scheme-handler/mailto') && a.built && a.installed
 )
 
+const hiddenProfiles  = new Set(globalSettings.hiddenProfiles ?? [])
+// Mutable array — create/edit dialogs hold a reference; refreshUaPresets() keeps selects in sync.
+const allUaPresets = [...uaPresets, ...(globalSettings.customUaPresets ?? [])]
+
 const ctx = {
-  i18n, tr, apps, version, toDisplayName, appDefaultSrc, uaPresets, plugins, templates,
+  i18n, tr, apps, version, toDisplayName, appDefaultSrc,
+  uaPresets: allUaPresets, builtInUaPresets: uaPresets, plugins, templates,
+  hiddenProfiles,
   rcloneAvailable: rcloneStatus?.available ?? false,
   mailHandlerAvailable,
   icons: {
@@ -73,6 +81,8 @@ const ctx = {
     filterMicrosoft: s('filterMicrosoft'),
     filterGoogle:    s('filterGoogle'),
     hideFilter:   s('hideFilter'),
+    configure:          s('configure'),
+    settings:           s('settings'),
     mail:               s('mail'),
     mailApp:            s('mailApp'),
     rclone:             s('rclone'),
@@ -83,6 +93,9 @@ const ctx = {
     github:         s('github'),
     updateNotifier: s('updateNotifier'),
     profiles:       s('profiles'),
+    globe:          s('globe'),
+    plus:           s('plus'),
+    minus:          s('minus'),
   },
 }
 
@@ -93,8 +106,13 @@ const info         = initInfoDialog(ctx)
 const profiles     = initProfilesDialog(ctx, { showConfirm: confirm.showConfirm })
 const iconPicker   = initIconPicker(ctx)
 const about        = initAboutDialog(ctx)
-// onSave is a late-bound closure — cards is assigned after initMailHandlerDialog returns.
-let onMailHandlerSave = null
+// Late-bound closures — cards is assigned after these dialogs are initialized.
+let onGlobalSettingsSave = null
+let onMailHandlerSave    = null
+
+const globalSettingsDialog = initGlobalSettingsDialog(ctx, {
+  onSave: profiles => onGlobalSettingsSave?.(profiles),
+})
 const mailHandlerDialog  = initMailHandlerDialog(ctx, {
   onSave: profile => onMailHandlerSave?.(profile),
 })
@@ -110,7 +128,14 @@ const cards = initCards(ctx, {
   openEditDialog:   editDialog.openEditDialog,
 })
 
-onMailHandlerSave = profile => cards.setDefaultMailHandler(profile)
+onMailHandlerSave    = profile  => cards.setDefaultMailHandler(profile)
+onGlobalSettingsSave = ({ hiddenProfiles: hp, customUaPresets: custom }) => {
+  cards.applyHiddenProfiles(hp)
+  // Rebuild allUaPresets in-place so create/edit selects stay in sync after refresh.
+  allUaPresets.splice(0, allUaPresets.length, ...uaPresets, ...custom)
+  createDialog.refreshUaPresets(allUaPresets)
+  editDialog.refreshUaPresets(allUaPresets)
+}
 
 // When the user copies an embedded config to private, replace the embedded card
 // with a new private card so editable controls become available immediately.
@@ -162,6 +187,11 @@ document.getElementById('menu-profiles').addEventListener('click', () => {
 document.getElementById('menu-about').addEventListener('click', () => {
   about.openAboutDialog()
   drawer.closeDrawer()
+})
+
+document.getElementById('menu-settings').addEventListener('click', () => {
+  drawer.closeDrawer()
+  globalSettingsDialog.openGlobalSettingsDialog()
 })
 
 // Only rendered when ≥1 mail-capable app is installed — guard against missing element.

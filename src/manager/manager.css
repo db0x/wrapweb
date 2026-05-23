@@ -118,6 +118,39 @@ header img {
   filter: brightness(0) invert(1);
 }
 
+/* Dark-mode toggle + settings button sit on the same row inside the drawer. */
+.drawer-appearance-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawer-appearance-row #menu-darkmode {
+  flex: 1;
+}
+
+.drawer-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 9px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--card-fg);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.drawer-icon-btn:hover {
+  background: var(--card-shadow);
+}
+
+body.dark .drawer-icon-btn img {
+  filter: invert(1);
+}
+
 /* ── Side drawer ── */
 
 .drawer-backdrop {
@@ -899,6 +932,7 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   color: #e05555;
 }
 
+
 .domain-add-row {
   display: flex;
   align-items: center;
@@ -1548,6 +1582,126 @@ body.dark .rclone-fieldset {
 
 body.dark .btn-password-toggle img {
   filter: invert(1);
+}
+
+/* ── Global settings dialog ───────────────────────────────────── */
+
+.global-settings-dialog {
+  width: 480px;
+}
+
+.global-settings-dialog .dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Fieldsets have min-width: min-content by default, which breaks the fixed dialog width. */
+.global-settings-dialog fieldset {
+  min-width: 0;
+}
+
+.gs-ua-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gs-ua-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--surface2);
+  font-size: 12px;
+}
+
+.gs-ua-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gs-ua-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 3px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.gs-ua-item:hover .gs-ua-copy-btn {
+  opacity: 1;
+}
+
+.gs-ua-copy-btn img {
+  display: block;
+  filter: brightness(0) opacity(0.5);
+  transition: filter 0.15s;
+}
+
+.gs-ua-copy-btn:hover img {
+  filter: brightness(0) opacity(0.9);
+}
+
+body.dark .gs-ua-copy-btn img {
+  filter: brightness(0) invert(1) opacity(0.5);
+}
+
+body.dark .gs-ua-copy-btn:hover img {
+  filter: brightness(0) invert(1) opacity(0.9);
+}
+
+.gs-ua-builtin {
+  opacity: 0.55;
+}
+
+.gs-ua-badge {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
+}
+
+/* ── UA add sub-dialog ────────────────────────────────────────── */
+
+.gs-ua-dialog {
+  width: 400px;
+}
+
+.gs-ua-d-value {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 60px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--input-border, #ccc);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 1.4;
+}
+
+.gs-ua-d-value:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+body.dark .gs-ua-d-value {
+  border-color: var(--input-border-dark, #555);
 }
 
 /* ── Mail-handler dialog ──────────────────────────────────────── */
