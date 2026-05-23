@@ -995,13 +995,18 @@ body.dark .toolbar-btn.danger:not(:disabled):hover img {
   background: var(--card-bg);
   border: 1px solid var(--card-shadow);
   border-radius: 6px;
-  padding: 4px 0;
   z-index: 200;
   max-height: 180px;
-  overflow-y: auto;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+
+/* Inner list — OverlayScrollbars is applied to the outer wrapper div, so this ul
+   is never replaced; clearing its children leaves the OS structure intact. */
+.app-select-list ul {
   list-style: none;
   margin: 0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  padding: 4px 0;
 }
 
 .app-select-item {

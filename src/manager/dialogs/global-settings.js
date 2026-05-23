@@ -1,3 +1,4 @@
+import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
 import { applyTemplate } from '../template.js'
 
 export function initGlobalSettingsDialog({ i18n, icons, apps, appDefaultSrc, builtInUaPresets, templates }, { onSave } = {}) {
@@ -14,14 +15,19 @@ export function initGlobalSettingsDialog({ i18n, icons, apps, appDefaultSrc, bui
   const saveBtn    = document.getElementById('global-settings-save')
 
   // Portal dropdown for the hidden-apps picker.
-  const appList = document.createElement('ul')
+  // Outer div is the positioned/shown-hidden host for OverlayScrollbars.
+  // Inner ul holds the items — its innerHTML can be wiped without touching OS internals.
+  const appList = document.createElement('div')
   appList.className = 'app-select-list'
-  appList.hidden = true
+  appList.style.display = 'none'
+  const appListInner = document.createElement('ul')
+  appList.appendChild(appListInner)
   document.body.appendChild(appList)
 
-  let hiddenProfiles  = []
-  let customUaPresets = []
-  let dropdownOpen    = false
+  let hiddenProfiles    = []
+  let customUaPresets   = []
+  let dropdownOpen      = false
+  let dropdownScrollbar = false
 
   // ── UA add sub-dialog (built once, reused) ─────────────────────
 
@@ -124,7 +130,7 @@ export function initGlobalSettingsDialog({ i18n, icons, apps, appDefaultSrc, bui
   }
 
   function updateAppSelect() {
-    appList.innerHTML = ''
+    appListInner.innerHTML = ''
     const available = getHideableApps().filter(a => !hiddenProfiles.includes(a.profile))
     appTrigger.disabled = available.length === 0
     for (const app of available) {
@@ -138,7 +144,7 @@ export function initGlobalSettingsDialog({ i18n, icons, apps, appDefaultSrc, bui
         renderHiddenList()
         updateAppSelect()
       })
-      appList.appendChild(li)
+      appListInner.appendChild(li)
     }
   }
 
@@ -147,17 +153,27 @@ export function initGlobalSettingsDialog({ i18n, icons, apps, appDefaultSrc, bui
     appList.style.left   = rect.left + 'px'
     appList.style.width  = rect.width + 'px'
     appList.style.bottom = (window.innerHeight - rect.top + 2) + 'px'
-    appList.hidden = false
+    // Inline style beats the OS author stylesheet's "display: flex" rule that would
+    // otherwise override the UA "[hidden] { display: none }" on close.
+    appList.style.display = ''
     dropdownOpen = true
+    // Init once after the element is visible so OverlayScrollbars can measure it.
+    if (!dropdownScrollbar) {
+      OverlayScrollbars(appList, { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })
+      dropdownScrollbar = true
+    }
   }
-  function closeDropdown() { appList.hidden = true; dropdownOpen = false }
+  function closeDropdown() { appList.style.display = 'none'; dropdownOpen = false }
 
-  appTrigger.addEventListener('click', e => {
-    e.stopPropagation()
+  appTrigger.addEventListener('click', () => {
     if (dropdownOpen) closeDropdown(); else openDropdown()
   })
-  appList.addEventListener('click', e => e.stopPropagation())
-  document.addEventListener('click', () => { if (dropdownOpen) closeDropdown() })
+  // Use contains() instead of stopPropagation — OverlayScrollbars rewrites the internal DOM,
+  // so propagation-based close breaks as clicks on scrollbar elements bubble up unexpectedly.
+  document.addEventListener('click', e => {
+    if (!dropdownOpen) return
+    if (!appList.contains(e.target) && !appTrigger.contains(e.target)) closeDropdown()
+  })
 
   // ── User-Agent presets ─────────────────────────────────────────
 
