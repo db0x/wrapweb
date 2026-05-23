@@ -7,12 +7,18 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
   document.body.appendChild(overlay)
 
   const uaSelect = document.getElementById('edit-useragent')
-  for (const { label, value } of uaPresets) {
-    const opt = document.createElement('option')
-    opt.value = value
-    opt.textContent = label
-    uaSelect.appendChild(opt)
+  function refreshUaPresets(presets) {
+    const current = uaSelect.value
+    uaSelect.querySelectorAll('option:not([value=""])').forEach(o => o.remove())
+    for (const { label, value } of presets) {
+      const opt = document.createElement('option')
+      opt.value = value
+      opt.textContent = label
+      uaSelect.appendChild(opt)
+    }
+    uaSelect.value = current
   }
+  refreshUaPresets(uaPresets)
 
   const domainList    = initDomainList('edit-domain-list', 'edit-domain-input', 'edit-domain-add', () => updateSaveBtn())
 
@@ -288,5 +294,5 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
     }
   })
 
-  return { openEditDialog }
+  return { openEditDialog, refreshUaPresets }
 }

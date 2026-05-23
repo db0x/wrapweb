@@ -47,6 +47,8 @@ export function initDrawer({ i18n, icons, rcloneAvailable, mailHandlerAvailable,
     applyDarkmodeMenuItem()
   })
 
+  // Settings button has no action yet — tooltip is set via data-tooltip-i18n resolved in applyTemplate.
+
   let currentFilter   = localStorage.getItem('filter') ?? 'all'
   let hideUninstalled = localStorage.getItem('hideUninstalled') === '1'
 

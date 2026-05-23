@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('managerAPI', {
   deleteProfileData:    (profile) => ipcRenderer.invoke('manager:delete-profile-data', profile),
   openExternal:    (url)  => ipcRenderer.invoke('manager:open-external', url),
   checkUpdate:     ()     => ipcRenderer.invoke('manager:check-update'),
+  loadGlobalSettings:   ()       => ipcRenderer.invoke('manager:global-settings-load'),
+  saveGlobalSettings:   (config) => ipcRenderer.invoke('manager:global-settings-save', config),
   getMailHandler:       ()             => ipcRenderer.invoke('manager:get-mail-handler'),
   setMailHandler:       (desktopName) => ipcRenderer.invoke('manager:set-mail-handler', desktopName),
   getRcloneStatus:      ()       => ipcRenderer.invoke('manager:rclone-status'),

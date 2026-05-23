@@ -227,4 +227,33 @@ const mailHandlerTest = base.extend({
   },
 })
 
-module.exports = { test, expect, FAKE_ICON_PATH, base, rcloneTest, mailHandlerTest }
+// ── Global-settings test helpers ─────────────────────────────────────────────
+
+// Uses WRAPWEB_TEST_DATA_DIR so global-settings.json is written to a temp
+// directory — tests never touch the user's real config.
+async function launchAppWithGlobalSettings(extraEnv = {}) {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wrapweb-gs-test-'))
+  const { app, userDataDir } = await launchApp({ WRAPWEB_TEST_DATA_DIR: dataDir, ...extraEnv })
+  return { app, userDataDir, dataDir }
+}
+
+async function closeAppWithGlobalSettings(app, userDataDir, dataDir) {
+  await closeApp(app, userDataDir)
+  fs.rmSync(dataDir, { recursive: true, force: true })
+}
+
+const globalSettingsTest = base.extend({
+  electronAppWithGs: [async ({}, use) => {
+    const { app, userDataDir, dataDir } = await launchAppWithGlobalSettings()
+    await use(app)
+    await closeAppWithGlobalSettings(app, userDataDir, dataDir)
+  }, { scope: 'test' }],
+
+  managerPageWithGs: async ({ electronAppWithGs }, use) => {
+    const page = await electronAppWithGs.firstWindow()
+    await page.waitForSelector('.card-add', { timeout: 30_000 })
+    await use(page)
+  },
+})
+
+module.exports = { test, expect, FAKE_ICON_PATH, base, rcloneTest, mailHandlerTest, globalSettingsTest }

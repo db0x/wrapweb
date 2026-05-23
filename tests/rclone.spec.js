@@ -20,7 +20,7 @@ test('rclone dialog opens and shows Google Drive fieldset', async ({ managerPage
   const page = managerPageWithRclone
   await page.click('#menu-btn')
   await page.click('#menu-rclone')
-  await expect(page.locator('.rclone-fieldset')).toBeVisible()
+  await expect(page.locator('.rclone-dialog .rclone-fieldset')).toBeVisible()
   await expect(page.locator('#rclone-remote-select')).toBeVisible()
 })
 
