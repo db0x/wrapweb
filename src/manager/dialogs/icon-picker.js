@@ -65,6 +65,11 @@ export function initIconPicker({ i18n, templates }) {
     onSelectCallback = onSelected
     overlay.classList.remove('hidden')
 
+    // Focus immediately while the dialog is visible — before any async work so the
+    // browser gesture association is still intact and the user can start typing right away.
+    const searchEl = document.getElementById('icon-search')
+    searchEl.value = ''
+
     // Cache the full icon list after the first IPC call — subsequent opens reuse it.
     if (!allIconsCache) {
       const loader = document.getElementById('icon-picker-loader')
@@ -74,9 +79,10 @@ export function initIconPicker({ i18n, templates }) {
       loader.classList.add('hidden')
     }
 
-    document.getElementById('icon-search').value = ''
     filterIconGrid('')
-    document.getElementById('icon-search').focus()
+    // Focus after all DOM work (icon grid render + filter) is done — earlier calls get
+    // displaced by the mass DOM insertion that follows.
+    setTimeout(() => searchEl.focus(), 0)
   }
 
   return { openIconPicker, closeIconPicker, isOpen }

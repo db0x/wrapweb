@@ -235,6 +235,7 @@ No AppImage rebuild is required — the key and enabled state are read at runtim
 | [`build.powerpoint.json`](webapps/build.powerpoint.json) | Microsoft PowerPoint |
 | [`build.teams.json`](webapps/build.teams.json) | Microsoft Teams |
 | [`build.word.json`](webapps/build.word.json) | Microsoft Word |
+| [`build.miro.json`](webapps/build.miro.json) | Miro |
 | [`build.whatsapp.json`](webapps/build.whatsapp.json) | WhatsApp |
 
 ## Requirements
