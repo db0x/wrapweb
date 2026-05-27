@@ -39,15 +39,20 @@ function loadRouting(): Routing {
 
 // --- Icon resolution (mirrors window.js logic) ---
 
+// Returns all XDG data directories in priority order.
+// Includes Flatpak export directories which are listed in XDG_DATA_DIRS on systems
+// where Flatpak is installed — this makes browser icon resolution work for Flatpak apps.
+function getXdgDataDirs(): string[] {
+  const fromEnv = (process.env.XDG_DATA_DIRS ?? '/usr/local/share:/usr/share').split(':').filter(Boolean)
+  return [join(homedir(), '.local', 'share'), ...fromEnv]
+}
+
 // Looks up a PNG icon file by name in standard hicolor theme locations.
-// Matches wrapweb's resolveIconPath — only PNG because SVG fails in some Electron contexts.
+// Checks all XDG data directories so Flatpak/Snap icon exports are found too.
 // For wrapweb app icons we also check for SVG since we're in a plain web context here.
 function resolveIconPath(iconName: string, allowSvg = false): string | null {
   if (!iconName) return null
-  const bases = [
-    join(homedir(), '.local', 'share', 'icons', 'hicolor'),
-    '/usr/share/icons/hicolor',
-  ]
+  const bases = getXdgDataDirs().map(d => join(d, 'icons', 'hicolor'))
   for (const base of bases) {
     if (allowSvg) {
       const p = join(base, 'scalable', 'apps', `${iconName}.svg`)
@@ -58,8 +63,10 @@ function resolveIconPath(iconName: string, allowSvg = false): string | null {
       if (existsSync(p)) return p
     }
   }
-  const pixmap = `/usr/share/pixmaps/${iconName}.png`
-  if (existsSync(pixmap)) return pixmap
+  for (const d of getXdgDataDirs()) {
+    const pixmap = join(d, 'pixmaps', `${iconName}.png`)
+    if (existsSync(pixmap)) return pixmap
+  }
   return null
 }
 
@@ -79,11 +86,8 @@ function resolveHandlerIconDataUrl(mimeType: string): string | null {
     const r = spawnSync('xdg-mime', ['query', 'default', mimeType], { encoding: 'utf8', timeout: 500 })
     if (!r.stdout) return null
     const desktop = r.stdout.trim()
-    const appDirs = [
-      join(homedir(), '.local', 'share', 'applications'),
-      '/usr/share/applications',
-      '/usr/local/share/applications',
-    ]
+    // Search all XDG data dirs — covers Flatpak exports (/var/lib/flatpak/exports/share, etc.)
+    const appDirs = getXdgDataDirs().map(d => join(d, 'applications'))
     let iconName = desktop.replace(/\.desktop$/, '')
     for (const dir of appDirs) {
       try {
