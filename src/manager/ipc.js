@@ -206,6 +206,17 @@ function safeBrowsingConfigPath() {
     : path.join(app.getPath('appData'), 'wrapweb', 'safe-browsing.json')
 }
 
+// Returns the path to obsidian.json, trying multiple packaging formats in order:
+// standard XDG (AppImage, .deb, .rpm, native), Flatpak, Snap.
+function resolveObsidianJson(configHome) {
+  const candidates = [
+    path.join(configHome, 'obsidian', 'obsidian.json'),
+    path.join(os.homedir(), '.var', 'app', 'md.obsidian.Obsidian', 'config', 'obsidian', 'obsidian.json'),
+    path.join(os.homedir(), 'snap', 'obsidian', 'current', '.config', 'obsidian', 'obsidian.json'),
+  ]
+  return candidates.find(p => fs.existsSync(p)) ?? candidates[0]
+}
+
 module.exports = function registerManagerIpc() {
   ipcMain.handle('manager:apps', () => {
     // xdg-mime returns a .desktop filename (e.g. "wrapweb-thunderbird.desktop");
@@ -578,7 +589,9 @@ for name in sorted(theme.list_icons(None)):
   // Vault list is read from the Obsidian app config (obsidian.json) at query time.
   ipcMain.handle('manager:obsidian-plugin-status', () => {
     const configHome    = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config')
-    const obsidianJson  = path.join(configHome, 'obsidian', 'obsidian.json')
+    // Different packaging formats store config in different locations.
+    // We try standard XDG first (AppImage, .deb, .rpm), then Flatpak, then Snap.
+    const obsidianJson  = resolveObsidianJson(configHome)
     const bundledManifest = path.join(APP_ROOT, 'src', 'plugins', 'obsidian', 'manifest.json')
 
     let bundledVersion = null
@@ -607,7 +620,7 @@ for name in sorted(theme.list_icons(None)):
   // Copies manifest.json and main.js into every known Obsidian vault.
   ipcMain.handle('manager:obsidian-plugin-install', () => {
     const configHome   = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config')
-    const obsidianJson = path.join(configHome, 'obsidian', 'obsidian.json')
+    const obsidianJson = resolveObsidianJson(configHome)
     const srcDir       = path.join(APP_ROOT, 'src', 'plugins', 'obsidian')
 
     let vaultPaths = []
