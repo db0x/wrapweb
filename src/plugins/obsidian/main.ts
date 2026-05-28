@@ -227,28 +227,14 @@ function resolveRoute(url: string): ResolvedRoute | null {
 }
 
 function openInWrapweb(route: ResolvedRoute, url: string): void {
-  let cmd: string
-  let args: string[]
-  if (IS_FLATPAK) {
-    // Run outside the sandbox via flatpak-spawn --host.
-    // Forward display vars — without these, Electron apps launched on the host
-    // have no DISPLAY/WAYLAND_DISPLAY and won't show a window.
-    const envArgs: string[] = []
-    for (const v of ['DISPLAY', 'WAYLAND_DISPLAY', 'DBUS_SESSION_BUS_ADDRESS', 'XDG_RUNTIME_DIR']) {
-      const val = process.env[v]
-      if (val) envArgs.push(`--env=${v}=${val}`)
-    }
-    cmd  = 'flatpak-spawn'
-    args = ['--host', ...envArgs, route.appImagePath, '--no-sandbox', url]
-  } else {
-    cmd  = route.appImagePath
-    args = ['--no-sandbox', url]
-  }
-  console.log('[wrapweb] spawn:', cmd, args.join(' '))
-  console.log('[wrapweb] display env — DISPLAY:', process.env.DISPLAY,
-    '| WAYLAND_DISPLAY:', process.env.WAYLAND_DISPLAY,
-    '| XDG_RUNTIME_DIR:', process.env.XDG_RUNTIME_DIR)
-  const child = spawn(cmd, args, { detached: true, stdio: 'pipe' })
+  // Run the AppImage directly — no flatpak-spawn needed.
+  // APPIMAGE_EXTRACT_AND_RUN=1 avoids FUSE mounting (which may be blocked inside a Flatpak sandbox).
+  console.log('[wrapweb] spawn:', route.appImagePath, '--no-sandbox', url)
+  const child = spawn(route.appImagePath, ['--no-sandbox', url], {
+    detached: true,
+    stdio:    'pipe',
+    env:      { ...process.env, APPIMAGE_EXTRACT_AND_RUN: '1' },
+  })
   child.stderr?.on('data', d => console.log('[wrapweb] spawn stderr:', d.toString()))
   child.on('error', e => console.log('[wrapweb] spawn error:', e.message))
   child.on('close', code => { if (code !== 0 && code !== null) console.log('[wrapweb] spawn exit code:', code) })
