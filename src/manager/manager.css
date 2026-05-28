@@ -1601,11 +1601,26 @@ body.dark .rclone-fieldset {
 
 /* ── Obsidian dialog ── */
 
+.obsidian-dialog {
+  width: 460px;
+}
+
+.obsidian-dialog .dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .obsidian-fieldset {
   border: 1.5px solid var(--card-border, rgba(0,0,0,0.12));
   border-radius: 8px;
   padding: 12px 14px 10px;
   margin: 0;
+  /* Fieldsets default to min-width: min-content, which lets long children
+     (like the no-wrap flatpak override command) stretch the parent dialog.
+     Zero allows the fieldset to honor the dialog's fixed width instead. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1671,6 +1686,45 @@ body.dark .obsidian-fieldset {
   color: var(--card-url);
   flex-shrink: 0;
 }
+
+.obsidian-code-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.obsidian-code {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--badge-unbuilt-bg);
+  color: var(--badge-unbuilt-fg);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  /* pre-wrap preserves the original spacing while breaking at whitespace;
+     overflow-wrap: anywhere is the fallback for tokens longer than the box. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.obsidian-copy-btn {
+  flex-shrink: 0;
+  background: var(--badge-unbuilt-bg);
+  color: var(--badge-unbuilt-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.obsidian-copy-btn:hover { opacity: 0.75; }
+.obsidian-copy-btn.copied { color: var(--badge-installed-fg, #2a8); }
 
 .input-password-wrap {
   display: flex;

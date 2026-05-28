@@ -256,4 +256,40 @@ const globalSettingsTest = base.extend({
   },
 })
 
-module.exports = { test, expect, FAKE_ICON_PATH, base, rcloneTest, mailHandlerTest, globalSettingsTest }
+// ── Obsidian-dialog test helpers ─────────────────────────────────────────────
+
+// WRAPWEB_TEST_OBSIDIAN_AVAILABLE turns the drawer entry on without a real
+// obsidian:// MIME registration; WRAPWEB_TEST_OBSIDIAN_FLATPAK toggles the
+// Flatpak-hint section inside the dialog.
+const obsidianTest = base.extend({
+  electronAppObsidianFlatpak: [async ({}, use) => {
+    const { app, userDataDir } = await launchApp({
+      WRAPWEB_TEST_OBSIDIAN_AVAILABLE: '1',
+      WRAPWEB_TEST_OBSIDIAN_FLATPAK:   '1',
+    })
+    await use(app)
+    await closeApp(app, userDataDir)
+  }, { scope: 'test' }],
+
+  electronAppObsidianNative: [async ({}, use) => {
+    const { app, userDataDir } = await launchApp({
+      WRAPWEB_TEST_OBSIDIAN_AVAILABLE: '1',
+    })
+    await use(app)
+    await closeApp(app, userDataDir)
+  }, { scope: 'test' }],
+
+  managerPageObsidianFlatpak: async ({ electronAppObsidianFlatpak }, use) => {
+    const page = await electronAppObsidianFlatpak.firstWindow()
+    await page.waitForSelector('.card-add', { timeout: 30_000 })
+    await use(page)
+  },
+
+  managerPageObsidianNative: async ({ electronAppObsidianNative }, use) => {
+    const page = await electronAppObsidianNative.firstWindow()
+    await page.waitForSelector('.card-add', { timeout: 30_000 })
+    await use(page)
+  },
+})
+
+module.exports = { test, expect, FAKE_ICON_PATH, base, rcloneTest, mailHandlerTest, globalSettingsTest, obsidianTest }

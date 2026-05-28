@@ -233,6 +233,16 @@ wrapweb ships a plugin for [Obsidian](https://obsidian.md/). Once installed, ext
 
 When wrapweb is updated and ships a newer plugin version, the dialog shows **Update verfügbar** per vault and an **Plugin aktualisieren** button.
 
+### Obsidian via Flatpak
+
+If Obsidian is installed as a Flatpak, the dialog shows an extra section with the one-time command required to grant the sandbox access to your home directory — otherwise it cannot spawn the wrapweb AppImages. The command is offered with a one-click copy button:
+
+```
+flatpak override --user --filesystem=home md.obsidian.Obsidian
+```
+
+Run it once in a terminal and restart Obsidian. The hint is only displayed when a Flatpak Obsidian install is detected.
+
 ### How it works
 
 The plugin reads `~/.config/wrapweb/plugins/routing/routing.json` at runtime — the same file that is written automatically whenever you install a wrapweb app. No rebuild and no Obsidian restart are required when routing changes.

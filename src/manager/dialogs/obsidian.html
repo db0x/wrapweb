@@ -15,6 +15,14 @@
         <div id="obsidian-vault-list" class="obsidian-vault-list"></div>
         <p class="obsidian-hint" id="obsidian-no-vaults-hint" style="display:none">{{obsidianDialogNoVaults}}</p>
       </fieldset>
+      <fieldset class="obsidian-fieldset obsidian-flatpak-fieldset" id="obsidian-flatpak-hint" style="display:none">
+        <legend class="obsidian-fieldset-legend">{{obsidianDialogFlatpakTitle}}</legend>
+        <p class="obsidian-hint">{{obsidianDialogFlatpakBody}}</p>
+        <div class="obsidian-code-row">
+          <code class="obsidian-code" id="obsidian-flatpak-cmd">flatpak override --user --filesystem=home md.obsidian.Obsidian</code>
+          <button class="obsidian-copy-btn" id="obsidian-flatpak-copy" type="button" title="{{obsidianDialogCopy}}" aria-label="{{obsidianDialogCopy}}">⧉</button>
+        </div>
+      </fieldset>
     </div>
     <div class="confirm-actions">
       <button class="btn-cancel" id="obsidian-cancel">{{confirmCancel}}</button>

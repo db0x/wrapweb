@@ -8,6 +8,9 @@ export function initObsidianDialog({ i18n, icons, templates }) {
   const noVaultsHint    = document.getElementById('obsidian-no-vaults-hint')
   const installBtn      = document.getElementById('obsidian-install')
   const bundledVersion  = document.getElementById('obsidian-bundled-version')
+  const flatpakHint     = document.getElementById('obsidian-flatpak-hint')
+  const flatpakCopyBtn  = document.getElementById('obsidian-flatpak-copy')
+  const flatpakCmd      = document.getElementById('obsidian-flatpak-cmd')
 
   function closeDialog() { overlay.classList.add('hidden') }
 
@@ -15,6 +18,20 @@ export function initObsidianDialog({ i18n, icons, templates }) {
   document.getElementById('obsidian-close').addEventListener('click', closeDialog)
   document.getElementById('obsidian-cancel').addEventListener('click', closeDialog)
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDialog() })
+
+  // Copy the override command to the clipboard. We swap the glyph briefly so the
+  // user gets feedback without having to read a tooltip or notice.
+  let copyResetTimer = null
+  flatpakCopyBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(flatpakCmd.textContent.trim()) } catch {}
+    flatpakCopyBtn.classList.add('copied')
+    flatpakCopyBtn.textContent = '✓'
+    clearTimeout(copyResetTimer)
+    copyResetTimer = setTimeout(() => {
+      flatpakCopyBtn.classList.remove('copied')
+      flatpakCopyBtn.textContent = '⧉'
+    }, 1500)
+  })
 
   installBtn.addEventListener('click', async () => {
     installBtn.disabled = true
@@ -36,6 +53,9 @@ export function initObsidianDialog({ i18n, icons, templates }) {
     vaultList.innerHTML = ''
     noVaultsHint.style.display = vaults.length === 0 ? '' : 'none'
     bundledVersion.textContent = status.bundledVersion ? `v${status.bundledVersion}` : ''
+    // The Flatpak hint is only relevant when Obsidian itself runs sandboxed —
+    // a native AppImage/.deb/.rpm install can spawn anything in $HOME without override.
+    flatpakHint.style.display = status.isObsidianFlatpak ? '' : 'none'
 
     let anyAction = false
 

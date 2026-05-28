@@ -76,7 +76,11 @@ function resolveIconsByGtkAsync(names) {
 // The Python/GTK call is skipped in tests (no display server in headless Playwright).
 // xdg-mime and which run in tests too — rclone tests inject a fake binary and rely on the real check.
 const prefetchedAppDefaultIcon    = process.env.WRAPWEB_TEST ? Promise.resolve({}) : resolveIconsByGtkAsync(['application-default-icon'])
-const prefetchedObsidianAvailable = runAsync('xdg-mime', ['query', 'default', 'x-scheme-handler/obsidian'], 2000).then(out => !!out.trim())
+// In test mode, WRAPWEB_TEST_OBSIDIAN_AVAILABLE forces the Obsidian drawer entry on
+// without requiring a real obsidian:// MIME registration on the host.
+const prefetchedObsidianAvailable = process.env.WRAPWEB_TEST
+  ? Promise.resolve(process.env.WRAPWEB_TEST_OBSIDIAN_AVAILABLE === '1')
+  : runAsync('xdg-mime', ['query', 'default', 'x-scheme-handler/obsidian'], 2000).then(out => !!out.trim())
 const prefetchedRcloneAvailable   = runAsync('which', ['rclone'], 2000).then(out => ({ available: !!out.trim() }))
 
 // Returns the current default mailto handler desktop filename, or null.
@@ -587,11 +591,22 @@ for name in sorted(theme.list_icons(None)):
 
   // Returns the list of known Obsidian vaults with the plugin install status for each.
   // Vault list is read from the Obsidian app config (obsidian.json) at query time.
+  // isObsidianFlatpak signals that the user needs to grant the Flatpak sandbox
+  // access to spawn AppImages from $HOME (see dialog hint).
   ipcMain.handle('manager:obsidian-plugin-status', () => {
     const configHome    = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config')
     // Different packaging formats store config in different locations.
     // We try standard XDG first (AppImage, .deb, .rpm), then Flatpak, then Snap.
     const obsidianJson  = resolveObsidianJson(configHome)
+    const flatpakObsidianJson = path.join(os.homedir(), '.var', 'app', 'md.obsidian.Obsidian', 'config', 'obsidian', 'obsidian.json')
+    // WRAPWEB_TEST_OBSIDIAN_FLATPAK forces detection on/off in tests so the dialog hint
+    // can be exercised without an actual Flatpak Obsidian install on the host.
+    // WRAPWEB_FORCE_OBSIDIAN_FLATPAK=1 enables the same override outside test mode —
+    // useful for previewing the hint locally on a native Obsidian install.
+    const isObsidianFlatpak   = process.env.WRAPWEB_FORCE_OBSIDIAN_FLATPAK === '1'
+      || (process.env.WRAPWEB_TEST
+        ? process.env.WRAPWEB_TEST_OBSIDIAN_FLATPAK === '1'
+        : fs.existsSync(flatpakObsidianJson))
     const bundledManifest = path.join(APP_ROOT, 'src', 'plugins', 'obsidian', 'manifest.json')
 
     let bundledVersion = null
@@ -614,7 +629,7 @@ for name in sorted(theme.list_icons(None)):
         })
     } catch {}
 
-    return { bundledVersion, vaults }
+    return { bundledVersion, vaults, isObsidianFlatpak }
   })
 
   // Copies manifest.json and main.js into every known Obsidian vault.
