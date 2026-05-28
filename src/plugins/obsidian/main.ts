@@ -152,6 +152,7 @@ function resolveDefaultDesktop(mimeType: string): string | null {
 function resolveHandlerIconDataUrl(mimeType: string): string | null {
   try {
     const desktop = resolveDefaultDesktop(mimeType)
+    console.log('[wrapweb] browser desktop:', desktop)
     if (!desktop) return null
     const appDirs = getXdgDataDirs().map(d => join(d, 'applications'))
     let iconName = desktop.replace(/\.desktop$/, '')
@@ -161,7 +162,9 @@ function resolveHandlerIconDataUrl(mimeType: string): string | null {
         if (match) { iconName = match[1].trim(); break }
       } catch {}
     }
+    console.log('[wrapweb] browser iconName:', iconName)
     const p = resolveIconPath(iconName)
+    console.log('[wrapweb] browser iconPath:', p)
     return p ? pathToDataUrl(p) : null
   } catch {
     return null
