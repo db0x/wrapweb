@@ -145,13 +145,23 @@ function resolveDefaultDesktop(mimeType: string): string | null {
     } catch {}
   }
 
-  // xdg-settings uses GSettings/D-Bus portal and works inside Flatpak even when
-  // the system MIME database is not directly accessible via the filesystem.
+  // xdg-settings queries via GSettings/D-Bus portal — works inside Flatpak.
   if (mimeType === 'x-scheme-handler/https' || mimeType === 'x-scheme-handler/http') {
     try {
       const r = spawnSync('xdg-settings', ['get', 'default-web-browser'], { encoding: 'utf8', timeout: 1000 })
       const val = r.stdout?.trim()
       if (val) return val
+    } catch {}
+    // gsettings reads GNOME's GSettings database directly — accessible via session D-Bus.
+    try {
+      const r = spawnSync('gsettings', [
+        'get', 'org.gnome.desktop.default-applications.browser', 'exec'
+      ], { encoding: 'utf8', timeout: 1000 })
+      const match = r.stdout?.match(/'([^']+)'/)
+      if (match?.[1]) {
+        const val = match[1].split(' ')[0].trim()  // strip any %u etc.
+        if (val) return val.endsWith('.desktop') ? val : `${val}.desktop`
+      }
     } catch {}
   }
 
@@ -163,7 +173,6 @@ function resolveDefaultDesktop(mimeType: string): string | null {
 function resolveHandlerIconDataUrl(mimeType: string): string | null {
   try {
     const desktop = resolveDefaultDesktop(mimeType)
-    console.log('[wrapweb] browser desktop:', desktop)
     if (!desktop) return null
     const appDirs = getXdgDataDirs().map(d => join(d, 'applications'))
     let iconName = desktop.replace(/\.desktop$/, '')
@@ -173,9 +182,7 @@ function resolveHandlerIconDataUrl(mimeType: string): string | null {
         if (match) { iconName = match[1].trim(); break }
       } catch {}
     }
-    console.log('[wrapweb] browser iconName:', iconName)
     const p = resolveIconPath(iconName)
-    console.log('[wrapweb] browser iconPath:', p)
     return p ? pathToDataUrl(p) : null
   } catch {
     return null
@@ -186,7 +193,23 @@ function resolveHandlerIconDataUrl(mimeType: string): string | null {
 let _browserIconDataUrl: string | null | undefined = undefined
 function getBrowserIconDataUrl(): string | null {
   if (_browserIconDataUrl !== undefined) return _browserIconDataUrl
-  return (_browserIconDataUrl = resolveHandlerIconDataUrl('x-scheme-handler/https'))
+  _browserIconDataUrl = resolveHandlerIconDataUrl('x-scheme-handler/https')
+  if (!_browserIconDataUrl) {
+    // Last resort: scan for any installed browser icon in accessible icon paths.
+    // Covers the case where the system MIME database is outside the Flatpak sandbox.
+    const candidates = [
+      'org.mozilla.firefox', 'firefox',
+      'com.brave.Browser', 'brave-browser',
+      'com.google.Chrome', 'google-chrome',
+      'org.chromium.Chromium', 'chromium', 'chromium-browser',
+      'web-browser', 'applications-internet',
+    ]
+    for (const name of candidates) {
+      const p = resolveIconPath(name, true)
+      if (p) { _browserIconDataUrl = pathToDataUrl(p); break }
+    }
+  }
+  return _browserIconDataUrl
 }
 
 // Per-AppImage icon data URL cache — icons don't change during a session.
