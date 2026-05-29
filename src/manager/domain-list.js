@@ -1,8 +1,16 @@
-export function initDomainList(listId, inputId, addBtnId, onChange) {
+// Reusable "add chips to a list" widget used for both the internalDomains field and
+// the routing-URLs field. The optional `validate` hook lets a caller reject an entry
+// (e.g. on a routing-URL overlap) before it is added; without it the widget behaves
+// exactly as before, so the internalDomains usage is unaffected.
+export function initDomainList(listId, inputId, addBtnId, onChange, options = {}) {
+  const { validate, hintEl } = options
   const listEl  = document.getElementById(listId)
   const inputEl = document.getElementById(inputId)
   const addBtn  = document.getElementById(addBtnId)
   let domains = []
+
+  function clearHint() { if (hintEl) { hintEl.textContent = ''; hintEl.className = 'field-hint' } }
+  function showHint(msg) { if (hintEl) { hintEl.textContent = msg; hintEl.className = 'field-hint error' } }
 
   function renderList() {
     listEl.innerHTML = ''
@@ -19,9 +27,15 @@ export function initDomainList(listId, inputId, addBtnId, onChange) {
     }
   }
 
-  function add() {
+  // Async because the optional validator may need an IPC round-trip (overlap check).
+  async function add() {
     const val = inputEl.value.trim()
     if (!val || domains.includes(val)) return
+    if (validate) {
+      const error = await validate(val)
+      if (error) { showHint(error); return }
+    }
+    clearHint()
     domains.push(val)
     inputEl.value = ''
     renderList()
@@ -29,6 +43,7 @@ export function initDomainList(listId, inputId, addBtnId, onChange) {
   }
 
   addBtn.addEventListener('click', add)
+  inputEl.addEventListener('input', clearHint)  // no-op when no hintEl is configured
   inputEl.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); add() }
   })
@@ -43,6 +58,6 @@ export function initDomainList(listId, inputId, addBtnId, onChange) {
         : []
       renderList()
     },
-    reset: ()    => { domains = []; renderList() },
+    reset: ()    => { domains = []; clearHint(); renderList() },
   }
 }

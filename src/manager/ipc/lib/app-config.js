@@ -82,6 +82,7 @@ function buildSingleApp(configFile, defaultMailDesktop) {
     icon: cfg.icon || null, geometry: cfg.geometry || null,
     userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false,
     singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null,
+    routingUrls: cfg.routingUrls || null,
     mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null,
     isDefaultMailHandler: defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`,
     category: cfg.category || null,
@@ -90,8 +91,20 @@ function buildSingleApp(configFile, defaultMailDesktop) {
   }
 }
 
+// Config keys the create/edit form fully owns. Everything else in an existing config
+// (category, rcloneFileHandler, mimeExtensions, mimeIcons, mailtoTemplate, …) is passed
+// through unchanged on edit so copying an embedded app to private and then editing it
+// does not silently drop fields the form cannot represent.
+const FORM_MANAGED_KEYS = new Set([
+  'profile', 'url', 'name', 'icon', 'geometry', 'userAgent',
+  'internalDomains', 'routingUrls', 'crossOriginIsolation', 'singleInstance',
+  'mimeTypes', 'mailtoJs',
+])
+
 // Builds a config object from create/edit form data, omitting falsy/default fields.
-function buildAppCfg({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance, mailHandler, mailtoJs }) {
+// `existing` is the config currently on disk (empty for create): its non-form-managed
+// keys are preserved, and its mimeTypes are kept (the form only toggles the mailto entry).
+function buildAppCfg({ profile, name, url, icon, width, height, userAgent, internalDomains, routingUrls, crossOriginIsolation, singleInstance, mailHandler, mailtoJs }, existing = {}) {
   const cfg = { profile, url }
   if (name)  cfg.name = name
   if (icon)  cfg.icon = icon
@@ -109,8 +122,24 @@ function buildAppCfg({ profile, name, url, icon, width, height, userAgent, inter
     if (domains.length === 1) cfg.internalDomains = domains[0]
     else if (domains.length > 1) cfg.internalDomains = domains
   }
-  if (mailHandler) cfg.mimeTypes = ['x-scheme-handler/mailto']
+  // routingUrls makes other apps route matching links to this one. Always stored as an
+  // array so updateRoutingTable() and the overlap check see a consistent shape.
+  if (Array.isArray(routingUrls)) {
+    const urls = routingUrls.map(u => u.trim()).filter(Boolean)
+    if (urls.length) cfg.routingUrls = urls
+  }
+  // The form's mail-handler toggle only governs the mailto scheme; any other MIME types
+  // the app already declared (e.g. a draw.io file handler) are preserved.
+  const otherMimeTypes = (Array.isArray(existing.mimeTypes) ? existing.mimeTypes : [])
+    .filter(t => t !== 'x-scheme-handler/mailto')
+  const mimeTypes = mailHandler ? [...otherMimeTypes, 'x-scheme-handler/mailto'] : otherMimeTypes
+  if (mimeTypes.length) cfg.mimeTypes = mimeTypes
   if (mailHandler && mailtoJs) cfg.mailtoJs = mailtoJs
+
+  // Carry over every field the form does not manage (category, rclone*, mime icons, …).
+  for (const [k, v] of Object.entries(existing)) {
+    if (!FORM_MANAGED_KEYS.has(k)) cfg[k] = v
+  }
   return cfg
 }
 

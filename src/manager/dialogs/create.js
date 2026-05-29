@@ -1,5 +1,6 @@
 import { applyTemplate } from '../template.js'
 import { initDomainList } from '../domain-list.js'
+import { initRoutingUrlList } from '../routing-url-field.js'
 
 export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, templates }, { iconPicker, applyVisibility, createCard, insertCard }) {
   const overlay = applyTemplate(templates.create, { i18n, vars: { appDefaultSrc } })
@@ -20,6 +21,13 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, 
   refreshUaPresets(uaPresets)
 
   const domainList = initDomainList('create-domain-list', 'create-domain-input', 'create-domain-add', () => {})
+  // getProfile reads the profile input live: the overlap check excludes the app's own
+  // profile, and the field may change while the dialog is open.
+  const routingList = initRoutingUrlList(
+    'create',
+    () => document.getElementById('create-profile').value.trim(),
+    { tr, onChange: () => {} }
+  )
 
   const pluginSelect = document.getElementById('create-plugin')
   for (const { file, label } of (plugins || []).filter(p => p.category === 'mail-handler')) {
@@ -41,6 +49,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, 
   let widthValid   = true
   let heightValid  = true
   let profileCheckTimer = null
+  let urlCheckTimer     = null
   let selectedIconName  = ''
 
   const profileInput = document.getElementById('create-profile')
@@ -124,25 +133,48 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, 
 
   urlInput.addEventListener('input', () => {
     const val = urlInput.value.trim()
+    clearTimeout(urlCheckTimer)
     if (!val) {
       urlValid = false
       urlInput.className = ''
       urlHint.textContent = ''
       urlHint.className = 'field-hint'
-    } else {
-      try {
-        new URL(val)
+      updateSaveBtn()
+      return
+    }
+    try {
+      new URL(val)
+    } catch {
+      urlValid = false
+      urlInput.className = 'invalid'
+      urlHint.textContent = i18n.validUrl
+      urlHint.className = 'field-hint error'
+      updateSaveBtn()
+      return
+    }
+    // Format ok — base URLs must not overlap another app's base URL. The check is async
+    // (IPC) and debounced; save stays disabled until it confirms the URL is collision-free.
+    urlValid = false
+    urlInput.className = ''
+    urlHint.textContent = i18n.validChecking
+    urlHint.className = 'field-hint'
+    updateSaveBtn()
+    urlCheckTimer = setTimeout(async () => {
+      const { conflict } = await window.managerAPI.checkRoutingOverlap(profileInput.value.trim(), val, 'base')
+      if (urlInput.value.trim() !== val) return  // input changed while awaiting
+      if (conflict) {
+        urlValid = false
+        urlInput.className = 'invalid'
+        urlHint.textContent = tr('routingUrlConflict', { app: conflict })
+        urlHint.className = 'field-hint error'
+      } else {
         urlValid = true
         urlInput.className = 'valid'
         urlHint.textContent = ''
-      } catch {
-        urlValid = false
-        urlInput.className = 'invalid'
-        urlHint.textContent = i18n.validUrl
-        urlHint.className = 'field-hint error'
+        urlHint.className = 'field-hint'
       }
-    }
-    updateSaveBtn()
+      updateSaveBtn()
+    }, 300)
   })
 
   document.getElementById('create-width').addEventListener('input', e =>
@@ -195,6 +227,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, 
     document.getElementById('create-height').value = ''
     document.getElementById('create-useragent').value = ''
     domainList.reset()
+    routingList.reset()
     document.getElementById('create-coi').classList.remove('active')
     document.getElementById('create-single-instance').classList.remove('active')
     document.getElementById('create-mail-handler').classList.remove('active')
@@ -211,6 +244,7 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, 
 
   function closeCreateDialog() {
     clearTimeout(profileCheckTimer)
+    clearTimeout(urlCheckTimer)
     overlay.classList.add('hidden')
   }
 
@@ -232,12 +266,13 @@ export function initCreateDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, 
     const height              = document.getElementById('create-height').value.trim()
     const userAgent           = document.getElementById('create-useragent').value.trim()
     const internalDomains     = domainList.get().join(', ')
+    const routingUrls          = routingList.get()
     const crossOriginIsolation = document.getElementById('create-coi').classList.contains('active')
     const singleInstance       = document.getElementById('create-single-instance').classList.contains('active')
     const mailHandler          = document.getElementById('create-mail-handler').classList.contains('active')
     const mailtoJs             = pluginSelect.value
     saveBtn.disabled = true
-    const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, crossOriginIsolation, singleInstance, mailHandler, mailtoJs })
+    const result = await window.managerAPI.createApp({ profile, name, url, icon, width, height, userAgent, internalDomains, routingUrls, crossOriginIsolation, singleInstance, mailHandler, mailtoJs })
     if (result.success) {
       closeCreateDialog()
       insertCard(createCard(result.app))

@@ -66,6 +66,20 @@
           </div>
         </div>
       </div>
+      <div class="dialog-field">
+        <label>{{createRoutingUrls}}
+          <span class="field-help" data-tooltip="{{tooltipRoutingUrls}}">?</span>
+        </label>
+        <div class="domain-field-wrapper">
+          <ul class="domain-list" id="create-routing-list"></ul>
+          <div class="domain-add-row">
+            <input type="text" id="create-routing-input" placeholder="*.example.com/docs/*"
+                   autocomplete="off" spellcheck="false">
+            <button type="button" id="create-routing-add" class="domain-add-btn">+</button>
+          </div>
+        </div>
+        <span class="field-hint" id="create-routing-hint"></span>
+      </div>
       <button type="button" class="dialog-field-toggle" id="create-coi">
         <span class="toggle-switch"></span>
         <span>{{createCoi}}

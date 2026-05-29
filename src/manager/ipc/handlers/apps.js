@@ -10,6 +10,7 @@ const { APP_ROOT, CONFIGS_DIR, pkg }                       = require('../lib/pat
 const { resolveIconsByGtk }                                = require('../lib/icons')
 const { readVersionSidecar, needsRebuild, buildSingleApp, buildAppCfg } = require('../lib/app-config')
 const { getDefaultMailDesktop }                            = require('./mail')
+const { urlToRoutingKey, keyOverlaps, primaryKeyFromUrl, routingUrlKeys } = require('../../../routing-match')
 
 module.exports = function registerAppHandlers() {
   ipcMain.handle('manager:apps', () => {
@@ -40,6 +41,7 @@ module.exports = function registerAppHandlers() {
           icon: cfg.icon || null, geometry: cfg.geometry || null,
           userAgent: cfg.userAgent || null, crossOriginIsolation: cfg.crossOriginIsolation || false,
           singleInstance: cfg.singleInstance || false, internalDomains: cfg.internalDomains || null,
+          routingUrls: cfg.routingUrls || null,
           mimeTypes: cfg.mimeTypes || null, mailtoJs: cfg.mailtoJs || null,
           isDefaultMailHandler: defaultMailDesktop === `wrapweb-${cfg.profile}.desktop`,
           category: cfg.category || null,
@@ -96,6 +98,31 @@ module.exports = function registerAppHandlers() {
     } catch (err) {
       return { success: false, error: err.message }
     }
+  })
+
+  // Checks whether a candidate URL collides with another app's claim of the SAME kind.
+  // The routing rules forbid base↔base and routing↔routing overlaps but explicitly allow
+  // a routing-URL to overlap a base-URL (a routing claim then wins at resolution time), so
+  // the check is scoped by `kind` ('base' | 'routing'). The app's own profile is excluded
+  // so editing its existing URLs never reports a self-conflict.
+  // Returns { conflict: <app display name> } on collision, else { conflict: null }.
+  ipcMain.handle('manager:check-routing-overlap', (event, { profile, url, kind }) => {
+    const candidate = kind === 'base' ? primaryKeyFromUrl(url) : urlToRoutingKey(url)
+    if (!candidate) return { conflict: null, invalid: true }
+    try {
+      for (const f of fs.readdirSync(CONFIGS_DIR).filter(f => /^build\..+\.json$/.test(f))) {
+        let cfg
+        try { cfg = JSON.parse(fs.readFileSync(path.join(CONFIGS_DIR, f), 'utf8')) } catch { continue }
+        if (!cfg.profile || cfg.profile === profile) continue
+        const otherKeys = kind === 'base'
+          ? [primaryKeyFromUrl(cfg.url)].filter(Boolean)
+          : routingUrlKeys(cfg)
+        if (otherKeys.some(key => keyOverlaps(candidate, key))) {
+          return { conflict: cfg.name || cfg.profile }
+        }
+      }
+    } catch {}
+    return { conflict: null }
   })
 
   ipcMain.handle('manager:reveal-path', (event, targetPath) => {
@@ -166,8 +193,10 @@ module.exports = function registerAppHandlers() {
         crossOriginIsolation: data.crossOriginIsolation || false,
         singleInstance:       data.singleInstance || false,
         internalDomains:      data.internalDomains ? cfg.internalDomains : null,
+        routingUrls:          cfg.routingUrls || null,
         mimeTypes:            cfg.mimeTypes || null,
         mailtoJs:             cfg.mailtoJs  || null,
+        category:             cfg.category  || null,
       },
     }
   })
@@ -175,7 +204,11 @@ module.exports = function registerAppHandlers() {
   ipcMain.handle('manager:update-app', (event, data) => {
     const filePath = path.join(CONFIGS_DIR, `build.private.${data.profile}.json`)
     if (!fs.existsSync(filePath)) return { success: false, error: 'not found' }
-    const cfg = buildAppCfg(data)
+    // Merge over the existing config so fields the form cannot edit (category,
+    // rcloneFileHandler, mimeExtensions/Icons, …) survive an edit instead of being dropped.
+    let existing = {}
+    try { existing = JSON.parse(fs.readFileSync(filePath, 'utf8')) } catch {}
+    const cfg = buildAppCfg(data, existing)
     try {
       fs.writeFileSync(filePath, JSON.stringify(cfg, null, 4), 'utf8')
     } catch (err) {
@@ -199,8 +232,10 @@ module.exports = function registerAppHandlers() {
         crossOriginIsolation: data.crossOriginIsolation || false,
         singleInstance:       data.singleInstance || false,
         internalDomains:      data.internalDomains ? cfg.internalDomains : null,
+        routingUrls:          cfg.routingUrls || null,
         mimeTypes:            cfg.mimeTypes || null,
         mailtoJs:             cfg.mailtoJs  || null,
+        category:             cfg.category  || null,
       },
     }
   })

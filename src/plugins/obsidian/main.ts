@@ -3,6 +3,15 @@ import { readFileSync, existsSync } from 'fs'
 import { join, basename } from 'path'
 import { spawn, spawnSync } from 'child_process'
 import { homedir } from 'os'
+// Shared matcher — esbuild bundles this plain-JS module into the plugin so the
+// plugin and the AppImages route URLs identically (wildcards + routing-wins-over-base).
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { findRoute } = require('../../routing-match.js') as {
+  findRoute: (
+    raw: unknown, hostname: string, pathname: string,
+    accept?: (entry: string | RouteTarget) => boolean,
+  ) => { key: string; entry: string | RouteTarget; kind: string } | null
+}
 
 // When Obsidian runs as a Flatpak, XDG_CONFIG_HOME and XDG_DATA_DIRS are redirected to
 // the app's private sandbox dirs — not the host's ~/.config or /usr/share. We detect
@@ -20,7 +29,9 @@ interface RouteTarget {
   icon?: string
 }
 
-type Routing = Record<string, string | RouteTarget>
+// The routing.json payload — a { base, routing } split (or the legacy flat shape).
+// findRoute() in routing-match.js normalises and interprets it, so it's kept opaque here.
+type Routing = unknown
 
 interface ResolvedRoute {
   appImagePath: string
@@ -235,31 +246,17 @@ function resolveRoute(url: string): ResolvedRoute | null {
     return null
   }
 
-  const routing = loadRouting()
+  // findRoute applies routing-wins-over-base priority + longest-match; the accept
+  // predicate skips apps whose AppImage isn't built so resolution falls through.
+  const match = findRoute(loadRouting(), hostname, pathname, (target) => {
+    const p = typeof target === 'string' ? target : target.path
+    return !!p && existsSync(p)
+  })
 
-  // Sort longer keys first so path-specific rules (e.g. docs.google.com/spreadsheets)
-  // take priority over hostname-only rules (e.g. docs.google.com).
-  const entry = Object.entries(routing)
-    .sort((a, b) => b[0].length - a[0].length)
-    .find(([key]) => {
-      const slash = key.indexOf('/')
-      if (slash !== -1) {
-        const keyHost = key.slice(0, slash)
-        const keyPath = '/' + key.slice(slash + 1)
-        return (
-          (hostname === keyHost || hostname.endsWith('.' + keyHost)) &&
-          pathname.startsWith(keyPath)
-        )
-      }
-      return hostname === key || hostname.endsWith('.' + key)
-    })
+  if (!match) return null
 
-  if (!entry) return null
-
-  const target       = entry[1]
+  const target       = match.entry
   const appImagePath = typeof target === 'string' ? target : target.path
-
-  if (!existsSync(appImagePath)) return null
 
   const name =
     typeof target === 'object' && target.name

@@ -1,6 +1,7 @@
 import { OverlayScrollbars } from '../../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
 import { applyTemplate }     from '../template.js'
 import { initDomainList }    from '../domain-list.js'
+import { initRoutingUrlList } from '../routing-url-field.js'
 
 export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, templates }, { iconPicker, showConfirm }) {
   const overlay = applyTemplate(templates.edit, { i18n, vars: { appDefaultSrc } })
@@ -21,6 +22,8 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
   refreshUaPresets(uaPresets)
 
   const domainList    = initDomainList('edit-domain-list', 'edit-domain-input', 'edit-domain-add', () => updateSaveBtn())
+  // currentProfile is read live (set in openEditDialog) so the overlap check excludes this app.
+  const routingList   = initRoutingUrlList('edit', () => currentProfile, { tr, onChange: () => updateSaveBtn() })
 
   const pluginSelect = document.getElementById('edit-plugin')
   for (const { file, label } of (plugins || []).filter(p => p.category === 'mail-handler')) {
@@ -41,6 +44,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
 
   let scrollbarInited  = false
   let urlValid         = true
+  let urlCheckTimer    = null
   let widthValid       = true
   let heightValid      = true
   let selectedIconName = ''
@@ -66,6 +70,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
       height:             document.getElementById('edit-height').value.trim(),
       userAgent:          uaSelect.value.trim(),
       internalDomains:    domainList.get().join(','),
+      routingUrls:        routingList.get().join(','),
       crossOriginIsolation: document.getElementById('edit-coi').classList.contains('active'),
       singleInstance:       document.getElementById('edit-single-instance').classList.contains('active'),
       mailHandler:          document.getElementById('edit-mail-handler').classList.contains('active'),
@@ -109,24 +114,57 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
 
   urlInput.addEventListener('input', () => {
     const val = urlInput.value.trim()
+    clearTimeout(urlCheckTimer)
     if (!val) {
       urlValid = false
       urlInput.className = ''
       urlHint.textContent = ''
-    } else {
-      try {
-        new URL(val)
+      updateSaveBtn()
+      return
+    }
+    try {
+      new URL(val)
+    } catch {
+      urlValid = false
+      urlInput.className = 'invalid'
+      urlHint.textContent = i18n.validUrl
+      urlHint.className = 'field-hint error'
+      updateSaveBtn()
+      return
+    }
+    // An unchanged base URL is never re-checked: it was already saved, so it must not be
+    // blocked just because it overlaps another app's base (the overlap rule applies to new
+    // or changed claims via the dialog, not retroactively to existing configs).
+    if (val === (currentApp?.url || '')) {
+      urlValid = true
+      urlInput.className = 'valid'
+      urlHint.textContent = ''
+      urlHint.className = 'field-hint'
+      updateSaveBtn()
+      return
+    }
+    // Changed base URL — verify it does not overlap another app's base URL.
+    urlValid = false
+    urlInput.className = ''
+    urlHint.textContent = i18n.validChecking
+    urlHint.className = 'field-hint'
+    updateSaveBtn()
+    urlCheckTimer = setTimeout(async () => {
+      const { conflict } = await window.managerAPI.checkRoutingOverlap(currentProfile, val, 'base')
+      if (urlInput.value.trim() !== val) return
+      if (conflict) {
+        urlValid = false
+        urlInput.className = 'invalid'
+        urlHint.textContent = tr('routingUrlConflict', { app: conflict })
+        urlHint.className = 'field-hint error'
+      } else {
         urlValid = true
         urlInput.className = 'valid'
         urlHint.textContent = ''
-      } catch {
-        urlValid = false
-        urlInput.className = 'invalid'
-        urlHint.textContent = i18n.validUrl
-        urlHint.className = 'field-hint error'
+        urlHint.className = 'field-hint'
       }
-    }
-    updateSaveBtn()
+      updateSaveBtn()
+    }, 300)
   })
 
   document.getElementById('edit-name').addEventListener('input', updateSaveBtn)
@@ -191,6 +229,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
   }
 
   function closeEditDialog() {
+    clearTimeout(urlCheckTimer)
     overlay.classList.add('hidden')
   }
 
@@ -231,6 +270,7 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
 
     uaSelect.value = app.userAgent || ''
     domainList.set(app.internalDomains || [])
+    routingList.set(app.routingUrls || [])
 
     const coiBtn = document.getElementById('edit-coi')
     if (app.crossOriginIsolation) coiBtn.classList.add('active')
@@ -271,7 +311,8 @@ export function initEditDialog({ i18n, tr, appDefaultSrc, uaPresets, plugins, te
   saveBtn.addEventListener('click', async () => {
     const cur = snapshot()
     saveBtn.disabled = true
-    const result = await window.managerAPI.updateApp({ profile: currentProfile, ...cur })
+    // snapshot() stringifies routingUrls for dirty-detection; buildAppCfg wants the array.
+    const result = await window.managerAPI.updateApp({ profile: currentProfile, ...cur, routingUrls: routingList.get() })
     if (!result.success) { updateSaveBtn(); return }
 
     closeEditDialog()

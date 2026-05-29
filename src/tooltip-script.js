@@ -16,16 +16,31 @@ function unwrapUrl(url) {
   return url;
 }
 
+// Port of keyMatches() from src/routing-match.js — must stay in sync with it.
+// Page-injected JS cannot require the module, so the greedy-'*' matcher is inlined here.
+function keyToRegExp(glob) {
+  const body = glob.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*');
+  return new RegExp('^' + body + '$');
+}
+function keyMatches(key, hostname, pathname) {
+  const slash   = key.indexOf('/');
+  const hostPat = slash === -1 ? key : key.slice(0, slash);
+  const pathPat = slash === -1 ? null : key.slice(slash);
+  const hostOk = hostPat.includes('*')
+    ? keyToRegExp(hostPat).test(hostname)
+    : (hostname === hostPat || hostname.endsWith('.' + hostPat));
+  if (!hostOk) return false;
+  if (pathPat === null) return true;
+  return pathPat.includes('*') ? keyToRegExp(pathPat).test(pathname) : pathname.startsWith(pathPat);
+}
+
 // Returns route info { iconDataUrl, name } if this URL would open in another wrapweb app.
 // Unwraps redirect URLs first so Safe Links / Google redirects are matched correctly.
 function getRouteInfo(url) {
   try {
     const resolved = unwrapUrl(url);
     const { hostname, pathname } = new URL(resolved);
-    return routeEntries.find(e =>
-      (hostname === e.host || hostname.endsWith('.' + e.host)) &&
-      pathname.startsWith(e.prefix)
-    ) ?? null;
+    return routeEntries.find(e => keyMatches(e.key, hostname, pathname)) ?? null;
   } catch { return null; }
 }
 

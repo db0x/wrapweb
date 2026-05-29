@@ -2,6 +2,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { execSync } = require('node:child_process')
+const { primaryKeyFromUrl, routingUrlKeys } = require('../src/routing-match')
 
 const PROJECT_ROOT = path.resolve(__dirname, '..')
 
@@ -287,14 +288,16 @@ function installDesktop(app) {
 
 // Rebuilds routing.json from all installed AppImages. Called after every
 // install-app run so the routing table stays in sync without requiring a rebuild.
-// Keys use path-prefix notation (e.g. docs.google.com/spreadsheets) so that
-// apps sharing a hostname can still be routed to different AppImages.
+// The table is split into a `base` map (each app's primary URL) and a `routing` map
+// (each app's routingUrls): the same key string may appear in both pointing at
+// different apps, and at resolution time a routing claim wins over a base claim.
+// Keys use path-prefix notation with optional '*' wildcards (e.g. docs.google.com/d/*).
 // The 48×48 PNG is preferred over SVG because nativeImage cannot load SVG on Linux.
 function updateRoutingTable() {
   const routingDir  = path.join(os.homedir(), '.config', 'wrapweb', 'plugins', 'routing')
   const routingFile = path.join(routingDir, 'routing.json')
 
-  const routing = {}
+  const routing = { base: {}, routing: {} }
   try {
     const webappsDir = path.join(PROJECT_ROOT, 'webapps')
     for (const f of fs.readdirSync(webappsDir).filter(f => /^build\..+\.json$/.test(f))) {
@@ -314,19 +317,9 @@ function updateRoutingTable() {
                         : fs.existsSync(iconSvg)   ? iconSvg
                         : null
         const entry = { path: appImagePath, name, ...(icon && { icon }) }
-        const routingKey = (u => {
-          const first = u.pathname.replace(/^\//, '').split('/')[0]
-          return first ? `${u.hostname}/${first}` : u.hostname
-        })(new URL(cfg.url))
-        routing[routingKey] = entry
-        for (const extra of cfg.routingUrls ?? []) {
-          try {
-            const u = new URL(extra)
-            const first = u.pathname.replace(/^\//, '').split('/')[0]
-            const key = first ? `${u.hostname}/${first}` : u.hostname
-            routing[key] = entry
-          } catch {}
-        }
+        const baseKey = primaryKeyFromUrl(cfg.url)
+        if (baseKey) routing.base[baseKey] = entry
+        for (const key of routingUrlKeys(cfg)) routing.routing[key] = entry
       } catch {}
     }
   } catch {}

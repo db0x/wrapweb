@@ -7,6 +7,7 @@ const { spawn, spawnSync } = require('node:child_process')
 const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
 const windowState = require('./window-state')
+const { findRoute, normalizeRouting } = require('./routing-match')
 
 const ROUTING_FILE = path.join(app.getPath('appData'), 'wrapweb', 'plugins', 'routing', 'routing.json')
 
@@ -175,28 +176,18 @@ function resolveRoute(url, currentProfile) {
   const resolved = unwrapUrl(url)
   let targetHost, targetPath
   try { ({ hostname: targetHost, pathname: targetPath } = new URL(resolved)) } catch { return null }
-  const routing = loadRouting()
-  // Sort longer keys first so path-specific entries (e.g. docs.google.com/spreadsheets)
-  // take priority over hostname-only entries (e.g. docs.google.com).
-  const entry = Object.entries(routing)
-    .sort((a, b) => b[0].length - a[0].length)
-    .find(([key]) => {
-      const slash = key.indexOf('/')
-      if (slash !== -1) {
-        const keyHost = key.slice(0, slash)
-        const keyPath = '/' + key.slice(slash + 1)
-        return (targetHost === keyHost || targetHost.endsWith('.' + keyHost)) &&
-               targetPath.startsWith(keyPath)
-      }
-      return targetHost === key || targetHost.endsWith('.' + key)
-    })
-  if (!entry) return null
-  const [, target] = entry
+  // findRoute applies the routing-wins-over-base priority and skips ineligible targets
+  // (this app itself, or an AppImage that isn't built) so resolution falls through.
+  const match = findRoute(loadRouting(), targetHost, targetPath, (target) => {
+    const p = typeof target === 'string' ? target : target.path
+    if (!p) return false
+    return path.basename(p).replace(/^wrapweb-/, '') !== currentProfile && fs.existsSync(p)
+  })
+  if (!match) return null
+  const target       = match.entry
   const appImagePath = typeof target === 'string' ? target : target.path
   const name         = typeof target === 'string' ? null  : target.name
   const icon         = typeof target === 'string' ? null  : (target.icon ?? null)
-  const matchedProfile = path.basename(appImagePath).replace(/^wrapweb-/, '')
-  if (matchedProfile === currentProfile || !fs.existsSync(appImagePath)) return null
   return { appImagePath, name, icon }
 }
 
@@ -368,23 +359,27 @@ function createWindow(pkg) {
 
   // Pre-compute route entries with icons so the tooltip can show the target app's icon.
   // Sorted longest-prefix-first so path-specific entries win over hostname-only entries.
-  const routeEntries = Object.entries(loadRouting())
-    .reduce((acc, [key, target]) => {
-      const appImagePath   = typeof target === 'string' ? target : target.path
-      const name           = typeof target === 'string' ? null   : (target.name ?? null)
-      const iconName       = typeof target === 'string' ? null   : (target.icon ?? null)
-      const matchedProfile = path.basename(appImagePath).replace(/^wrapweb-/, '')
-      if (matchedProfile === pkg.profile || !fs.existsSync(appImagePath)) return acc
-      const slash  = key.indexOf('/')
-      const host   = slash !== -1 ? key.slice(0, slash) : key
-      const prefix = slash !== -1 ? '/' + key.slice(slash + 1) : '/'
-      // Fall back to the installed wrapweb icon (wrapweb-<profile>) when the build-config icon
-      // name doesn't resolve — installed AppImages always register their icon under this name.
-      const iconDataUrl = toDataUrl(resolveIconPath(iconName) ?? resolveIconPath(`wrapweb-${matchedProfile}`))
-      acc.push({ host, prefix, iconDataUrl, name: name || matchedProfile })
-      return acc
-    }, [])
-    .sort((a, b) => b.prefix.length - a.prefix.length)
+  const routingTable = normalizeRouting(loadRouting())
+  const buildRouteEntry = ([key, target]) => {
+    const appImagePath   = typeof target === 'string' ? target : target.path
+    const name           = typeof target === 'string' ? null   : (target.name ?? null)
+    const iconName       = typeof target === 'string' ? null   : (target.icon ?? null)
+    const matchedProfile = path.basename(appImagePath).replace(/^wrapweb-/, '')
+    if (matchedProfile === pkg.profile || !fs.existsSync(appImagePath)) return null
+    // Fall back to the installed wrapweb icon (wrapweb-<profile>) when the build-config icon
+    // name doesn't resolve — installed AppImages always register their icon under this name.
+    const iconDataUrl = toDataUrl(resolveIconPath(iconName) ?? resolveIconPath(`wrapweb-${matchedProfile}`))
+    // The raw routing key is passed through; the tooltip script matches it with a
+    // keyMatches() port (page-injected JS cannot require routing-match.js).
+    return { key, iconDataUrl, name: name || matchedProfile }
+  }
+  const byKeyLen = (a, b) => b[0].length - a[0].length
+  // Routing entries come first so the tooltip's first-match find() mirrors findRoute's
+  // routing-wins-over-base priority; within each kind the longest key wins.
+  const routeEntries = [
+    ...Object.entries(routingTable.routing).sort(byKeyLen),
+    ...Object.entries(routingTable.base).sort(byKeyLen),
+  ].map(buildRouteEntry).filter(Boolean)
 
   // Builds the tooltip injection script for the main frame.
   // The tooltip DOM always lives in the main frame so position:fixed anchors to the main window bottom —

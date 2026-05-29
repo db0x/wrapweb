@@ -2,12 +2,14 @@ const { test, expect } = require('./fixtures')
 const path = require('node:path')
 const fs   = require('node:fs')
 
-const CONFIGS_DIR   = path.join(__dirname, '..')
-const PRIVATE_FILE  = path.join(CONFIGS_DIR, 'webapps', 'build.private.test-app.json')
+const CONFIGS_DIR     = path.join(__dirname, '..')
+const PRIVATE_FILE    = path.join(CONFIGS_DIR, 'webapps', 'build.private.test-app.json')
+const PRIVATE_MS_FILE = path.join(CONFIGS_DIR, 'webapps', 'build.private.test-ms-app.json')
 
 // Remove any private config that may have been created during the test.
 test.afterEach(async () => {
   fs.rmSync(PRIVATE_FILE, { force: true })
+  fs.rmSync(PRIVATE_MS_FILE, { force: true })
 })
 
 // ── Info button / copy button visibility ─────────────────────────────────────
@@ -136,4 +138,33 @@ test('deleting private config with deleteConfig restores embedded card', async (
   await card.hover()
   await expect(card.locator('[data-action="info"]')).toBeVisible()
   await expect(card.locator('[data-action="edit"]')).toHaveCount(0)
+})
+
+// ── Field preservation across edit ────────────────────────────────────────────
+
+// Setup:    Embedded "Test MS App" (category: microsoft) is copied to a private config,
+//           then its edit dialog is opened.
+// Action:   Change the name and save.
+// Expected: The written private config still carries category="microsoft" — the edit
+//           merges over the existing config instead of rebuilding it from form fields
+//           only, so fields the form cannot represent are not dropped.
+test('editing a copied private app preserves non-form fields (category)', async ({ managerPage }) => {
+  const card = managerPage.locator('.card', { hasText: 'Test MS App' })
+  await card.hover()
+  await card.locator('[data-action="info"]').click()
+  await managerPage.locator('#info-copy-btn').click()
+  await expect(managerPage.locator('#info-copy-btn')).not.toBeVisible()
+  await expect(card).toHaveAttribute('data-private', 'true')
+
+  // Open the now-editable private card and change the name (test-ms-app is not built,
+  // so saving closes the dialog directly without a rebuild prompt).
+  await card.hover()
+  await card.locator('[data-action="edit"]').click()
+  await managerPage.fill('#edit-name', 'Renamed MS App')
+  await managerPage.click('#edit-save')
+
+  // The saved config must keep the renamed value AND the untouched category.
+  await expect.poll(() => {
+    try { return JSON.parse(fs.readFileSync(PRIVATE_MS_FILE, 'utf8')) } catch { return {} }
+  }).toMatchObject({ name: 'Renamed MS App', category: 'microsoft' })
 })

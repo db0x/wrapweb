@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('managerAPI', {
   launchApp:    (profile) => ipcRenderer.invoke('manager:launch',       profile),
   revealPath:   (p)       => ipcRenderer.invoke('manager:reveal-path',    p),
   checkProfile: (profile) => ipcRenderer.invoke('manager:check-profile', profile),
+  checkRoutingOverlap: (profile, url, kind) => ipcRenderer.invoke('manager:check-routing-overlap', { profile, url, kind }),
   createApp:    (data)    => ipcRenderer.invoke('manager:create-app',    data),
   updateApp:    (data)    => ipcRenderer.invoke('manager:update-app',    data),
   getPlugins:   ()        => ipcRenderer.invoke('manager:plugins'),

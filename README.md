@@ -62,7 +62,7 @@ npm start
 - **Isolated sessions** — each app has its own persistent profile; cookies, storage and login state never bleed across apps
 - **Native feel** — no browser chrome, correct WM class for taskbar grouping and window management
 - **Context menu** — Cut / Copy / Paste + Save Image As; spelling suggestions via `aspell` (falls back to English); links show **Open with [App]** and **Open in browser** (with the system default browser icon) when a routing target is known
-- **Cross-app link routing** — links to URLs handled by another installed wrapweb app open directly in that app instead of the system browser; a `routing.json` plugin file (written by `install-app`, read at runtime) maps hostnames to AppImages — no rebuild required when routing changes
+- **Cross-app link routing** — links to URLs handled by another installed wrapweb app open directly in that app instead of the system browser; a `routing.json` plugin file (written by `install-app`, read at runtime) maps hostnames to AppImages — no rebuild required when routing changes. The file is split into `base` claims (each app's primary URL) and `routing` claims (extra URLs apps opt into via the `routingUrls` config field, with `*` wildcards, editable in the create/edit dialog); when both match a link, the `routing` claim wins
 - **Zoom** — `Ctrl+Scroll` per window
 - **Screen sharing** — WebRTC / PipeWire capture works out of the box
 - **DevTools** — `F12` to toggle
@@ -112,6 +112,7 @@ Click the **+** card at the end of the grid to open the **Create App** dialog. A
 | Width / Height | Initial window size (optional) |
 | User-Agent | Choose from presets or leave empty for the default Electron UA |
 | Internal domains | Extra domains that open inside the app window (e.g. OAuth redirects) — added one by one via the list widget |
+| Routing URLs | Extra URLs that other apps (and Obsidian) route to this one — added one by one via the list widget; supports `*` wildcards and is checked for overlap with other apps |
 | Cross-Origin Isolation | Enables `SharedArrayBuffer` — required for multi-threaded WASM |
 | Single instance | Prevent more than one window of this app from opening at the same time |
 
@@ -329,6 +330,7 @@ App configs live in the `webapps/` directory. For apps you don't want to commit,
 | `geometry.width/height` | number | Initial window size (default: 1280 × 1024) |
 | `geometry.x/y` | number | Initial window position — _deprecated, X11 only_ |
 | `internalDomains` | string \| array | Extra domains allowed to open inside the app window (e.g. OAuth providers) |
+| `routingUrls` | array | Extra URLs that route to this app from other apps and Obsidian, in addition to the primary `url`. Each entry is `host[/path]` and may use `*` as a greedy wildcard (matches any characters, including `/`), e.g. `"*.example.com"` or `"docs.example.com/d/*"`. A routing URL may overlap another app's **base** URL (the routing URL then wins at resolution time), but the Manager blocks entries that overlap another app's **routing** URL. Base URLs must not overlap each other |
 | `crossOriginIsolation` | boolean | Enable `SharedArrayBuffer` — required for multi-threaded WASM (Google Earth) |
 | `singleInstance` | boolean | Allow only one running instance; a second launch focuses the existing window instead |
 | `mimeTypes` | array | Protocol schemes or MIME types this app can handle (e.g. `["x-scheme-handler/mailto"]` or `["application/x-drawio"]`) |
