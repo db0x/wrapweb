@@ -21,6 +21,7 @@
 
   "drawerLightMode":       "Light Mode",
   "drawerDarkMode":        "Dark Mode",
+  "drawerSettings":        "Einstellungen",
   "headerSettings":        "Globale Einstellungen",
   "drawerVisibility":      "Sichtbarkeit",
   "drawerAllApps":         "Alle Apps",

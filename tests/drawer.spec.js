@@ -59,6 +59,41 @@ test('google filter button shows text label with icon when icon is available', a
   await expect(btn.locator('span')).toHaveText('Google Apps')
 })
 
+// Appearance row layout
+// ----------------------
+// The settings button sits on the left with a text label; the theme switch
+// sits on the right as an icon-only button (its label moved to a hover tooltip).
+
+// Setup:    Manager open with the standard fixture.
+// Action:   Open the drawer.
+// Expected: Within the appearance row the settings button comes before the theme
+//           switch, confirming the left/right ordering after the swap.
+test('settings button precedes the theme switch in the appearance row', async ({ managerPage }) => {
+  await managerPage.click('#menu-btn')
+  const order = await managerPage.$$eval('.drawer-appearance-row > button', els => els.map(e => e.id))
+  expect(order).toEqual(['menu-settings', 'menu-darkmode'])
+})
+
+// Setup:    Manager open with the standard fixture.
+// Action:   Open the drawer.
+// Expected: The settings button carries a non-empty text label (it is the labelled
+//           item on the left).
+test('settings button has a text label', async ({ managerPage }) => {
+  await managerPage.click('#menu-btn')
+  const label = await managerPage.locator('#menu-settings span').textContent()
+  expect(label.trim().length).toBeGreaterThan(0)
+})
+
+// Setup:    Manager open with the standard fixture.
+// Action:   Open the drawer.
+// Expected: The theme switch has no label span and instead exposes its label via
+//           data-tooltip, so it renders icon-only.
+test('theme switch is icon-only with a tooltip label', async ({ managerPage }) => {
+  await managerPage.click('#menu-btn')
+  await expect(managerPage.locator('#menu-darkmode span')).toHaveCount(0)
+  await expect(managerPage.locator('#menu-darkmode')).toHaveAttribute('data-tooltip', /.+/)
+})
+
 // Category filtering
 // ------------------
 

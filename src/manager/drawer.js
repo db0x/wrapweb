@@ -23,6 +23,8 @@ export function initDrawer({ i18n, icons, rcloneAvailable, obsidianAvailable, ma
   drawer.innerHTML = wrapper.innerHTML
   document.body.appendChild(drawer)
 
+  const menuDarkmodeBtn = document.getElementById('menu-darkmode')
+
   function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open') }
   function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open') }
 
@@ -32,17 +34,18 @@ export function initDrawer({ i18n, icons, rcloneAvailable, obsidianAvailable, ma
   backdrop.addEventListener('click', closeDrawer)
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer() })
 
+  // Theme switch is icon-only: show sun while dark (click → light), moon while light.
+  // A data-tooltip carries the textual label that used to live next to the icon.
   function applyDarkmodeMenuItem() {
     const isDark = document.body.classList.contains('dark')
-    const icon  = document.getElementById('menu-darkmode-icon')
-    const label = document.getElementById('menu-darkmode-label')
+    const icon = document.getElementById('menu-darkmode-icon')
     icon.src = isDark ? (sunSrc ?? '') : (moonSrc ?? '')
     icon.style.display = (sunSrc || moonSrc) ? '' : 'none'
-    label.textContent = isDark ? i18n.drawerLightMode : i18n.drawerDarkMode
+    menuDarkmodeBtn.dataset.tooltip = isDark ? i18n.drawerLightMode : i18n.drawerDarkMode
   }
   applyDarkmodeMenuItem()
 
-  document.getElementById('menu-darkmode').addEventListener('click', () => {
+  menuDarkmodeBtn.addEventListener('click', () => {
     document.body.classList.toggle('dark')
     const isDark = document.body.classList.contains('dark')
     localStorage.setItem('dark', isDark ? '1' : '0')
@@ -51,8 +54,6 @@ export function initDrawer({ i18n, icons, rcloneAvailable, obsidianAvailable, ma
     window.managerAPI?.setDark?.(isDark)
     applyDarkmodeMenuItem()
   })
-
-  // Settings button has no action yet — tooltip is set via data-tooltip-i18n resolved in applyTemplate.
 
   let currentFilter   = localStorage.getItem('filter') ?? 'all'
   let hideUninstalled = localStorage.getItem('hideUninstalled') === '1'
