@@ -151,6 +151,10 @@ header img {
   color: var(--card-fg);
   transition: background 0.15s;
   flex-shrink: 0;
+  /* The toggle sits flush at the drawer's right edge, where the overlay
+     scrollbar floats on short windows — keep a gutter so the bar never
+     crowds it. */
+  margin-right: 10px;
 }
 
 .drawer-icon-btn:hover {
@@ -162,6 +166,26 @@ body.dark .drawer-icon-btn img {
 }
 
 /* ── Side drawer ── */
+
+/* OverlayScrollbars host inside the drawer: takes the remaining height (the
+   base .drawer is a flex column) and scrolls the menu when the window is too
+   short to fit every item, instead of leaving the lower items unreachable.
+   min-height:0 lets it shrink below its content so the overflow is real. */
+.drawer-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The menu items live here, not directly on .drawer, because OverlayScrollbars
+   wraps .drawer-scroll's single child — the gap would otherwise be lost.
+   min-height:100% keeps the list at least as tall as the viewport so the
+   bottom-pinned About button (margin-top:auto) stays put when the menu fits. */
+.drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 100%;
+}
 
 .drawer-backdrop {
   position: fixed;

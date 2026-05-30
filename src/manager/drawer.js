@@ -1,6 +1,9 @@
 // Single source of truth for card visibility. applyVisibility() is called
 // whenever a filter changes, a card is added, or an app is installed/deleted.
 import { applyTemplate } from './template.js'
+// Gives the drawer the same custom scrollbar as the dialogs so every menu item
+// stays reachable when the window is too short to show the whole menu at once.
+import { OverlayScrollbars } from '../../node_modules/overlayscrollbars/overlayscrollbars.mjs'
 
 export function initDrawer({ i18n, icons, rcloneAvailable, obsidianAvailable, mailHandlerAvailable, templates }) {
   const { sun: sunSrc, moon: moonSrc, menu: menuSrc } = icons
@@ -20,12 +23,32 @@ export function initDrawer({ i18n, icons, rcloneAvailable, obsidianAvailable, ma
   if (!mailHandlerAvailable) wrapper.querySelector('#menu-mail-handler')?.remove()
   if (!rcloneAvailable)    wrapper.querySelector('#menu-rclone')?.remove()
   if (!obsidianAvailable)  wrapper.querySelector('#menu-obsidian')?.remove()
-  drawer.innerHTML = wrapper.innerHTML
+  // Wrap the menu in a dedicated scroll surface: .drawer stays the fixed
+  // slide-in host, .drawer-scroll is what OverlayScrollbars takes over, and the
+  // item spacing moves onto .drawer-list — OS wraps only the scroll element's
+  // single child, so the gap has to live one level deeper (same shape the
+  // dialog scroll wrappers use).
+  wrapper.classList.add('drawer-list')
+  const scroll = document.createElement('div')
+  scroll.className = 'drawer-scroll'
+  scroll.appendChild(wrapper)
+  drawer.appendChild(scroll)
   document.body.appendChild(drawer)
 
   const menuDarkmodeBtn = document.getElementById('menu-darkmode')
 
-  function openDrawer()  { drawer.classList.add('open'); backdrop.classList.add('open') }
+  // Initialise OverlayScrollbars on first open so it measures the drawer while
+  // it is actually on screen; its ResizeObserver then keeps the scrollbar in
+  // sync as the window is resized afterwards.
+  let scrollbarInited = false
+  function openDrawer() {
+    drawer.classList.add('open')
+    backdrop.classList.add('open')
+    if (!scrollbarInited) {
+      OverlayScrollbars(scroll, { scrollbars: { autoHide: 'leave', autoHideDelay: 200 } })
+      scrollbarInited = true
+    }
+  }
   function closeDrawer() { drawer.classList.remove('open'); backdrop.classList.remove('open') }
 
   menuBtn.addEventListener('click', () =>

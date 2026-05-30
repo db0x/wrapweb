@@ -153,3 +153,50 @@ test('"all" filter restores all cards after category filter', async ({ managerPa
   await expect(managerPage.locator('.card[data-category="google"]').first()).toBeVisible()
   await expect(managerPage.locator('.card-add')).toBeVisible()
 })
+
+// Drawer scrolling
+// ----------------
+// On short windows the menu used to be taller than the drawer with no way to
+// reach the lower items. The drawer now wraps its menu in an OverlayScrollbars
+// viewport (.drawer-scroll), so it scrolls only when the items don't fit.
+
+// Overflow metric of the OverlayScrollbars viewport inside the drawer. Returns
+// -1 while the viewport doesn't exist yet so expect.poll keeps waiting for the
+// lazy init (the scrollbar is only set up on the first drawer open) and for the
+// OS ResizeObserver to settle after a window resize.
+const drawerOverflow = (page) => page.evaluate(() => {
+  const vp = document.querySelector('.drawer-scroll [data-overlayscrollbars-viewport]')
+  return vp ? vp.scrollHeight - vp.clientHeight : -1
+})
+
+// Setup:    Manager shrunk to the minimum height so the menu is taller than the drawer.
+// Action:   Open the drawer and scroll its viewport to the bottom.
+// Expected: The viewport actually overflows (scroll range > 0) and the last entry
+//           (About) sits fully inside the viewport once scrolled — i.e. every menu
+//           item is reachable, which was the original bug.
+test('the drawer menu scrolls when the window is too short to fit it', async ({ electronApp, managerPage }) => {
+  await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 380))
+  await managerPage.click('#menu-btn')
+
+  await expect.poll(() => drawerOverflow(managerPage)).toBeGreaterThan(0)
+
+  const aboutReachable = await managerPage.evaluate(() => {
+    const vp = document.querySelector('.drawer-scroll [data-overlayscrollbars-viewport]')
+    vp.scrollTop = vp.scrollHeight
+    const v = vp.getBoundingClientRect()
+    const a = document.getElementById('menu-about').getBoundingClientRect()
+    return a.bottom <= v.bottom + 1 && a.top >= v.top - 1
+  })
+  expect(aboutReachable).toBe(true)
+})
+
+// Setup:    Manager sized tall enough to show the whole menu at once.
+// Action:   Open the drawer.
+// Expected: The viewport has no scroll range — the scrollbar appears only when
+//           needed, never when the menu already fits.
+test('the drawer menu does not scroll when the window is tall enough', async ({ electronApp, managerPage }) => {
+  await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 760))
+  await managerPage.click('#menu-btn')
+
+  await expect.poll(() => drawerOverflow(managerPage)).toBeLessThanOrEqual(0)
+})
