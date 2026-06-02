@@ -1,0 +1,12 @@
+{
+    "profile": "onenote",
+    "name": "Microsoft OneNote",
+    "icon": "ms-onenote",
+    "url": "https://onenote.cloud.microsoft",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+    "routingUrls": [
+        "https://*.sharepoint.com/:o:/*",
+        "https://*.sharepoint.com/*Doc.aspx*!*.docx*!*.xlsx*!*.pptx*"
+    ],
+    "category": "microsoft"
+}

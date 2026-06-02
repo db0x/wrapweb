@@ -35,6 +35,7 @@ current
 dist
 node_modules
 webapps/build.private.*.json
+webapps/plugins/private*
 !webapps/build.private.test-user-app.json
 test-results/
 playwright-report/

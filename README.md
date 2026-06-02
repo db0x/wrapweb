@@ -331,7 +331,7 @@ App configs live in the `webapps/` directory. For apps you don't want to commit,
 | `geometry.width/height` | number | Initial window size (default: 1280 × 1024) |
 | `geometry.x/y` | number | Initial window position — _deprecated, X11 only_ |
 | `internalDomains` | string \| array | Extra domains allowed to open inside the app window (e.g. OAuth providers) |
-| `routingUrls` | array | Extra URLs that route to this app from other apps and Obsidian, in addition to the primary `url`. Each entry is `host[/path]` and may use `*` as a greedy wildcard (matches any characters, including `/`), e.g. `"*.example.com"` or `"docs.example.com/d/*"`. A routing URL may overlap another app's **base** URL (the routing URL then wins at resolution time), but the Manager blocks entries that overlap another app's **routing** URL. Base URLs must not overlap each other |
+| `routingUrls` | array | Extra URLs that route to this app from other apps and Obsidian, in addition to the primary `url`. Each entry is `host[/path]` and may use `*` as a greedy wildcard (matches any characters, including `/`), e.g. `"*.example.com"` or `"docs.example.com/d/*"`. Matching runs against the path **and query string**, and a pattern may carry **negative clauses** — see [Advanced routing patterns](#advanced-routing-patterns) below. A routing URL may overlap another app's **base** URL (the routing URL then wins at resolution time), but the Manager blocks entries that overlap another app's **routing** URL. Base URLs must not overlap each other |
 | `crossOriginIsolation` | boolean | Enable `SharedArrayBuffer` — required for multi-threaded WASM (Google Earth) |
 | `singleInstance` | boolean | Allow only one running instance; a second launch focuses the existing window instead |
 | `mimeTypes` | array | Protocol schemes or MIME types this app can handle (e.g. `["x-scheme-handler/mailto"]` or `["application/x-drawio"]`) |
@@ -342,6 +342,36 @@ App configs live in the `webapps/` directory. For apps you don't want to commit,
 | `mailtoTemplate` | string | Base URL for the compose window — `mailto:` parameters are appended as a query string |
 | `mailtoParamMap` | object | Rename `mailto:` parameters before appending (e.g. `{ "subject": "su" }` for Gmail) |
 | `plugins` | array | Main-process plugins shipped under `webapps/plugins/` that this app loads, each as a webapps-relative path (e.g. `"plugins/onedrive/onedrive.js"`). Selectable in the create/edit dialog. A plugin module exports `attachPlugin(win, api)` and extends the app's behaviour — e.g. routing OneDrive document opens to Word/Excel/PowerPoint, or driving a webmail app's compose UI on a `mailto:` launch. Changing the selection requires rebuilding the AppImage |
+
+### Advanced routing patterns
+
+> ⚠️ **Uncommon mechanics — only reach for these when a plain `host/path*` pattern genuinely cannot tell two apps apart.** They add real complexity to `routingUrls`; most apps never need them. They exist for one specific case: Microsoft 365 documents on SharePoint.
+
+A routing pattern is matched against the **path *and* query string** of the target URL, and may contain **negative clauses**. Two non-obvious rules:
+
+**1. The query string is part of the match.** Unlike most routers, the matcher tests `pathname + "?" + search`, not just the path. This is necessary because SharePoint opens every Office document through the *same* generic endpoint and only the query distinguishes them:
+
+```
+https://contoso.sharepoint.com/sites/X/_layouts/15/Doc.aspx?sourcedoc=…&file=Report.docx
+                               └──────────── path (identical for all apps) ──┘ └─ only the query differs ─┘
+```
+
+So Word claims `"https://*.sharepoint.com/*.docx*"`, Excel `"*.xlsx*"`, PowerPoint `"*.pptx*"` — the `.docx`/`.xlsx`/`.pptx` lives in the query. (Share-style links instead carry a scheme token in the path — `:w:` Word, `:x:` Excel, `:p:` PowerPoint, `:o:` OneNote — which each app also claims, e.g. `"https://*.sharepoint.com/:w:/*"`.)
+
+**2. A `!` adds negative clauses: `positive!not-this!not-that`.** The pattern matches only if the positive part matches **and none** of the `!`-separated path/query globs match. A glob can say "contains X" but not "does *not* contain X", so this fills that gap.
+
+The one place this is actually used is **OneNote**: a OneNote notebook opens through the same `Doc.aspx` as Word, but its link carries **no file extension** (a notebook is a folder, so `file=` is just its name). There is no positive token to match on, so OneNote claims "a `Doc.aspx` link that is *not* one of the other three Office types":
+
+```json
+"routingUrls": [
+    "https://*.sharepoint.com/:o:/*",
+    "https://*.sharepoint.com/*Doc.aspx*!*.docx*!*.xlsx*!*.pptx*"
+]
+```
+
+The second pattern reads: *match a `Doc.aspx` URL, but not if it contains `.docx`, `.xlsx` or `.pptx`.* Because `findRoute` tries the longest key first, a `Report.docx` URL hits this OneNote key first, its negation rejects it, and resolution falls through to Word's `*.docx*` — so OneNote never steals a Word/Excel/PowerPoint document.
+
+The same matcher (`src/routing-match.js`) is shared by the app windows, the Obsidian plugin, and the build-time table generator, so these rules behave identically everywhere.
 
 ### Examples
 

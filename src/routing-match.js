@@ -30,22 +30,42 @@ function globToRegExp(glob) {
   return new RegExp('^' + body + '$')
 }
 
+// A key may carry negative clauses, separated by '!': "positive!neg1!neg2". The key matches
+// only if the positive part matches AND no negative path-glob matches. This expresses claims
+// a plain glob cannot — notably "Doc.aspx but NOT *.docx/*.xlsx/*.pptx", which is how OneNote
+// notebooks are told apart from Word/Excel/PowerPoint (all open via the same generic Doc.aspx,
+// and OneNote's link carries no file extension at all). Negatives are path globs tested
+// against the pathname(+search), same matcher as the positive path.
+function splitNegations(key) {
+  const i = key.indexOf('!')
+  if (i === -1) return { positive: key, negatives: [] }
+  const parts = key.split('!')
+  return { positive: parts[0], negatives: parts.slice(1).filter(Boolean) }
+}
+
+// Path-glob match: wildcard globs are full-match (greedy '*'); a literal keeps startsWith.
+function pathGlobMatches(pat, pathname) {
+  return pat.includes('*') ? globToRegExp(pat).test(pathname) : pathname.startsWith(pat)
+}
+
 // Tests whether a routing key matches a given hostname/pathname pair.
 // Non-wildcard hosts keep the legacy "exact host or any subdomain" rule and
 // non-wildcard paths keep the legacy startsWith (prefix) rule, so existing
 // tables built before wildcard support behave identically.
 function keyMatches(key, hostname, pathname) {
-  const { hostPat, pathPat } = splitKey(key)
+  const { positive, negatives } = splitNegations(key)
+  const { hostPat, pathPat } = splitKey(positive)
 
   const hostOk = hostPat.includes('*')
     ? globToRegExp(hostPat).test(hostname)
     : (hostname === hostPat || hostname.endsWith('.' + hostPat))
   if (!hostOk) return false
 
-  if (pathPat === null) return true
-  return pathPat.includes('*')
-    ? globToRegExp(pathPat).test(pathname)
-    : pathname.startsWith(pathPat)
+  if (pathPat !== null && !pathGlobMatches(pathPat, pathname)) return false
+
+  // Any negative clause that matches the path disqualifies the whole key.
+  for (const neg of negatives) if (pathGlobMatches(neg, pathname)) return false
+  return true
 }
 
 // Tests whether two greedy-'*' globs can match a common string. Implemented as an
@@ -98,10 +118,12 @@ function pathGlob(pathPat) {
 
 // Tests whether two routing keys could ever match the same URL. Used to block
 // configuring a routing-URL that overlaps another app's claim. Conservative:
-// host parts overlap if any of their expanded forms intersect.
+// host parts overlap if any of their expanded forms intersect. Negative clauses are
+// ignored here — they only narrow a claim, so comparing the positive parts stays a safe
+// (over-approximating) overlap test.
 function keyOverlaps(keyA, keyB) {
-  const a = splitKey(keyA)
-  const b = splitKey(keyB)
+  const a = splitKey(splitNegations(keyA).positive)
+  const b = splitKey(splitNegations(keyB).positive)
   const hostOk = hostForms(a.hostPat).some(fa =>
     hostForms(b.hostPat).some(fb => globsIntersect(fa, fb)))
   if (!hostOk) return false

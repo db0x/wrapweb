@@ -104,6 +104,43 @@ test.describe('keyMatches — query-aware (Office document routing)', () => {
   })
 })
 
+test.describe('keyMatches — negative clauses (OneNote routing)', () => {
+  // OneNote notebooks open via the SAME generic Doc.aspx as Word/Excel/PowerPoint but their
+  // link carries no file extension (the "file=" value is the notebook name, a folder). A glob
+  // cannot express "Doc.aspx but NOT *.docx", so a key may append '!'-separated negatives:
+  // it matches only if the positive matches AND no negative does.
+  const host    = 'contoso.sharepoint.com'
+  // The real-world shapes observed: Word carries file=….docx; OneNote carries an extension-less name.
+  const wordUrl = '/sites/X/_layouts/15/Doc.aspx?sourcedoc=%7B1%7D&file=Report.docx&action=default'
+  const noteUrl = '/sites/X/_layouts/15/Doc.aspx?sourcedoc=%7B2%7D&file=Project%20Documentation&action=edit&wdorigin=Sharepoint'
+  const KEY     = '*.sharepoint.com/*Doc.aspx*!*.docx*!*.xlsx*!*.pptx*'
+
+  // Setup:    the OneNote key (Doc.aspx minus the three Office extensions).
+  // Action:   match an extension-less Doc.aspx link and an Office one.
+  // Expected: the extension-less (OneNote) link matches; the .docx (Word) link is excluded
+  //           by a negative clause — so OneNote never steals a Word/Excel/PowerPoint document.
+  test('Doc.aspx without an office extension matches; with one it is excluded', () => {
+    expect(keyMatches(KEY, host, noteUrl)).toBe(true)
+    expect(keyMatches(KEY, host, wordUrl)).toBe(false)
+    // A standalone Word key still claims the .docx link.
+    expect(keyMatches('*.sharepoint.com/*.docx*', host, wordUrl)).toBe(true)
+    expect(keyMatches('*.sharepoint.com/*.docx*', host, noteUrl)).toBe(false)
+  })
+
+  // Setup:    full table with both OneNote (negated) and Word keys as routing entries.
+  // Action:   resolve a Word URL and a OneNote URL.
+  // Expected: each resolves to its own app — the longest-key-first order tries the (longer)
+  //           OneNote key first, whose negation lets the .docx fall through to Word.
+  test('findRoute separates OneNote from Word on shared Doc.aspx', () => {
+    const table = { base: {}, routing: {
+      '*.sharepoint.com/*.docx*': { path: '/d/wrapweb-word',    name: 'Word' },
+      [KEY]:                      { path: '/d/wrapweb-onenote', name: 'OneNote' },
+    } }
+    expect(findRoute(table, host, wordUrl)?.entry.name).toBe('Word')
+    expect(findRoute(table, host, noteUrl)?.entry.name).toBe('OneNote')
+  })
+})
+
 test.describe('routingKeysForConfig', () => {
   // Setup:    a config with a primary URL and two routingUrls.
   // Action:   derive its full claim set.
