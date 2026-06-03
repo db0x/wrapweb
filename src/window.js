@@ -8,6 +8,7 @@ const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
 const windowState = require('./window-state')
 const { findRoute, normalizeRouting } = require('./routing-match')
+const { toggleAboutWindow } = require('./about-window')
 
 const ROUTING_FILE = path.join(app.getPath('appData'), 'wrapweb', 'plugins', 'routing', 'routing.json')
 
@@ -389,9 +390,14 @@ function createWindow(pkg, opts = {}) {
     })
   })
 
-  mainWindow.webContents.on('before-input-event', (_event, input) => {
-    if (input.type === 'keyDown' && input.key === 'F12')
-      mainWindow.webContents.toggleDevTools()
+  // F12 toggles the About panel; Shift+F12 toggles DevTools. before-input-event fires ahead
+  // of the page, and preventDefault() swallows the key so the web app never sees F12.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.key === 'F12') {
+      event.preventDefault()
+      if (input.shift) mainWindow.webContents.toggleDevTools()
+      else             toggleAboutWindow(mainWindow)
+    }
   })
 
   const toDataUrl = p => { try { return p ? `data:image/png;base64,${fs.readFileSync(p).toString('base64')}` : null } catch { return null } }

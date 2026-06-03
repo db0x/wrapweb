@@ -9,9 +9,17 @@
       --card-url:#888;--muted-bg:#e9e9e9;--muted-fg:#666;
       --shadow:rgba(0,0,0,0.25);--div:#d8d8d8;
     }
+    /* Follows the OS light/dark preference — no cross-process link to the manager's theme. */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#1e1e1e;--card-bg:#2c2c2c;--card-fg:#f0f0f0;
+        --card-url:#aaa;--muted-bg:#3a3a3a;--muted-fg:#bbb;
+        --shadow:rgba(0,0,0,0.5);--div:#444;
+      }
+    }
     body{display:flex;align-items:center;justify-content:center;
          height:100vh;background:var(--bg);
-         font-family:'Ubuntu',sans-serif;color:var(--card-fg);color-scheme:light}
+         font-family:'Ubuntu',sans-serif;color:var(--card-fg);color-scheme:light dark}
     .dialog{background:var(--card-bg);border-radius:12px;width:460px;max-width:90vw;
             box-shadow:0 8px 32px var(--shadow);
             display:flex;flex-direction:column;overflow:hidden}

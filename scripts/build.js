@@ -41,6 +41,10 @@ function expandConfig(app) {
       appId,
       profile: app.profile,
       url: app.url,
+      // The embedded `name` must stay "wrapweb-<profile>" (WM class / app id depend on it),
+      // so the human-readable config name travels separately as displayName for UI like the
+      // About panel.
+      ...(app.name                && { displayName: app.name }),
       ...(app.userAgent           && { userAgent: app.userAgent }),
       ...(app.geometry            && { geometry:  app.geometry  }),
       ...(app.internalDomains     && { internalDomains: app.internalDomains }),
