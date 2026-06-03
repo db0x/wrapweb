@@ -88,7 +88,6 @@ function buildAboutInjection(info) {
   if (existing) { existing.remove(); return; }   // F12 again closes it
 
   const d = ${JSON.stringify(data)};
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const css = \`
     /* Card colours follow the OS light/dark preference — there is no cross-process link to
@@ -139,70 +138,104 @@ function buildAboutInjection(info) {
     #\${ID} .wa-actions button:hover{opacity:.85}
   \`;
 
-  // The whole plugins field is omitted when no plugins are loaded — nothing to show.
-  const pluginsField = d.plugins.length
-    ? '<div class="wa-field"><div class="wa-label">' + esc(d.t.plugins) + '</div>' +
-        '<ul class="wa-plugins">' + d.plugins.map(p =>
-          '<li>' + (p.icon ? '<img src="' + p.icon + '" alt="">' : '') + '<span>' + esc(p.label) + '</span></li>'
-        ).join('') + '</ul>' +
-      '</div>'
-    : '';
+  // Built with the DOM API (createElement/textContent), NOT innerHTML: Microsoft 365 apps
+  // (Teams, Outlook) enforce Trusted Types (require-trusted-types-for 'script'), which makes
+  // any innerHTML assignment throw. The DOM API needs no TrustedHTML, so it works everywhere.
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls)  n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const img = (src, cls) => { const n = el('img', cls); n.alt = ''; if (src) n.src = src; return n; };
 
-  // Header shows only the app's own icon (no wrapweb badge — wrapweb is credited in the
-  // footer branding row instead).
-  const headerIcon = d.appIcon ? '<img src="' + d.appIcon + '" alt="">' : '';
+  // One "LABEL + content" field. contentNode is a node, or null for a plain value string.
+  const field = (label, valueText, contentNode) => {
+    const f = el('div', 'wa-field');
+    f.appendChild(el('div', 'wa-label', label));
+    if (contentNode) f.appendChild(contentNode);
+    else             f.appendChild(el('div', 'wa-val', valueText));
+    return f;
+  };
 
-  // Versions block: two sub-rows, each with a value and a short explanatory hint —
-  // wrapweb (the build that produced this AppImage) and Electron (the underlying framework).
-  const versionsField =
-    '<div class="wa-field"><div class="wa-label">' + esc(d.t.versions) + '</div>' +
-      '<div class="wa-vers">' +
-        '<div class="wa-ver"><span class="wa-ver-name">wrapweb ' + esc(d.version) + '</span>' +
-          '<span class="wa-ver-hint">' + esc(d.t.wrapwebHint) + '</span></div>' +
-        '<div class="wa-ver"><span class="wa-ver-name">Electron ' + esc(d.electron) + '</span>' +
-          '<span class="wa-ver-hint">' + esc(d.t.electronHint) + '</span></div>' +
-        '<div class="wa-ver"><span class="wa-ver-name">Chromium ' + esc(d.chromium) + '</span>' +
-          '<span class="wa-ver-hint">' + esc(d.t.chromiumHint) + '</span></div>' +
-      '</div>' +
-    '</div>';
-
-  // Footer: two GitHub-style links stacked vertically (wrapweb repo, then Electron site).
-  // target="_blank" makes the app's setWindowOpenHandler route them to the system browser
-  // (neither same-origin nor internal) — no IPC. The Electron link carries no version now.
-  const ghImg = d.githubIcon ? '<img src="' + d.githubIcon + '" alt="">' : '';
-  const brandingHtml =
-    '<div class="wa-branding">' +
-      '<a href="https://github.com/db0x/wrapweb" target="_blank" rel="noreferrer">' + ghImg +
-        '<span>' + esc(d.t.builtWith) + '</span></a>' +
-      '<a href="https://www.electronjs.org/" target="_blank" rel="noreferrer">' +
-        '<span>' + esc(d.t.electron) + '</span></a>' +
-    '</div>';
-
-  const ov = document.createElement('div');
+  const ov = el('div');
   ov.id = ID;
-  ov.innerHTML =
-    '<style>' + css + '</style>' +
-    '<div class="wa-card">' +
-      '<div class="wa-header"><div class="wa-icon-wrap">' + headerIcon + '</div>' +
-        '<div class="wa-htitles">' +
-          '<span class="wa-htitle">' + esc(d.t.titlePrefix) + esc(d.displayName) + '</span>' +
-          '<span class="wa-hsub">' + esc(d.t.subtitle) + '</span>' +
-        '</div></div>' +
-      '<div class="wa-body">' +
-        '<div class="wa-field"><div class="wa-label">' + esc(d.t.domain) + '</div>' +
-          '<div class="wa-val wa-domain"><img id="wa-sb" alt="" hidden>' +
-          '<span>' + esc(d.domain) + '</span></div></div>' +
-        '<div class="wa-field"><div class="wa-label">' + esc(d.t.appName) + '</div><div class="wa-val">' + esc(d.appName) + '</div></div>' +
-        versionsField +
-        pluginsField +
-        brandingHtml +
-        '<div class="wa-actions"><button id="wa-close">' + esc(d.t.close) + '</button></div>' +
-      '</div>' +
-    '</div>';
+  ov.appendChild(Object.assign(document.createElement('style'), { textContent: css }));
+
+  const card = el('div', 'wa-card');
+
+  // Header: app icon + title/subtitle.
+  const header = el('div', 'wa-header');
+  const iconWrap = el('div', 'wa-icon-wrap');
+  if (d.appIcon) iconWrap.appendChild(img(d.appIcon));
+  header.appendChild(iconWrap);
+  const titles = el('div', 'wa-htitles');
+  titles.appendChild(el('span', 'wa-htitle', d.t.titlePrefix + d.displayName));
+  titles.appendChild(el('span', 'wa-hsub', d.t.subtitle));
+  header.appendChild(titles);
+  card.appendChild(header);
+
+  const body = el('div', 'wa-body');
+
+  // Domain field with a (hidden) Safe Browsing badge before it.
+  const domWrap = el('div', 'wa-val wa-domain');
+  const sb = img(null); sb.id = 'wa-sb'; sb.hidden = true;
+  domWrap.appendChild(sb);
+  domWrap.appendChild(el('span', null, d.domain));
+  body.appendChild(field(d.t.domain, null, domWrap));
+
+  // App.
+  body.appendChild(field(d.t.appName, d.appName));
+
+  // Versions: wrapweb / Electron / Chromium, each name + hint.
+  const versWrap = el('div', 'wa-vers');
+  [['wrapweb ' + d.version, d.t.wrapwebHint],
+   ['Electron ' + d.electron, d.t.electronHint],
+   ['Chromium ' + d.chromium, d.t.chromiumHint]].forEach(([name, hint]) => {
+    const v = el('div', 'wa-ver');
+    v.appendChild(el('span', 'wa-ver-name', name));
+    v.appendChild(el('span', 'wa-ver-hint', hint));
+    versWrap.appendChild(v);
+  });
+  body.appendChild(field(d.t.versions, null, versWrap));
+
+  // Plugins — only when present.
+  if (d.plugins.length) {
+    const ul = el('ul', 'wa-plugins');
+    d.plugins.forEach(p => {
+      const li = el('li');
+      if (p.icon) li.appendChild(img(p.icon));
+      li.appendChild(el('span', null, p.label));
+      ul.appendChild(li);
+    });
+    body.appendChild(field(d.t.plugins, null, ul));
+  }
+
+  // Footer: stacked links to wrapweb's repo and the Electron site. target=_blank lets the
+  // app's setWindowOpenHandler route them to the system browser.
+  const branding = el('div', 'wa-branding');
+  const link = (href, withIcon, text) => {
+    const a = el('a'); a.href = href; a.target = '_blank'; a.rel = 'noreferrer';
+    if (withIcon && d.githubIcon) a.appendChild(img(d.githubIcon));
+    a.appendChild(el('span', null, text));
+    return a;
+  };
+  branding.appendChild(link('https://github.com/db0x/wrapweb', true, d.t.builtWith));
+  branding.appendChild(link('https://www.electronjs.org/', false, d.t.electron));
+  body.appendChild(branding);
+
+  // Close button.
+  const actions = el('div', 'wa-actions');
+  const closeBtn = el('button', null, d.t.close);
+  actions.appendChild(closeBtn);
+  body.appendChild(actions);
+
+  card.appendChild(body);
+  ov.appendChild(card);
 
   const close = () => ov.remove();
+  closeBtn.addEventListener('click', close);
   ov.addEventListener('click', e => { if (e.target === ov) close(); });   // backdrop click
-  ov.querySelector('#wa-close').addEventListener('click', close);
   // Esc closes; capture so the page's own Esc handlers don't swallow it first.
   document.addEventListener('keydown', function onEsc(e){
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc, true); }
@@ -210,16 +243,15 @@ function buildAboutInjection(info) {
 
   document.body.appendChild(ov);
 
-  // Safe Browsing status next to the domain — only shown when the check returns a definite
+  // Safe Browsing status before the domain — only shown when the check returns a definite
   // verdict. 'unknown' (feature disabled, no API key, or app excluded) shows nothing, so the
   // badge appears only when Safe Browsing is actually active. Reuses the same IPC bridge as
   // the link tooltip; async, so it fills in once the overlay is already visible.
   if (window.electronAPI && window.electronAPI.checkSafeBrowsing) {
-    window.electronAPI.checkSafeBrowsing(d.fullUrl).then(r => {
-      const el = ov.querySelector('#wa-sb');
-      if (!el) return;
-      if (r === 'safe'   && d.safeIcon)   { el.src = d.safeIcon;   el.title = d.t.sbSafe;   el.hidden = false; }
-      if (r === 'unsafe' && d.unsafeIcon) { el.src = d.unsafeIcon; el.title = d.t.sbUnsafe; el.hidden = false; }
+    // ignoreExclude=true: report the status even for apps excluded from the passive tooltip.
+    window.electronAPI.checkSafeBrowsing(d.fullUrl, true).then(r => {
+      if (r === 'safe'   && d.safeIcon)   { sb.src = d.safeIcon;   sb.title = d.t.sbSafe;   sb.hidden = false; }
+      if (r === 'unsafe' && d.unsafeIcon) { sb.src = d.unsafeIcon; sb.title = d.t.sbUnsafe; sb.hidden = false; }
     }).catch(() => {});
   }
 })();`

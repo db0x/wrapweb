@@ -44,7 +44,10 @@ function httpsPost(url, body) {
   })
 }
 
-ipcMain.handle('safe-browsing:check', async (event, url) => {
+// ignoreExclude lets the About dialog check the base URL even for apps that opted out of
+// passive Safe Browsing (excludedProfiles only suppresses the automatic link tooltip; an
+// explicit About lookup should still report the status). apiKey + enabled are always required.
+ipcMain.handle('safe-browsing:check', async (event, url, ignoreExclude = false) => {
   let origin
   try { origin = new URL(url).origin } catch { return 'unknown' }
 
@@ -56,9 +59,10 @@ ipcMain.handle('safe-browsing:check', async (event, url) => {
   })()
   if (!config.apiKey || !config.enabled) return 'unknown'
 
-  // Skip check for apps that have opted out (e.g. Outlook, Teams with built-in protection).
+  // Skip check for apps that have opted out (e.g. Outlook, Teams with built-in protection),
+  // unless the caller explicitly overrides it (the About dialog).
   const profile = windowProfiles.get(event.sender.id)
-  if (profile && Array.isArray(config.excludedProfiles) && config.excludedProfiles.includes(profile)) {
+  if (!ignoreExclude && profile && Array.isArray(config.excludedProfiles) && config.excludedProfiles.includes(profile)) {
     return 'unknown'
   }
 
