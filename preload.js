@@ -27,7 +27,7 @@ if (process.argv.includes('--wrapweb-file-handler')) {
 contextBridge.exposeInMainWorld('electronAPI', {
   adjustZoom:        (delta)  => ipcRenderer.send('adjust-zoom',       delta),
   rcloneConfirm:     (choice) => ipcRenderer.send('rclone-confirm',    choice),
-  checkSafeBrowsing: (url)    => ipcRenderer.invoke('safe-browsing:check', url),
+  checkSafeBrowsing: (url, ignoreExclude) => ipcRenderer.invoke('safe-browsing:check', url, ignoreExclude),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

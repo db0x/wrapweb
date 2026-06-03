@@ -1,6 +1,6 @@
 {
     "profile": "google-earth",
-    "!name": "Google Earth",
+    "name": "Google Earth",
     "url": "https://earth.google.com",
     "icon": "google-earth",
     "category": "google",

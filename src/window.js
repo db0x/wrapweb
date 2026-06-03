@@ -8,6 +8,7 @@ const { createSession } = require('./session')
 const { showContextMenu } = require('./context-menu')
 const windowState = require('./window-state')
 const { findRoute, normalizeRouting } = require('./routing-match')
+const { toggleAboutWindow } = require('./about-window')
 
 const ROUTING_FILE = path.join(app.getPath('appData'), 'wrapweb', 'plugins', 'routing', 'routing.json')
 
@@ -43,7 +44,10 @@ function httpsPost(url, body) {
   })
 }
 
-ipcMain.handle('safe-browsing:check', async (event, url) => {
+// ignoreExclude lets the About dialog check the base URL even for apps that opted out of
+// passive Safe Browsing (excludedProfiles only suppresses the automatic link tooltip; an
+// explicit About lookup should still report the status). apiKey + enabled are always required.
+ipcMain.handle('safe-browsing:check', async (event, url, ignoreExclude = false) => {
   let origin
   try { origin = new URL(url).origin } catch { return 'unknown' }
 
@@ -55,9 +59,10 @@ ipcMain.handle('safe-browsing:check', async (event, url) => {
   })()
   if (!config.apiKey || !config.enabled) return 'unknown'
 
-  // Skip check for apps that have opted out (e.g. Outlook, Teams with built-in protection).
+  // Skip check for apps that have opted out (e.g. Outlook, Teams with built-in protection),
+  // unless the caller explicitly overrides it (the About dialog).
   const profile = windowProfiles.get(event.sender.id)
-  if (profile && Array.isArray(config.excludedProfiles) && config.excludedProfiles.includes(profile)) {
+  if (!ignoreExclude && profile && Array.isArray(config.excludedProfiles) && config.excludedProfiles.includes(profile)) {
     return 'unknown'
   }
 
@@ -389,9 +394,14 @@ function createWindow(pkg, opts = {}) {
     })
   })
 
-  mainWindow.webContents.on('before-input-event', (_event, input) => {
-    if (input.type === 'keyDown' && input.key === 'F12')
-      mainWindow.webContents.toggleDevTools()
+  // F12 toggles the About panel; Shift+F12 toggles DevTools. before-input-event fires ahead
+  // of the page, and preventDefault() swallows the key so the web app never sees F12.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.key === 'F12') {
+      event.preventDefault()
+      if (input.shift) mainWindow.webContents.toggleDevTools()
+      else             toggleAboutWindow(mainWindow)
+    }
   })
 
   const toDataUrl = p => { try { return p ? `data:image/png;base64,${fs.readFileSync(p).toString('base64')}` : null } catch { return null } }

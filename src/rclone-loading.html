@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box }
+    /* Follows the OS light/dark preference (prefers-color-scheme) — there is no cross-process
+       link to the manager's theme, and the system setting is the closest honest signal. */
     body {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; height: 100vh;
       background: #fff; font-family: 'Ubuntu', sans-serif; color: #3c4043;
-      color-scheme: light;
+      color-scheme: light dark;
     }
     .spinner {
       width: 48px; height: 48px;
@@ -18,6 +20,10 @@
     }
     @keyframes spin { to { transform: rotate(360deg) } }
     p { font-size: 15px; font-weight: 400 }
+    @media (prefers-color-scheme: dark) {
+      body { background: #2c2c2c; color: #f0f0f0 }
+      .spinner { border-color: #444; border-top-color: #4285f4 }
+    }
   </style>
 </head>
 <body>
