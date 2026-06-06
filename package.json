@@ -27,6 +27,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@melloware/coloris": "^0.25.0",
     "overlayscrollbars": "^2.15.1"
   }
 }

@@ -1,5 +1,5 @@
-/* Widget tint + rounded corners, injected via insertCSS by widget.js. {{radius}} is replaced
-   at load time. */
+/* Widget tint + rounded corners, injected via insertCSS by widget.js. {{radius}} and {{tint}}
+   (an rgba() colour built from the per-app tint colour + opacity) are replaced at load time. */
 
 /* Rounded corners on a transparent window — the tint + radius live on <html>:
    - clip-path:inset(round) rounds the corners AND clips every descendant to that shape,
@@ -14,7 +14,7 @@
    scroll, bottom ones never appear) and the scrollbar would sit on html, outside the clip.
    So html clips + overflow:hidden, and body is the scroller (overflow:auto). */
 html {
-  background: rgba(0, 0, 0, 0.65) !important;
+  background: {{tint}} !important;
   clip-path: inset(0 round {{radius}}) !important;
   overflow: hidden !important;
 }

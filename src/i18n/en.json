@@ -10,6 +10,13 @@
   "widgetMoveHint": "Drag to move",
   "widgetMoveDone": "Done",
   "widgetQuit": "Quit {name}",
+  "widgetConfigTitle": "Widget configuration",
+  "widgetConfigRadius": "Corner radius",
+  "widgetConfigResizable": "Resizable",
+  "widgetConfigBackground": "Background",
+  "widgetConfigTintColor": "Colour",
+  "pluginConfigApply": "Apply",
+  "pluginConfigCancel": "Cancel",
 
   "globalSettingsTitle":        "Global settings",
   "globalSettingsHideApps":     "Hide embedded apps",

@@ -30,6 +30,23 @@ function pluginIconDataUrl(relFile) {
   } catch { return null }
 }
 
+// Whether a plugin exposes user-facing settings, read from its `configurable` export. require()
+// runs the entry module — fine here (it's the same module window.js loads), but guarded so a
+// throwing or absent flag just yields false (a plugin without config is the default).
+function pluginConfigurable(relFile) {
+  try {
+    return require(path.join(CONFIGS_DIR, relFile)).configurable === true
+  } catch { return false }
+}
+
+// A configurable plugin ships its config dialog as config.html next to its entry file — the
+// dialog markup is part of the plugin. Read here so the renderer (which has no file access) can
+// host it. Returns null when the plugin declares configurable but ships no dialog yet.
+function pluginConfigHtml(relFile) {
+  const html = path.join(CONFIGS_DIR, path.dirname(relFile), 'config.html')
+  try { return fs.readFileSync(html, 'utf8') } catch { return null }
+}
+
 module.exports = function registerPluginHandlers() {
   ipcMain.handle('manager:plugins', () => {
     const pluginsDir = path.join(CONFIGS_DIR, 'plugins')
@@ -40,11 +57,17 @@ module.exports = function registerPluginHandlers() {
     // A leading "private." (the gitignored-private naming convention) is dropped from the
     // label only; the stored `file` path keeps it so the loader still resolves the real file.
     return files
-      .map(file => ({
-        file,
-        label: path.basename(file).replace(/\.js$/, '').replace(/^private\./, ''),
-        icon:  pluginIconDataUrl(file),
-      }))
+      .map(file => {
+        const configurable = pluginConfigurable(file)
+        return {
+          file,
+          label: path.basename(file).replace(/\.js$/, '').replace(/^private\./, ''),
+          icon:  pluginIconDataUrl(file),
+          configurable,
+          // Only configurable plugins carry their config dialog markup.
+          configHtml: configurable ? pluginConfigHtml(file) : null,
+        }
+      })
       .sort((a, b) => a.label.localeCompare(b.label))
   })
 }

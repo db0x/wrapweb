@@ -10,6 +10,13 @@
   "widgetMoveHint": "Zum Verschieben ziehen",
   "widgetMoveDone": "Fertig",
   "widgetQuit": "{name} beenden",
+  "widgetConfigTitle": "Widget-Konfiguration",
+  "widgetConfigRadius": "Eckenradius",
+  "widgetConfigResizable": "Größe veränderbar",
+  "widgetConfigBackground": "Hintergrund",
+  "widgetConfigTintColor": "Farbe",
+  "pluginConfigApply": "Übernehmen",
+  "pluginConfigCancel": "Abbrechen",
 
   "globalSettingsTitle":        "Globale Einstellungen",
   "globalSettingsHideApps":     "Embedded Apps ausblenden",

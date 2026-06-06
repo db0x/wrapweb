@@ -216,6 +216,8 @@ function routeExternalUrl(url, currentProfile) {
 //   routeUrl(url) → bool                 — route a URL to another built app (true on a hit)
 //   openExternal(url)                    — hand a URL to the system browser
 //   mailto                               — { parseMailtoFields, typeMailtoFields } compose helpers
+//   config                               — this plugin's per-app settings (pkg.pluginConfig[rel])
+// config is per-plugin so it's added to a shallow copy of api inside the loop, not the shared api.
 // attachPlugin may return a handler object; a returned onLaunch(arg) is re-invoked when a
 // second instance forwards a new launch argument to this already-running window.
 function loadPlugins(mainWindow, pkg, { appOrigin, internalDomains, launchArg }) {
@@ -244,7 +246,8 @@ function loadPlugins(mainWindow, pkg, { appOrigin, internalDomains, launchArg })
           console.error(`[plugin] ${rel} exports neither attachPlugin() nor windowOptions() — skipped`)
         continue
       }
-      instances.push(mod.attachPlugin(mainWindow, api) || {})
+      const config = pkg.pluginConfig?.[rel] || {}
+      instances.push(mod.attachPlugin(mainWindow, { ...api, config }) || {})
     } catch (err) {
       console.error(`[plugin] failed to load ${rel}:`, err)
     }
