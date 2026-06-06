@@ -21,6 +21,10 @@ test('create dialog: shipped plugins are offered in the dropdown', async ({ mana
   await expect(items.filter({ hasText: 'strato-webmail' })).toHaveCount(1)
   // Each item carries an icon image.
   await expect(items.first().locator('img')).toBeVisible()
+  // Helper modules inside a plugin dir (e.g. widget/move-overlay.js) must NOT appear — only the
+  // <dir>/<dir>.js entry file counts as a selectable plugin.
+  await expect(items.filter({ hasText: 'move-overlay' })).toHaveCount(0)
+  await expect(items.filter({ hasText: 'widget' })).toHaveCount(1)
   await managerPage.keyboard.press('Escape')
 })
 
