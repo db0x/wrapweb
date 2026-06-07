@@ -38,8 +38,12 @@ const GUARD = `(() => {
   }
 })();`
 
-function attachPlugin(win) {
-  const wc = win.webContents
+function attachPlugin(win, api) {
+  // Inject into the APP's webContents — api.webContents is the window's own webContents normally,
+  // but the inset WebContentsView when another plugin (e.g. widget) runs the app in view mode.
+  // Using win.webContents would hit the empty host/shadow page in that case → no-select silently
+  // does nothing. See window.js loadPlugins() for the api.webContents contract.
+  const wc = api.webContents
 
   // CSS via insertCSS persists across in-page navigation; the JS guard must be re-run after
   // each load because a full navigation replaces the document (and our window flag with it).
