@@ -8,5 +8,8 @@
         "https://*.sharepoint.com/:x:/*",
         "https://*.sharepoint.com/*.xlsx*"
     ],
-    "category": "microsoft"
+    "category": "microsoft",
+    "plugins": [
+        "plugins/ms-office/ms-office.js"
+    ]
 }

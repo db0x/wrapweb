@@ -139,6 +139,43 @@ test.describe('keyMatches — negative clauses (OneNote routing)', () => {
     expect(findRoute(table, host, wordUrl)?.entry.name).toBe('Word')
     expect(findRoute(table, host, noteUrl)?.entry.name).toBe('OneNote')
   })
+
+  // Setup:    OneNote opens one of its own notes from inside the OneNote app — the table only
+  //           has the OneNote key, and resolveRoute's eligibility predicate excludes the current
+  //           app (so docs route to OTHER apps). This is the exact shape that sent a clicked note
+  //           to the browser: routeUrl found no eligible target.
+  // Action:   resolve the note URL twice — once with self EXCLUDED (routeUrl's predicate), once
+  //           with self ALLOWED (appClaimsUrl's predicate).
+  // Expected: excluded → no route (the old browser fall-through); allowed → OneNote claims it.
+  //           The two predicates are exact inverses, so loading in-app is correct precisely when
+  //           routeUrl misses by self-exclusion.
+  test('a self-owned note: excluded by routeUrl, claimed by appClaimsUrl', () => {
+    const table = { base: {}, routing: { [KEY]: { path: '/d/wrapweb-onenote', name: 'OneNote' } } }
+    const isOnenote = (e) => e.path.replace(/.*\/wrapweb-/, '') === 'onenote'
+    expect(findRoute(table, host, noteUrl, (e) => !isOnenote(e))).toBe(null)
+    expect(findRoute(table, host, noteUrl, isOnenote)?.entry.name).toBe('OneNote')
+  })
+
+  // Setup:    a personal-OneDrive note lives under the "-my" SharePoint host — which is OneDrive's
+  //           OWN base key (its primary URL host) — while OneNote claims it via a Doc.aspx ROUTING
+  //           key. Both apps' claims match the URL: a base claim (OneDrive) and a routing claim
+  //           (OneNote). This is the exact conflict that opened a note inside OneDrive.
+  // Action:   resolve the rightful owner the way appClaimsUrl does — across ALL built apps, no
+  //           self-exclusion (eligibility = the AppImage exists, here always true).
+  // Expected: OneNote wins, because findRoute checks routing claims before base claims. So the
+  //           note belongs to OneNote from EITHER app: OneNote self-claims (load in place),
+  //           OneDrive does not (routes it away to OneNote) — both correct.
+  test('a personal (-my) note: routing claim (OneNote) beats base claim (OneDrive host)', () => {
+    const myHost  = 'contoso-my.sharepoint.com'
+    const myNote  = '/personal/user_contoso_de/_layouts/15/Doc.aspx?sourcedoc=%7B7%7D&file=Mein%20Notizbuch&action=edit&mobileredirect=true'
+    const ownerOf = (e) => e.path.replace(/.*\/wrapweb-/, '')
+    const table = { base:    { [myHost]: { path: '/d/wrapweb-onedrive', name: 'OneDrive' } },
+                    routing: { [KEY]:    { path: '/d/wrapweb-onenote',  name: 'OneNote' } } }
+    expect(keyMatches(KEY, myHost, myNote)).toBe(true)            // OneNote's routing key matches
+    expect(keyMatches(myHost, myHost, myNote)).toBe(true)         // OneDrive's base key matches too
+    // appClaimsUrl's resolution: eligibility = exists (no self-exclusion) → the global winner.
+    expect(ownerOf(findRoute(table, myHost, myNote, () => true).entry)).toBe('onenote')
+  })
 })
 
 test.describe('routingKeysForConfig', () => {

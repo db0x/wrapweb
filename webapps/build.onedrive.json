@@ -7,6 +7,6 @@
     "singleInstance": true,
     "category": "microsoft",
     "plugins": [
-        "plugins/onedrive/onedrive.js"
+        "plugins/ms-office/ms-office.js"
     ]
 }

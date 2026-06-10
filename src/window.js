@@ -199,6 +199,27 @@ function resolveRoute(url, currentProfile) {
   return { appImagePath, name, icon }
 }
 
+// Whether `currentProfile` is the app that RIGHTFULLY owns this URL. Resolves the owner across all
+// built apps with the normal routing-wins-over-base priority and does NOT exclude the current app
+// (unlike resolveRoute, which skips self so docs route to *another* app). The current app owns the
+// URL only if it wins that global resolution — a mere base-key match must not self-claim a doc
+// another app's higher-priority routing key owns. Concretely: a personal-OneDrive note lives under
+// the same *-my.sharepoint.com host that is OneDrive's own base key, but OneNote claims it via a
+// Doc.aspx routing key — so the note belongs to OneNote, not OneDrive, from either app. Plugins use
+// this to decide "load in place here" vs. "route away".
+function appClaimsUrl(url, currentProfile) {
+  const resolved = unwrapUrl(url)
+  let targetHost, targetPath
+  try { const u = new URL(resolved); targetHost = u.hostname; targetPath = u.pathname + u.search } catch { return false }
+  const match = findRoute(loadRouting(), targetHost, targetPath, (target) => {
+    const p = typeof target === 'string' ? target : target.path
+    return !!p && fs.existsSync(p)
+  })
+  if (!match) return false
+  const winnerPath = typeof match.entry === 'string' ? match.entry : match.entry.path
+  return path.basename(winnerPath).replace(/^wrapweb-/, '') === currentProfile
+}
+
 function routeExternalUrl(url, currentProfile) {
   const route = resolveRoute(url, currentProfile)
   if (!route) return false
@@ -214,6 +235,7 @@ function routeExternalUrl(url, currentProfile) {
 //   profile, appOrigin, internalDomains  — window identity / same-origin classification
 //   launchArg                            — the raw CLI argument the app opened with (or null)
 //   routeUrl(url) → bool                 — route a URL to another built app (true on a hit)
+//   claimsUrl(url) → bool                — whether THIS app owns the URL (self, which routeUrl skips)
 //   openExternal(url)                    — hand a URL to the system browser
 //   mailto                               — { parseMailtoFields, typeMailtoFields } compose helpers
 //   config                               — this plugin's per-app settings (pkg.pluginConfig[rel])
@@ -232,6 +254,7 @@ function loadPlugins(mainWindow, pkg, { appOrigin, internalDomains, launchArg, a
     // mode. Plugins that inject CSS/JS into the app MUST use this, not mainWindow.webContents.
     webContents:     appContents ?? mainWindow.webContents,
     routeUrl:        (url) => routeExternalUrl(url, pkg.profile),
+    claimsUrl:       (url) => appClaimsUrl(url, pkg.profile),
     openExternal:    (url) => shell.openExternal(url),
     quit:            () => mainWindow.close(),
     t:               require('./i18n').t,

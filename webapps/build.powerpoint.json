@@ -9,5 +9,8 @@
         "https://*.sharepoint.com/:p:/*",
         "https://*.sharepoint.com/*.pptx*"
     ],
-    "category": "microsoft"
+    "category": "microsoft",
+    "plugins": [
+        "plugins/ms-office/ms-office.js"
+    ]
 }

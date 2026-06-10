@@ -17,7 +17,7 @@
 // To avoid a stray OneDrive window flashing up, same-origin popups are created hidden; the
 // child is only ever shown if it turns out NOT to be a routed document.
 
-const TAG = '[onedrive-plugin]'
+const TAG = '[ms-office-plugin]'
 
 // Grace period before revealing a hidden child that never routed. The routed-document case
 // resolves within a few hundred ms (open launcher → in-page nav to the doc → route + close);
@@ -28,8 +28,9 @@ const REVEAL_AFTER_MS = 1500
 // Receives the standard plugin api from window.js loadPlugins(); it uses:
 //   appOrigin, internalDomains — classify a popup as same-origin/internal (a doc launcher)
 //   routeUrl(url)              — launch the claiming AppImage, returns true on a routing hit
+//   claimsUrl(url)             — whether THIS app owns the doc (e.g. a OneNote note from OneNote)
 //   openExternal(url)          — hand a non-routed external URL to the system browser
-function attachPlugin(win, { appOrigin, internalDomains, routeUrl, openExternal }) {
+function attachPlugin(win, { appOrigin, internalDomains, routeUrl, claimsUrl, openExternal }) {
   const wc = win.webContents
 
   // Replace the default handler for OneDrive. Same-origin / internal popups (the document
@@ -46,10 +47,20 @@ function attachPlugin(win, { appOrigin, internalDomains, routeUrl, openExternal 
         console.log(TAG, 'window.open internal (launcher, watching child):', url)
         return { action: 'allow', overrideBrowserWindowOptions: { show: false } }
       }
-      // Non-internal window.open: OneDrive sometimes opens docs (e.g. links into a different
-      // project) with the final URL right here — no child window is created. Route it if a
-      // built app claims it; otherwise it goes to the system browser. Logged either way so a
-      // routing miss on this path (which previously produced no log at all) is visible.
+      // Non-internal window.open with the final doc URL right here (no child window). Decide in
+      // this order — the order matters:
+      //   1. THIS app owns the doc (a OneNote note opened from OneNote): keep it, load in place.
+      //      Checked FIRST and before routing, because SharePoint hosts a personal OneDrive note
+      //      under *-my.sharepoint.com too, which a broad/stale routing key in another built app
+      //      can also match — without self-first such a note is wrongly handed to that app.
+      //   2. Another built app claims it (OneDrive → a .docx → Word): route there.
+      //   3. Nobody claims it: system browser.
+      // Logged either way so a routing decision on this path is always visible.
+      if (claimsUrl(url)) {
+        console.log(TAG, 'window.open → load in app (self-claimed):', url)
+        wc.loadURL(url).catch(() => {})
+        return { action: 'deny' }
+      }
       const hit = routeUrl(url)
       console.log(TAG, hit ? 'window.open routed:' : 'window.open → browser (no match):', url)
       if (!hit) openExternal(url)
@@ -67,8 +78,17 @@ function attachPlugin(win, { appOrigin, internalDomains, routeUrl, openExternal 
     // their event so the in-flight load is cancelled too (in-page navigations can't be).
     const tryRoute = (url, event) => {
       if (handled || !url) return
-      // Log every candidate URL we test against the routing table — the URL printed here is
-      // exactly what determines the routing target, so a wrong/unexpected one explains a miss.
+      // Same precedence as the window.open handler: a doc THIS app owns is kept (self-first, so a
+      // broad/stale key in another app can't steal it); otherwise route to the claiming app. The
+      // logged URL is exactly what drove the decision, so a wrong/unexpected one explains a miss.
+      if (claimsUrl(url)) {
+        console.log(TAG, 'routing URL (self-claimed, load in app):', url)
+        handled = true
+        if (event) event.preventDefault()
+        if (!child.isDestroyed()) child.close()
+        wc.loadURL(url).catch(() => {})
+        return
+      }
       const hit = routeUrl(url)
       console.log(TAG, hit ? 'routing URL (matched):' : 'routing URL (no match):', url)
       if (!hit) return
@@ -85,6 +105,9 @@ function attachPlugin(win, { appOrigin, internalDomains, routeUrl, openExternal 
     // Not a routed document → reveal it so a genuine OneDrive popup isn't stuck invisible.
     setTimeout(() => { if (!handled && !child.isDestroyed()) child.show() }, REVEAL_AFTER_MS)
   })
+
+  console.log(TAG, 'attached')
+  
 }
 
 module.exports = { attachPlugin }
