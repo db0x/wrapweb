@@ -17,8 +17,13 @@
   const ID = 'wrapweb-widget-move'
   if (document.getElementById(ID)) return                 // already in move mode
 
-  const { icon, hintText, doneText } = window.__wrapwebWidgetMove || {}
+  const { icon, hintText, doneText, zoom } = window.__wrapwebWidgetMove || {}
   const dark = matchMedia('(prefers-color-scheme: dark)').matches
+  // Counter-scale the panel so it keeps a constant on-screen size when the view is zoomed (the zoom
+  // plugin sets the page zoom; without this the panel would scale with the page). The backdrop (ov)
+  // intentionally still fills the viewport — only the card is scaled, about its centre, so the
+  // flex-centred position is preserved.
+  const invZoom = 1 / (Number(zoom) || 1)
 
   const ov = document.createElement('div')
   ov.id = ID
@@ -31,6 +36,7 @@
   card.style.cssText = 'border-radius:12px;max-width:90vw;' +
     'box-shadow:0 8px 32px rgba(0,0,0,0.45);overflow:hidden;' +
     'padding:18px 22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;' +
+    `transform-origin:center;transform:scale(${invZoom});` +
     (dark ? 'background:#2c2c2c;color:#f0f0f0' : 'background:#fff;color:#1e1e1e')
 
   // Hint row: move icon inline before the text.

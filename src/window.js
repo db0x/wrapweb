@@ -308,6 +308,13 @@ function usesWidgetPlugin(pkg) {
   return (pkg.plugins ?? []).some(p => /(^|\/)widget\//.test(p))
 }
 
+// True when the app loads the zoom plugin, which owns the per-app Ctrl+wheel zoom. Apps without it
+// have no way to change zoom, so window.js resets their (Electron-persisted) zoom to 100% on load —
+// see the did-finish-load handler. Zoom-plugin apps are left alone so their zoom can stand.
+function usesZoomPlugin(pkg) {
+  return (pkg.plugins ?? []).some(p => /(^|\/)zoom\//.test(p))
+}
+
 // View mode: a plugin may render the app in an inset WebContentsView so the host window can draw
 // a drop shadow + rounded corners AROUND it, leaving the app's page completely untouched (native
 // scrolling/layout — no clip-path/transform hacks). A plugin opts in by exporting viewConfig(cfg)
@@ -403,15 +410,6 @@ function createWindow(pkg, opts = {}) {
 
   if (pkg.userAgent) appContents.setUserAgent(pkg.userAgent)
   appContents.loadURL(pkg.url)
-
-  ipcMain.on('adjust-zoom', (event, delta) => {
-    const wc = event.sender
-    const current = wc.getZoomFactor()
-    wc.setZoomFactor(delta > 0
-      ? Math.min(current + 0.1, 3.0)
-      : Math.max(current - 0.1, 0.5)
-    )
-  })
 
   const appOrigin = new URL(pkg.url).origin
   const internalDomains = pkg.internalDomains ?
@@ -518,8 +516,14 @@ function createWindow(pkg, opts = {}) {
   appContents.on('context-menu', (_event, params) => {
     // Plugins may contribute extra context-menu entries via a returned contextMenuItems() —
     // e.g. the widget plugin's "Quit" item, since a frameless widget has no window close button.
+    // An item may carry an `order` number to position itself across plugins (lower = higher up,
+    // default 0); the sort is stable so same-order items keep their plugin/declaration order. The
+    // field is stripped before the template reaches Electron, which doesn't know it. This lets one
+    // plugin's item sit between another's (e.g. zoom's "Zoom" between the widget's Move and Quit).
     const pluginItems = (mainWindow._wrapwebPlugins ?? [])
       .flatMap(inst => { try { return inst.contextMenuItems?.() ?? [] } catch { return [] } })
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map(({ order, ...item }) => item)
     showContextMenu(mainWindow, customSession, params, {
       resolveRoute: (url) => { const r = resolveRoute(url, pkg.profile); return r ? { ...r, url: unwrapUrl(url) } : null },
       openInBrowser: (url) => shell.openExternal(url),
@@ -598,7 +602,13 @@ function createWindow(pkg, opts = {}) {
     return `(() => {\n${vars}\n${tooltipScript}\n})()`
   }
 
+  // Apps not managed by the zoom plugin can't change zoom, but Electron persists the zoom factor per
+  // origin — so an app zoomed earlier (or before zoom became a plugin) would reopen zoomed with no
+  // way back. Reset those to 100% on load. The zoom plugin, when present, owns the zoom instead.
+  const zoomManaged = usesZoomPlugin(pkg)
+
   appContents.on('did-finish-load', () => {
+    if (!zoomManaged) appContents.setZoomFactor(1)
     appContents.insertCSS(`
       ::-webkit-scrollbar { width: 8px; height: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
@@ -608,9 +618,6 @@ function createWindow(pkg, opts = {}) {
       ${tooltipCss}
     `)
     appContents.executeJavaScript(`
-      window.addEventListener('wheel', (e) => {
-        if (e.ctrlKey) window.electronAPI.adjustZoom(e.deltaY < 0 ? 1 : -1);
-      }, { passive: true });
       ${buildTooltipScript()}
     `)
   })

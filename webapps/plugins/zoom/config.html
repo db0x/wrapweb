@@ -1,0 +1,55 @@
+<!-- Config dialog shipped by the zoom plugin (part of the plugin). The manager's plugin-config
+     host (src/manager/plugin-config.js) renders this into the manager DOM and owns the generic
+     open/close + Apply/Cancel wiring; the markup reuses the manager's .dialog-* classes so it
+     matches every other dialog. {{pluginIcon}} is the plugin's icon (a var); {{zoom*}} are i18n
+     keys. The help "?" carries its caveat in the shared data-tooltip (rendered by the manager's
+     global initTooltip), the same way every other dialog surfaces help.
+
+     Each control binds generically: the host reads/writes config[data-config-key], seeds the field
+     from data-config-default when the app has no stored value, and mirrors the live value into the
+     matching [data-config-value] output. The slider min/max/step MUST match zoom.js (the resolve*
+     bounds), or a stored value could sit outside the slider's reachable steps. -->
+<div class="dialog-overlay plugin-config-overlay hidden">
+  <div class="dialog">
+    <div class="dialog-header">
+      <img src="{{pluginIcon}}" alt="">
+      <span class="dialog-title">{{zoomConfigTitle}}</span>
+      <button class="dialog-close" type="button">✕</button>
+    </div>
+    <div class="dialog-fields">
+      <div class="dialog-field">
+        <label for="zoom-config-step">{{zoomConfigStep}}<span class="field-help" data-tooltip="{{zoomConfigStepHint}}">?</span></label>
+        <div class="plugin-config-range">
+          <input type="range" id="zoom-config-step" min="0.05" max="0.5" step="0.05"
+                 data-config-key="step" data-config-default="0.1">
+          <output data-config-value="step"></output>
+        </div>
+      </div>
+      <!-- The min/max zoom bounds sit side by side: each is one short slider. -->
+      <div class="dialog-field-row" style="grid-template-columns: 1fr 1fr;">
+        <div class="dialog-field">
+          <label for="zoom-config-min">{{zoomConfigMin}}</label>
+          <div class="plugin-config-range">
+            <input type="range" id="zoom-config-min" min="0.3" max="1" step="0.1"
+                   data-config-key="min" data-config-default="0.5">
+            <output data-config-value="min" data-unit="×"></output>
+          </div>
+        </div>
+        <div class="dialog-field">
+          <label for="zoom-config-max">{{zoomConfigMax}}</label>
+          <div class="plugin-config-range">
+            <input type="range" id="zoom-config-max" min="1.5" max="5" step="0.5"
+                   data-config-key="max" data-config-default="3">
+            <output data-config-value="max" data-unit="×"></output>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Apply commits the edit to the app's config; Cancel/✕/backdrop/Esc discard. The host wires
+         these by class (.plugin-config-apply / .plugin-config-cancel). -->
+    <div class="confirm-actions">
+      <button class="btn-cancel plugin-config-cancel" type="button">{{pluginConfigCancel}}</button>
+      <button class="btn-save plugin-config-apply" type="button">{{pluginConfigApply}}</button>
+    </div>
+  </div>
+</div>

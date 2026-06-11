@@ -25,6 +25,9 @@ if (process.argv.includes('--wrapweb-file-handler')) {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Renderer→main bridge for the zoom plugin: a page can't reach its own webContents zoom, so the
+  // injected ctrl+wheel listener signals the direction here and the plugin steps the zoom factor.
+  // Harmless for apps without the zoom plugin (no 'adjust-zoom' handler is registered, so it no-ops).
   adjustZoom:        (delta)  => ipcRenderer.send('adjust-zoom',       delta),
   rcloneConfirm:     (choice) => ipcRenderer.send('rclone-confirm',    choice),
   checkSafeBrowsing: (url, ignoreExclude) => ipcRenderer.invoke('safe-browsing:check', url, ignoreExclude),

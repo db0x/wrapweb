@@ -18,6 +18,7 @@
 
 const fs   = require('node:fs')
 const path = require('node:path')
+const { nativeImage, nativeTheme } = require('electron')
 
 // Corner-radius bounds. Must stay in sync with the slider in config.html (min/max/default).
 const DEFAULT_RADIUS = 14
@@ -49,6 +50,28 @@ const MOVE_ICON = (() => {
   try { return `data:image/svg+xml;base64,${fs.readFileSync(path.join(__dirname, 'move.svg')).toString('base64')}` }
   catch { return null }
 })()
+
+// move icon as a nativeImage for the "Move" context-menu item. nativeImage can't rasterise SVG, so
+// the menu needs PNGs — the SVG above is still used for the in-page overlay. The glyph is mono, so
+// it can't follow the menu's text colour on its own (setTemplateImage is macOS-only); instead we
+// ship two rasterised variants and pick per theme at menu-open time. Each base name auto-loads its
+// @2x HiDPI sibling via createFromPath. null if an asset is missing/unreadable.
+//   move.png      — dark glyph, for a light menu
+//   move-dark.png — light glyph, for a dark menu
+function loadMoveIcon(file) {
+  try {
+    const img = nativeImage.createFromPath(path.join(__dirname, file))
+    return img.isEmpty() ? null : img
+  } catch { return null }
+}
+const MOVE_MENU_ICON_LIGHT = loadMoveIcon('move.png')
+const MOVE_MENU_ICON_DARK  = loadMoveIcon('move-dark.png')
+
+// The variant matching the current menu theme. Read at menu-open time (contextMenuItems runs on
+// every open) so a theme switch is reflected without restart.
+function moveMenuIcon() {
+  return nativeTheme.shouldUseDarkColors ? MOVE_MENU_ICON_DARK : MOVE_MENU_ICON_LIGHT
+}
 
 // Clamp the configured radius to the supported range; fall back to the default for missing/invalid.
 function resolveRadius(config) {
@@ -95,10 +118,12 @@ function resolveResizable(config) {
   return config?.resizable !== false
 }
 
-// Whether to paint our tint over the page (and clear the app's root backgrounds so it shows).
-// Default yes. Off → the plugin doesn't touch the page background: the app shows as-is, natively.
+// Whether to paint our tint over the page (and clear the app's root backgrounds so the desktop
+// shows through). Default OFF — it only takes effect on pages whose own background is transparent
+// (e.g. Home Assistant), and the broad root-clearing selector can strip backgrounds the app needs
+// (e.g. draw.io's menus). So it's opt-in: on → tint + show-through, off → page left exactly as-is.
 function tintEnabled(config) {
-  return config?.tintBackground !== false
+  return config?.tintBackground === true
 }
 
 // Whether to hide the app's scrollbars (keeping wheel/touchpad scrolling). Default yes — only an
@@ -146,7 +171,9 @@ function hostHtml(config) {
 // Enters move mode: hands the overlay its parameters via window.__wrapwebWidgetMove, then runs
 // move-overlay.js in the page. `wc` is the app view's webContents.
 function enterMoveMode(wc, t) {
-  const params = { icon: MOVE_ICON, hintText: t.widgetMoveHint, doneText: t.widgetMoveDone }
+  // Pass the current page zoom so the overlay can counter-scale its panel to a constant on-screen
+  // size — otherwise a zoomed view (zoom plugin) would scale the move panel along with the page.
+  const params = { icon: MOVE_ICON, hintText: t.widgetMoveHint, doneText: t.widgetMoveDone, zoom: wc.getZoomFactor() }
   wc.executeJavaScript(`window.__wrapwebWidgetMove = ${JSON.stringify(params)};`)
     .then(() => wc.executeJavaScript(MOVE_SCRIPT))
     .catch(() => {})
@@ -169,9 +196,11 @@ function attachPlugin(win, api) {
   return {
     contextMenuItems: () => {
       const t = api.t()
+      // order: Move sits near the top of the plugin block; Quit is pinned last (high order) so any
+      // other plugin's items (e.g. the zoom plugin's "Zoom") land between them — see window.js.
       return [
-        { label: t.widgetMove, click: () => enterMoveMode(wc, t) },
-        { label: t.widgetQuit.replace('{name}', api.displayName), click: () => api.quit() },
+        { label: t.widgetMove, order: 10, ...((icon => icon && { icon })(moveMenuIcon())), click: () => enterMoveMode(wc, t) },
+        { label: t.widgetQuit.replace('{name}', api.displayName), order: 1000, click: () => api.quit() },
       ]
     },
   }
