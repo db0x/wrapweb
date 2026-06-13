@@ -772,6 +772,19 @@ function createWindow(pkg, opts = {}) {
   // way back. Reset those to 100% on load. The zoom plugin, when present, owns the zoom instead.
   const zoomManaged = usesZoomPlugin(pkg)
 
+  // A frameless widget must not be closeable by the page itself: apps like Teams call window.close()
+  // from their own bootstrap right after loading, which would kill the widget. Neutralise the page's
+  // window.close() (a no-op) rather than blocking the BrowserWindow's close — so GNOME/WM close and
+  // our context-menu Quit (both go through the window, not window.close) keep working normally. Only
+  // for widget apps; framed apps may legitimately self-close. Injected early (dom-ready) + on every
+  // load so it's in place before the app's close call.
+  if (usesWidgetPlugin(pkg)) {
+    const NEUTRALISE_CLOSE = '(function(){try{window.close=function(){};}catch(e){' +
+      'try{Object.defineProperty(window,"close",{value:function(){},configurable:true});}catch(_){}}})();'
+    appContents.on('dom-ready',       () => appContents.executeJavaScript(NEUTRALISE_CLOSE).catch(() => {}))
+    appContents.on('did-finish-load', () => appContents.executeJavaScript(NEUTRALISE_CLOSE).catch(() => {}))
+  }
+
   appContents.on('did-finish-load', () => {
     if (!zoomManaged) appContents.setZoomFactor(1)
     appContents.insertCSS(`
